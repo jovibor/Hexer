@@ -1,0 +1,3 @@
+[submodule "Hexer/dep/HexCtrl"]
+	path = Hexer/dep/HexCtrl
+	url = https://github.com/jovibor/HexCtrl.git

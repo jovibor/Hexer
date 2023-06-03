@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="HexCtrl">
+      <UniqueIdentifier>{f36aad90-1098-4a42-b0b9-c32da156b6fd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CHexerApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CMainFrame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CChildFrame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CHexerDoc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CHexerView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPaneFileProps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CAppSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\HexCtrl.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\dep\ListEx\ListEx.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\res\HexCtrlRes.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\CHexCtrl.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\CHexSelection.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\CScrollEx.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgBkmMgr.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCallback.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgEncoding.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgGoTo.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgModify.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgOpers.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\HexUtility.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CHexerApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CMainFrame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CChildFrame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CHexerDoc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CHexerView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CPaneFileProps.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CAppSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\dep\ListEx\CListEx.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexCtrl.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexSelection.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CScrollEx.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgBkmMgr.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCallback.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgEncoding.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgGoTo.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgModify.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgOpers.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\HexUtility.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Hexer.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="dep\HexCtrl\HexCtrl\res\HexCtrl.rc">
+      <Filter>HexCtrl</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\IDI_PROPERTIES.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\Hexer.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\IDR_TOOLBAR_MAINFRAME.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\Hexer.rc2">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>
