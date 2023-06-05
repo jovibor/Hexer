@@ -4,7 +4,7 @@
 //
 #define IDD_ABOUTBOX                    100
 #define IDR_MAINFRAME                   101
-#define IDR_TOOLBAR_MAINFRAME           102
+#define IDR_TOOLBAR_MAIN                102
 #define IDI_PANE_PROPERTIES             103
 #define IDC_PANE_PROPERTIES             104
 #define IDC_LINK_HEXER                  105

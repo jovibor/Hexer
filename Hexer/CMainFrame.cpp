@@ -80,7 +80,20 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	m_wndToolBar.CreateEx(this, TBSTYLE_FLAT,
 		WS_CHILD | WS_VISIBLE | CBRS_TOP | CBRS_GRIPPER | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC);
-	m_wndToolBar.LoadToolBar(IDR_TOOLBAR_MAINFRAME);
+	m_wndToolBar.LoadToolBar(IDR_TOOLBAR_MAIN);
+
+	CMFCToolBar::m_bDontScaleImages = TRUE;
+	const auto imgTB = CMFCToolBar::GetImages();    //Toolbar image.
+	const auto sizeImgCurr = imgTB->GetImageSize(); //One button's dimensions.
+	const auto fToolbarScaledFactor = sizeImgCurr.cx / 16.0; //How many times our toolbar is bigger than the standard one.
+	const auto fDPI = m_iLOGPIXELSY / 96.0F;  //Scale factor for HighDPI displays.
+	const auto fScale = fDPI / fToolbarScaledFactor;
+	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * fScale) + 7,
+		static_cast<int>(sizeImgCurr.cy * fScale) + 7 }; //Size of the toolbar's button.
+	imgTB->SmoothResize(fScale); //Resize image according to the current DPI.
+	CMFCToolBar::SetSizes(sizeBtn, imgTB->GetImageSize());
+	CMFCToolBar::SetMenuSizes(sizeBtn, imgTB->GetImageSize());
+
 	m_wndToolBar.SetWindowTextW(L"Standard"); //This text is in fact menu name.
 	m_wndToolBar.EnableCustomizeButton(TRUE, IDM_TOOLBAR_CUSTOMIZE, L"Customize...");
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);

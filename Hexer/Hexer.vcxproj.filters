@@ -186,7 +186,7 @@
     <Image Include="res\Hexer.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="res\IDR_TOOLBAR_MAINFRAME.bmp">
+    <Image Include="res\IDR_TOOLBAR_MAIN.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

@@ -80,7 +80,7 @@ IDI_PANE_PROPERTIES     ICON                    "res\\IDI_PROPERTIES.ico"
 // Bitmap
 //
 
-IDR_TOOLBAR_MAINFRAME   BITMAP                  "res\\IDR_TOOLBAR_MAINFRAME.bmp"
+IDR_TOOLBAR_MAIN        BITMAP                  "res\\IDR_TOOLBAR_MAIN.bmp"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -88,17 +88,11 @@ IDR_TOOLBAR_MAINFRAME   BITMAP                  "res\\IDR_TOOLBAR_MAINFRAME.bmp"
 // Toolbar
 //
 
-IDR_TOOLBAR_MAINFRAME TOOLBAR 16, 17
+IDR_TOOLBAR_MAIN TOOLBAR 32, 34
 BEGIN
     BUTTON      ID_FILE_NEW
     BUTTON      ID_FILE_OPEN
-    BUTTON      ID_FILE_SAVE
     SEPARATOR
-    BUTTON      ID_EDIT_COPY
-    BUTTON      ID_EDIT_PASTE
-    SEPARATOR
-    BUTTON      ID_FILE_PRINT
-    BUTTON      ID_APP_ABOUT
     BUTTON      IDM_EDIT_EDITMODE
 END
 

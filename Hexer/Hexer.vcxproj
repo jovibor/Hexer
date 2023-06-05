@@ -180,7 +180,7 @@
   <ItemGroup>
     <Image Include="res\Hexer.ico" />
     <Image Include="res\IDI_PROPERTIES.ico" />
-    <Image Include="res\IDR_TOOLBAR_MAINFRAME.bmp" />
+    <Image Include="res\IDR_TOOLBAR_MAIN.bmp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\Hexer.rc2" />
