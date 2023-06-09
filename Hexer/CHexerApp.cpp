@@ -13,6 +13,7 @@
 #include "CChildFrame.h"
 #include "CHexerDoc.h"
 #include "CHexerView.h"
+#include "CDlgOpenDevice.h"
 #include <format>
 import Utility;
 
@@ -59,9 +60,11 @@ BOOL CAboutDlg::OnInitDialog()
 //CHexerApp.
 
 BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
-	ON_COMMAND(ID_APP_ABOUT, &CHexerApp::OnAppAbout)
-	ON_COMMAND(ID_FILE_OPEN, &CHexerApp::OnFileOpen)
 	ON_COMMAND(ID_FILE_NEW, &CWinAppEx::OnFileNew)
+	ON_COMMAND(ID_FILE_OPEN, &CHexerApp::OnFileOpen)
+	ON_COMMAND(IDM_FILE_OPENDEVICE, &CHexerApp::OnFileOpenDevice)
+	ON_COMMAND(ID_APP_ABOUT, &CHexerApp::OnAppAbout)
+	ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CHexerApp::OnUpdateFileNew)
 END_MESSAGE_MAP()
 
 void CHexerApp::OnFileOpen()
@@ -94,6 +97,16 @@ void CHexerApp::OnFileOpen()
 	while (!lmbFOD()) { }; //If no file has been opened (in multiple selection) show the "Open File Dialog" again.
 }
 
+void CHexerApp::OnFileOpenDevice()
+{
+	if (CDlgOpenDevice dlg; dlg.DoModal() == IDOK) {
+		MessageBoxW(0, L"Not implemented yet (in process)", L"", MB_ICONEXCLAMATION);
+		/*for (const auto& wstrPath : dlg.GetPaths()) {
+			OpenDocumentFile(wstrPath.data());
+		}*/
+	}
+}
+
 auto CHexerApp::GetAppSettings()->CAppSettings&
 {
 	return m_stAppSettings;
@@ -101,6 +114,17 @@ auto CHexerApp::GetAppSettings()->CAppSettings&
 
 
 //Private methods.
+
+void CHexerApp::OnAppAbout()
+{
+	CAboutDlg aboutDlg;
+	aboutDlg.DoModal();
+}
+
+void CHexerApp::OnUpdateFileNew(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(FALSE);
+}
 
 BOOL CHexerApp::InitInstance()
 {
@@ -153,10 +177,4 @@ int CHexerApp::ExitInstance()
 	m_stAppSettings.SaveSettings(g_wstrAppName);
 
 	return CWinAppEx::ExitInstance();
-}
-
-void CHexerApp::OnAppAbout()
-{
-	CAboutDlg aboutDlg;
-	aboutDlg.DoModal();
 }

@@ -11,7 +11,6 @@
 #include "resource.h"
 #include <format>
 #include <algorithm>
-#include <ranges>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -113,15 +112,8 @@ void CPaneFileProps::UpdatePaneFileProps(const Utility::FILEPROPS& stFP)
 			pProp->SetValue(stFP.wsvFileName.data());
 			break;
 		case FILE_SIZE:
-		{
-			//Split the file size by groups of 3 digits, with comma.
-			auto wstrFileSize = std::format(L"{}", stFP.ullFileSize)
-				| std::views::reverse | std::views::chunk(3) | std::views::join_with(std::wstring(L","))
-				| std::ranges::to<std::wstring>() | std::views::reverse | std::ranges::to<std::wstring>();
-			wstrFileSize += L" bytes";
-			pProp->SetValue(wstrFileSize.data());
-		}
-		break;
+			pProp->SetValue(std::format(std::locale("en_US.UTF-8"), L"{:L} bytes", stFP.ullFileSize).data());
+			break;
 		case PAGE_SIZE:
 			pProp->SetValue(std::format(L"{}", stFP.dwPageSize).data());
 			break;

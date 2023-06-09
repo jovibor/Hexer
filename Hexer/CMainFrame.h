@@ -21,7 +21,6 @@ protected:
 	afx_msg void OnViewCustomize();
 	afx_msg void OnViewProperties();
 	afx_msg void OnUpdateViewProperties(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);
 	BOOL OnCloseDockingPane(CDockablePane* pWnd)override;
 	DECLARE_DYNAMIC(CMainFrame);
 	DECLARE_MESSAGE_MAP();

@@ -96,6 +96,18 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\HexUtility.h">
       <Filter>HexCtrl</Filter>
     </ClInclude>
+    <ClInclude Include="CDlgOpenDisk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDlgOpenVolume.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDlgOpenPath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDlgOpenDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CHexerApp.cpp">
@@ -169,6 +181,18 @@
     </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\HexUtility.cpp">
       <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="CDlgOpenDisk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CDlgOpenVolume.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CDlgOpenPath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CDlgOpenDevice.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

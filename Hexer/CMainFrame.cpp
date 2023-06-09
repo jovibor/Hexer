@@ -9,8 +9,6 @@
 #include "CHexerApp.h"
 #include "CMainFrame.h"
 
-using namespace Utility;
-
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -22,7 +20,6 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
 	ON_COMMAND(IDM_VIEW_PROPERTIES, &CMainFrame::OnViewProperties)
 	ON_UPDATE_COMMAND_UI(IDM_VIEW_PROPERTIES, &CMainFrame::OnUpdateViewProperties)
-	ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CMainFrame::OnUpdateFileNew)
 END_MESSAGE_MAP()
 
 int& CMainFrame::GetChildFramesCount()
@@ -46,11 +43,6 @@ void CMainFrame::OnOpenFirstTab()
 void CMainFrame::OnCloseLastTab()
 {
 	HidePanes();
-}
-
-void CMainFrame::OnUpdateFileNew(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(FALSE);
 }
 
 void CMainFrame::UpdatePaneFileProps(const Utility::FILEPROPS& stFP)
@@ -263,16 +255,16 @@ auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		pDC->SelectObject(m_fontMDIClient);
 		pDC->SetBkMode(TRANSPARENT);
 		pDC->SetTextColor(RGB(220, 220, 220)); //Shadow color.
-		pDC->DrawTextW(g_wstrAppName, static_cast<int>(std::size(g_wstrAppName) - 1), rcShadow, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		pDC->DrawTextW(Utility::g_wstrAppName, static_cast<int>(std::size(Utility::g_wstrAppName) - 1), rcShadow, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
 		pDC->SetTextColor(RGB(203, 203, 203)); //Text color.
-		pDC->DrawTextW(g_wstrAppName, static_cast<int>(std::size(g_wstrAppName) - 1), rcText, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		pDC->DrawTextW(Utility::g_wstrAppName, static_cast<int>(std::size(Utility::g_wstrAppName) - 1), rcText, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
 	}
 	break;
 	case WM_SIZE:
 		MDIClientSize(hWnd, wParam, lParam);
 		break;
 	case WM_LBUTTONDBLCLK:
-		static_cast<CHexerApp*>(AfxGetApp())->OnFileOpen();
+		theApp.OnFileOpen();
 		break;
 	}
 
@@ -295,7 +287,7 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 		lf.lfHeight = -MulDiv(iFontSizeMin, m_iLOGPIXELSY, 72);
 		m_fontMDIClient.CreateFontIndirectW(&lf);
 		pDC->SelectObject(m_fontMDIClient);
-		stSizeText = pDC->GetTextExtent(g_wstrAppName, static_cast<int>(std::size(g_wstrAppName) - 1));
+		stSizeText = pDC->GetTextExtent(Utility::g_wstrAppName, static_cast<int>(std::size(Utility::g_wstrAppName) - 1));
 	}
 	::ReleaseDC(hWnd, pDC->m_hDC);
 	::RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);

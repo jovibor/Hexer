@@ -5,22 +5,20 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #pragma once
-#include "CAppSettings.h"
+#include <afxdialogex.h>
+#include <string>
+#include <vector>
 
-class CHexerApp final : public CWinAppEx
+class CDlgOpenPath final : public CDialogEx
 {
 public:
-	afx_msg void OnFileOpen();
-	afx_msg void OnFileOpenDevice();
-	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
-private:
-	BOOL InitInstance()override;
-	int ExitInstance()override;
-	afx_msg void OnAppAbout();
-	afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);
+	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
+protected:
+	void DoDataExchange(CDataExchange* pDX)override;
+	void OnOK()override;
+	void OnCancel()override;
+	DECLARE_DYNAMIC(CDlgOpenPath);
 	DECLARE_MESSAGE_MAP();
 private:
-	CAppSettings m_stAppSettings;
+	std::vector<std::wstring> m_vecPaths; //Paths to open.
 };
-
-extern CHexerApp theApp;

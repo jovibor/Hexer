@@ -64,7 +64,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <BuildStlModules>false</BuildStlModules>
     </ClCompile>
@@ -93,7 +93,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <BuildStlModules>false</BuildStlModules>
     </ClCompile>
@@ -116,6 +116,10 @@
   <ItemGroup>
     <ClInclude Include="CAppSettings.h" />
     <ClInclude Include="CChildFrame.h" />
+    <ClInclude Include="CDlgOpenDevice.h" />
+    <ClInclude Include="CDlgOpenDisk.h" />
+    <ClInclude Include="CDlgOpenPath.h" />
+    <ClInclude Include="CDlgOpenVolume.h" />
     <ClInclude Include="CHexerDoc.h" />
     <ClInclude Include="CHexerView.h" />
     <ClInclude Include="CMainFrame.h" />
@@ -144,6 +148,10 @@
   <ItemGroup>
     <ClCompile Include="CAppSettings.cpp" />
     <ClCompile Include="CChildFrame.cpp" />
+    <ClCompile Include="CDlgOpenDevice.cpp" />
+    <ClCompile Include="CDlgOpenDisk.cpp" />
+    <ClCompile Include="CDlgOpenPath.cpp" />
+    <ClCompile Include="CDlgOpenVolume.cpp" />
     <ClCompile Include="CHexerDoc.cpp" />
     <ClCompile Include="CHexerView.cpp" />
     <ClCompile Include="CMainFrame.cpp" />

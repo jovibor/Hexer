@@ -9,6 +9,7 @@
 #include "CHexerApp.h"
 #include "CMainFrame.h"
 #include "CChildFrame.h"
+#include <format>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -24,7 +25,7 @@ auto CHexerDoc::GetFileName()const->const std::wstring&
 	return m_wstrFileName;
 }
 
-auto CHexerDoc::GetFilePath() const -> const std::wstring &
+auto CHexerDoc::GetFilePath()const->const std::wstring&
 {
 	return m_wstrFilePath;
 }
@@ -73,13 +74,19 @@ void CHexerDoc::OnCloseDocument()
 
 bool CHexerDoc::OpenFile(LPCWSTR lpszFileName)
 {
-	m_hFile = CreateFileW(lpszFileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
-		nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	m_hFile = CreateFileW(lpszFileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
 	if (m_hFile == INVALID_HANDLE_VALUE) {
-		m_hFile = CreateFileW(lpszFileName, GENERIC_READ, FILE_SHARE_READ,
-			nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		m_hFile = CreateFileW(lpszFileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 		if (m_hFile == INVALID_HANDLE_VALUE) {
-			MessageBoxW(nullptr, L"CreateFileW failed.", L"Error", MB_ICONERROR);
+			const auto dwError = GetLastError();
+			wchar_t buffErr[MAX_PATH];
+			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, NULL);
+			const auto wstrMsg = std::format(L"CreateFileW failed: 0x{:08X}\r\n{}", dwError, buffErr);
+			::MessageBoxW(nullptr, wstrMsg.data(), L"Error", MB_ICONERROR);
 			return false;
 		}
 	}
