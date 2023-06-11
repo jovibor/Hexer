@@ -6,6 +6,7 @@
 *******************************************************************************/
 #pragma once
 #include "CAppSettings.h"
+#include "CHexerRFL.h"
 
 class CHexerApp final : public CWinAppEx
 {
@@ -13,14 +14,18 @@ public:
 	afx_msg void OnFileOpen();
 	afx_msg void OnFileOpenDevice();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
+	void AddToRFL(std::wstring_view wsvPath); //Add path to Recent File List.
 private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;
 	afx_msg void OnAppAbout();
+	afx_msg void OnFileRFL(UINT uID);
 	afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateFileRFL(CCmdUI* pCmdUI);
 	DECLARE_MESSAGE_MAP();
 private:
 	CAppSettings m_stAppSettings;
+	CHexerRFL    m_stRFL;
 };
 
 extern CHexerApp theApp;

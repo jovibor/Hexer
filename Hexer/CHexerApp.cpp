@@ -11,6 +11,7 @@
 #include "CHexerApp.h"
 #include "CMainFrame.h"
 #include "CChildFrame.h"
+#include "CHexerDocMgr.h"
 #include "CHexerDoc.h"
 #include "CHexerView.h"
 #include "CDlgOpenDevice.h"
@@ -64,8 +65,20 @@ BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
 	ON_COMMAND(ID_FILE_OPEN, &CHexerApp::OnFileOpen)
 	ON_COMMAND(IDM_FILE_OPENDEVICE, &CHexerApp::OnFileOpenDevice)
 	ON_COMMAND(ID_APP_ABOUT, &CHexerApp::OnAppAbout)
+	ON_COMMAND_RANGE(IDM_FILE_RFL00, IDM_FILE_RFL19, &CHexerApp::OnFileRFL)
 	ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CHexerApp::OnUpdateFileNew)
+	ON_UPDATE_COMMAND_UI_RANGE(IDM_FILE_RFL00, IDM_FILE_RFL19, &CHexerApp::OnUpdateFileRFL)
 END_MESSAGE_MAP()
+
+void CHexerApp::AddToRFL(std::wstring_view wsvPath)
+{
+	m_stRFL.AddToRFL(wsvPath);
+}
+
+auto CHexerApp::GetAppSettings()->CAppSettings&
+{
+	return m_stAppSettings;
+}
 
 void CHexerApp::OnFileOpen()
 {
@@ -97,21 +110,6 @@ void CHexerApp::OnFileOpen()
 	while (!lmbFOD()) { }; //If no file has been opened (in multiple selection) show the "Open File Dialog" again.
 }
 
-void CHexerApp::OnFileOpenDevice()
-{
-	if (CDlgOpenDevice dlg; dlg.DoModal() == IDOK) {
-		MessageBoxW(0, L"Not implemented yet (in process)", L"", MB_ICONEXCLAMATION);
-		/*for (const auto& wstrPath : dlg.GetPaths()) {
-			OpenDocumentFile(wstrPath.data());
-		}*/
-	}
-}
-
-auto CHexerApp::GetAppSettings()->CAppSettings&
-{
-	return m_stAppSettings;
-}
-
 
 //Private methods.
 
@@ -121,9 +119,29 @@ void CHexerApp::OnAppAbout()
 	aboutDlg.DoModal();
 }
 
+void CHexerApp::OnFileOpenDevice()
+{
+	if (CDlgOpenDevice dlg; dlg.DoModal() == IDOK) {
+		MessageBoxW(0, L"Not implemented yet (in process).", L"", MB_ICONEXCLAMATION);
+		/*for (const auto& wstrPath : dlg.GetPaths()) {
+			OpenDocumentFile(wstrPath.data());
+		}*/
+	}
+}
+
+void CHexerApp::OnFileRFL(UINT uID)
+{
+	OpenDocumentFile(m_stRFL.GetPathFromRFL(uID).data());
+}
+
 void CHexerApp::OnUpdateFileNew(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(FALSE);
+}
+
+void CHexerApp::OnUpdateFileRFL(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(TRUE);
 }
 
 BOOL CHexerApp::InitInstance()
@@ -132,7 +150,7 @@ BOOL CHexerApp::InitInstance()
 
 	EnableTaskbarInteraction();
 	SetRegistryKey(g_wstrAppName);
-	LoadStdProfileSettings(5);  // Load standard INI file options (including MRU)
+	LoadStdProfileSettings(0); //Disable default "Recent File List".
 	InitTooltipManager();
 	m_stAppSettings.LoadSettings(g_wstrAppName);
 
@@ -140,13 +158,23 @@ BOOL CHexerApp::InitInstance()
 	ttParams.m_bVislManagerTheme = TRUE;
 	theApp.GetTooltipManager()->SetTooltipParams(AFX_TOOLTIP_TYPE_ALL, RUNTIME_CLASS(CMFCToolTipCtrl), &ttParams);
 
+	m_pDocManager = new CHexerDocMgr;
 	const auto pDocTemplate = new CMultiDocTemplate(IDR_MAINFRAME, RUNTIME_CLASS(CHexerDoc),
 		RUNTIME_CLASS(CChildFrame), RUNTIME_CLASS(CHexerView));
 	AddDocTemplate(pDocTemplate);
 
+	//Main menu resource was redefined as IDR_HEXER_FRAME.
+	//This stops MFC from setting two different app menus:
+	//One when no child windows is opened, and one when any child window is opened.
+
 	const auto pMainFrame = new CMainFrame;
-	pMainFrame->LoadFrame(IDR_MAINFRAME);
+	pMainFrame->LoadFrame(IDR_HEXER_FRAME);
 	m_pMainWnd = pMainFrame;
+
+	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
+	const auto pRecentFilesMenu = pFileMenu->GetSubMenu(3);      //"Recent Files" sub-menu.
+	m_stRFL.Initialize(pRecentFilesMenu->m_hMenu, IDM_FILE_RFL00, &m_stAppSettings.GetRFL());
+	DrawMenuBar(pMainFrame->m_hWnd);
 
 	//For Drag'n Drop to work, even in elevated mode.
 	//helgeklein.com/blog/2010/03/how-to-enable-drag-and-drop-for-an-elevated-mfc-application-on-vistawindows-7/

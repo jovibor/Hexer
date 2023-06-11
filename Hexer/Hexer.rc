@@ -70,9 +70,9 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDR_MAINFRAME           ICON                    "res\\Hexer.ico"
-
 IDI_PANE_PROPERTIES     ICON                    "res\\IDI_PROPERTIES.ico"
+
+IDR_HEXER_FRAME         ICON                    "res\\Hexer.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -102,13 +102,17 @@ END
 // Menu
 //
 
-IDR_MAINFRAME MENU
+IDR_HEXER_FRAME MENU
 BEGIN
     POPUP "&File"
     BEGIN
         MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
         MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
         MENUITEM "Open Device...",              IDM_FILE_OPENDEVICE
+        POPUP "Recent Files"
+        BEGIN
+            MENUITEM "<IDM_FILE_RFL00>",            IDM_FILE_RFL00
+        END
         MENUITEM "&Close",                      ID_FILE_CLOSE
         MENUITEM "&Save\tCtrl+S",               ID_FILE_SAVE
         MENUITEM "Save &As...",                 ID_FILE_SAVE_AS
@@ -116,8 +120,6 @@ BEGIN
         MENUITEM "&Print...\tCtrl+P",           ID_FILE_PRINT
         MENUITEM "Print Pre&view",              ID_FILE_PRINT_PREVIEW
         MENUITEM "P&rint Setup...",             ID_FILE_PRINT_SETUP
-        MENUITEM SEPARATOR
-        MENUITEM "Recent File",                 ID_FILE_MRU_FILE1
         MENUITEM SEPARATOR
         MENUITEM "E&xit",                       ID_APP_EXIT
     END
@@ -349,7 +351,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDR_MAINFRAME           "Hexer"
+    IDR_HEXER_FRAME         "Hexer"
 END
 
 #endif    // English (United States) resources

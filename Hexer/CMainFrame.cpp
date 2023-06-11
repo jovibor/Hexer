@@ -105,7 +105,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndFileProps.EnableDocking(CBRS_ALIGN_ANY);
 	DockPane(&m_wndFileProps);
 
-//	EnablePaneMenu(TRUE, IDM_TOOLBAR_CUSTOMIZE, L"Customize...", ID_VIEW_TOOLBAR); //MainFrame and Pane context menu.
+	//	EnablePaneMenu(TRUE, IDM_TOOLBAR_CUSTOMIZE, L"Customize...", ID_VIEW_TOOLBAR); //MainFrame and Pane context menu.
 	CMFCToolBar::EnableQuickCustomization(); // enable quick (Alt+drag) toolbar customization
 	ModifyStyle(0, FWS_PREFIXTITLE);
 

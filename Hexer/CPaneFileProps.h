@@ -27,5 +27,4 @@ private:
 	CMFCPropertyGridCtrl m_wndProperty;
 	std::vector<CMFCPropertyGridProperty*> m_vecProps;
 	CFont m_fntProperty;
-
 };

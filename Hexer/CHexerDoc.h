@@ -17,11 +17,12 @@ public:
 	[[nodiscard]] auto GetFileData()const->std::byte*;
 	[[nodiscard]] bool GetFileRW()const;
 private:
+	bool OpenFile(const wchar_t* pwszFileName);
+	void CloseFile();
+	void SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU = TRUE)override;
 	BOOL OnNewDocument()override;
 	BOOL OnOpenDocument(LPCTSTR lpszPathName)override;
 	void OnCloseDocument()override;
-	bool OpenFile(LPCWSTR lpszFileName);
-	void CloseFile();
 	DECLARE_DYNCREATE(CHexerDoc);
 	DECLARE_MESSAGE_MAP();
 private:

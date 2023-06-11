@@ -121,6 +121,8 @@
     <ClInclude Include="CDlgOpenPath.h" />
     <ClInclude Include="CDlgOpenVolume.h" />
     <ClInclude Include="CHexerDoc.h" />
+    <ClInclude Include="CHexerDocMgr.h" />
+    <ClInclude Include="CHexerRFL.h" />
     <ClInclude Include="CHexerView.h" />
     <ClInclude Include="CMainFrame.h" />
     <ClInclude Include="CHexerApp.h" />
@@ -153,6 +155,8 @@
     <ClCompile Include="CDlgOpenPath.cpp" />
     <ClCompile Include="CDlgOpenVolume.cpp" />
     <ClCompile Include="CHexerDoc.cpp" />
+    <ClCompile Include="CHexerDocMgr.cpp" />
+    <ClCompile Include="CHexerRFL.cpp" />
     <ClCompile Include="CHexerView.cpp" />
     <ClCompile Include="CMainFrame.cpp" />
     <ClCompile Include="CHexerApp.cpp" />

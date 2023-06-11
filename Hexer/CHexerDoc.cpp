@@ -45,40 +45,17 @@ bool CHexerDoc::GetFileRW()const
 	return m_fWritable;
 }
 
-BOOL CHexerDoc::OnNewDocument()
+
+//Private methods.
+
+
+bool CHexerDoc::OpenFile(const wchar_t* pwszFileName)
 {
-	if (!CDocument::OnNewDocument())
-		return FALSE;
-
-	return TRUE;
-}
-
-BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
-{
-	if (!OpenFile(lpszPathName)) {
-		return FALSE;
-	}
-
-	m_wstrFilePath = lpszPathName;
-	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
-
-	return TRUE;
-}
-
-void CHexerDoc::OnCloseDocument()
-{
-	CloseFile();
-
-	CDocument::OnCloseDocument();
-}
-
-bool CHexerDoc::OpenFile(LPCWSTR lpszFileName)
-{
-	m_hFile = CreateFileW(lpszFileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+	m_hFile = CreateFileW(pwszFileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
 		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (m_hFile == INVALID_HANDLE_VALUE) {
-		m_hFile = CreateFileW(lpszFileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+		m_hFile = CreateFileW(pwszFileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
 			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 		if (m_hFile == INVALID_HANDLE_VALUE) {
 			const auto dwError = GetLastError();
@@ -86,7 +63,7 @@ bool CHexerDoc::OpenFile(LPCWSTR lpszFileName)
 			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, NULL);
 			const auto wstrMsg = std::format(L"CreateFileW failed: 0x{:08X}\r\n{}", dwError, buffErr);
-			::MessageBoxW(nullptr, wstrMsg.data(), L"Error", MB_ICONERROR);
+			::MessageBoxW(nullptr, wstrMsg.data(), pwszFileName, MB_ICONERROR);
 			return false;
 		}
 	}
@@ -96,14 +73,14 @@ bool CHexerDoc::OpenFile(LPCWSTR lpszFileName)
 
 	GetFileSizeEx(m_hFile, &m_stFileSize);
 	if (m_stFileSize.QuadPart == 0) { //Zero size.
-		MessageBoxW(nullptr, L"File is zero size.", L"Error", MB_ICONERROR);
+		MessageBoxW(nullptr, L"File is zero size.", pwszFileName, MB_ICONERROR);
 		return false;
 	}
 
 	m_hMapObject = CreateFileMappingW(m_hFile, nullptr, m_fWritable ? PAGE_READWRITE : PAGE_READONLY, 0, 0, nullptr);
 	if (!m_hMapObject) {
 		CloseHandle(m_hFile);
-		MessageBoxW(nullptr, L"CreateFileMappingW failed.", L"Error", MB_ICONERROR);
+		MessageBoxW(nullptr, L"CreateFileMappingW failed.", pwszFileName, MB_ICONERROR);
 		return false;
 	}
 
@@ -122,4 +99,47 @@ void CHexerDoc::CloseFile()
 	m_lpBase = nullptr;
 	m_hMapObject = nullptr;
 	m_hFile = nullptr;
+}
+
+BOOL CHexerDoc::OnNewDocument()
+{
+	if (!CDocument::OnNewDocument())
+		return FALSE;
+
+	return TRUE;
+}
+
+BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
+{
+	if (!OpenFile(lpszPathName)) {
+		return FALSE;
+	}
+
+	m_wstrFilePath = lpszPathName;
+	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
+	theApp.AddToRFL(m_wstrFilePath);
+
+	return TRUE;
+}
+
+void CHexerDoc::OnCloseDocument()
+{
+	CloseFile();
+
+	CDocument::OnCloseDocument();
+}
+
+void CHexerDoc::SetPathName(LPCTSTR lpszPathName, BOOL /*bAddToMRU*/)
+{
+	//This code is copy-pasted from the original CDocument::SetPathName.
+	//We need to override this method to remove calls to AfxFullPath and AfxGetFileTitle functions
+	//from the original method, because these functions can't handle paths like "\\?\PhysicalDisk".
+	//Also the AfxGetApp()->AddToRecentFileList call is removed since we manage the Recent File List manually.
+
+	m_strPathName = lpszPathName;
+	ASSERT(!m_strPathName.IsEmpty()); // must be set to something
+	m_bEmbedded = FALSE;
+	ASSERT_VALID(this);
+	SetTitle(GetFileName().data());
+	ASSERT_VALID(this);
 }

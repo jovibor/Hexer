@@ -6,6 +6,7 @@
 *******************************************************************************/
 #pragma once
 #include <string_view>
+#include <vector>
 
 class CAppSettings final
 {
@@ -18,7 +19,9 @@ public:
 	void LoadSettings(std::wstring_view wsvKeyName);
 	void SaveSettings(std::wstring_view wsvKeyName);
 	[[nodiscard]] bool GetShowPaneFileProps()const;
+	[[nodiscard]] auto GetRFL() -> std::vector<std::wstring>&;
 	void SetShowPaneFileProps(bool fShow);
 private:
+	std::vector<std::wstring> m_vecRFL;
 	bool m_fShowPaneFileProps { }; //Show "File Properties" pane on the first file opened?
 };
