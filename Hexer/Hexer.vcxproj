@@ -120,6 +120,7 @@
     <ClInclude Include="CDlgOpenDisk.h" />
     <ClInclude Include="CDlgOpenPath.h" />
     <ClInclude Include="CDlgOpenVolume.h" />
+    <ClInclude Include="CFileLoader.h" />
     <ClInclude Include="CHexerDoc.h" />
     <ClInclude Include="CHexerDocMgr.h" />
     <ClInclude Include="CHexerRFL.h" />
@@ -154,6 +155,7 @@
     <ClCompile Include="CDlgOpenDisk.cpp" />
     <ClCompile Include="CDlgOpenPath.cpp" />
     <ClCompile Include="CDlgOpenVolume.cpp" />
+    <ClCompile Include="CFileLoader.cpp" />
     <ClCompile Include="CHexerDoc.cpp" />
     <ClCompile Include="CHexerDocMgr.cpp" />
     <ClCompile Include="CHexerRFL.cpp" />

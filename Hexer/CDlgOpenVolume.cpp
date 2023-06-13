@@ -14,8 +14,6 @@
 #pragma comment(lib, "wbemuuid.lib") //For Wbemidl.h
 using namespace Utility;
 
-IMPLEMENT_DYNAMIC(CDlgOpenVolume, CDialogEx)
-
 BEGIN_MESSAGE_MAP(CDlgOpenVolume, CDialogEx)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPEN_VOLUME_LIST_VOLUMES, &CDlgOpenVolume::OnListDblClick)
 END_MESSAGE_MAP()

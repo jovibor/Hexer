@@ -21,7 +21,6 @@ private:
 	void OnCancel()override;
 	afx_msg void OnListDblClick(NMHDR* pNMHDR, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP();
-	DECLARE_DYNAMIC(CDlgOpenDisk);
 	[[nodiscard]] static auto GetPhysicalDisks() -> std::vector<Utility::PHYSICALDISK>;
 private:
 	CListCtrl m_list;

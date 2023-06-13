@@ -11,7 +11,6 @@ private:
 	[[nodiscard]] auto GetChildFrame()const->CChildFrame*;
 	[[nodiscard]] auto GetDocument()const->CHexerDoc*;
 	[[nodiscard]] auto GetHexCtrl()const->HEXCTRL::IHexCtrl*;
-	[[nodiscard]] bool IsWritable()const;
 	void OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView)override;
 	void OnInitialUpdate()override;
 	void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)override;
@@ -30,5 +29,4 @@ private:
 private:
 	HEXCTRL::IHexCtrlPtr m_pHexCtrl { HEXCTRL::CreateHexCtrl() };
 	Utility::FILEPROPS m_stFP { }; //Current view file properties.
-	bool m_fWritable { }; //HexCtrl current mode.
 };

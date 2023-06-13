@@ -55,11 +55,6 @@ auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
 	return &*m_pHexCtrl;
 }
 
-bool CHexerView::IsWritable()const
-{
-	return m_fWritable;
-}
-
 void CHexerView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView)
 {
 	if (bActivate) {
@@ -77,8 +72,10 @@ void CHexerView::OnInitialUpdate()
 	m_stFP.wsvFileName = pDoc->GetFileName();
 	m_stFP.wsvFilePath = pDoc->GetFilePath();
 	m_stFP.ullFileSize = pDoc->GetFileSize();
+
 	GetHexCtrl()->Create({ .hWndParent { m_hWnd }, .uID { 0x1000 }, .dwStyle { WS_VISIBLE | WS_CHILD } });
-	GetHexCtrl()->SetData({ .spnData{ std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } }, .fMutable{} });
+	GetHexCtrl()->SetData({ .spnData{ std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },
+		 .pHexVirtData { pDoc->GetVirtualInterface() }, .dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }
 
 void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM /*lHint*/, CObject* /*pHint*/)
@@ -110,16 +107,16 @@ void CHexerView::OnFilePrintPreview()
 
 void CHexerView::OnEditEditMode()
 {
-	GetHexCtrl()->SetMutable(!IsWritable());
-	m_stFP.fWritable = m_fWritable = !m_fWritable;
+	GetHexCtrl()->SetMutable(!GetHexCtrl()->IsMutable());
+	m_stFP.fWritable = GetHexCtrl()->IsMutable();
 	GetMainFrame()->UpdatePaneFileProps(m_stFP);
 }
 
 void CHexerView::OnUpdateEditEditMode(CCmdUI* pCmdUI)
 {
-	if (GetDocument()->GetFileRW()) {
+	if (GetDocument()->IsFileMutable()) {
 		pCmdUI->Enable(TRUE);
-		pCmdUI->SetCheck(IsWritable());
+		pCmdUI->SetCheck(GetHexCtrl()->IsMutable());
 	}
 	else {
 		pCmdUI->Enable(FALSE);

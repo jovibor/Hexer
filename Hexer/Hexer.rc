@@ -70,9 +70,9 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_PANE_PROPERTIES     ICON                    "res\\IDI_PROPERTIES.ico"
-
 IDR_HEXER_FRAME         ICON                    "res\\Hexer.ico"
+
+IDI_PANE_PROPERTIES     ICON                    "res\\IDI_PROPERTIES.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -108,7 +108,7 @@ BEGIN
     BEGIN
         MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
         MENUITEM "&Open...\tCtrl+O",            ID_FILE_OPEN
-        MENUITEM "Open Device...",              IDM_FILE_OPENDEVICE
+        MENUITEM "Open Device...\tCtrl+D",      IDM_FILE_OPENDEVICE
         POPUP "Recent Files"
         BEGIN
             MENUITEM "<IDM_FILE_RFL00>",            IDM_FILE_RFL00
@@ -157,22 +157,11 @@ END
 // Accelerator
 //
 
-IDR_MAINFRAME ACCELERATORS
+IDR_HEXER_FRAME ACCELERATORS
 BEGIN
-    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL
-    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL
-    "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL
-    "P",            ID_FILE_PRINT,          VIRTKEY, CONTROL
-    "Z",            ID_EDIT_UNDO,           VIRTKEY, CONTROL
-    "X",            ID_EDIT_CUT,            VIRTKEY, CONTROL
-    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL
-    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL
-    VK_BACK,        ID_EDIT_UNDO,           VIRTKEY, ALT
-    VK_DELETE,      ID_EDIT_CUT,            VIRTKEY, SHIFT
-    VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL
-    VK_INSERT,      ID_EDIT_PASTE,          VIRTKEY, SHIFT
-    VK_F6,          ID_NEXT_PANE,           VIRTKEY 
-    VK_F6,          ID_PREV_PANE,           VIRTKEY, SHIFT
+    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL, NOINVERT
+    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
+    "D",            IDM_FILE_OPENDEVICE,    VIRTKEY, CONTROL, NOINVERT
 END
 
 

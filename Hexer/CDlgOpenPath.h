@@ -17,7 +17,6 @@ protected:
 	void DoDataExchange(CDataExchange* pDX)override;
 	void OnOK()override;
 	void OnCancel()override;
-	DECLARE_DYNAMIC(CDlgOpenPath);
 	DECLARE_MESSAGE_MAP();
 private:
 	std::vector<std::wstring> m_vecPaths; //Paths to open.

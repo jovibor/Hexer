@@ -121,11 +121,10 @@ void CHexerApp::OnAppAbout()
 
 void CHexerApp::OnFileOpenDevice()
 {
-	if (CDlgOpenDevice dlg; dlg.DoModal() == IDOK) {
-		MessageBoxW(0, L"Not implemented yet (in process).", L"", MB_ICONEXCLAMATION);
-		/*for (const auto& wstrPath : dlg.GetPaths()) {
+	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
+		for (const auto& wstrPath : dlg.GetPaths()) {
 			OpenDocumentFile(wstrPath.data());
-		}*/
+		}
 	}
 }
 
@@ -148,7 +147,7 @@ BOOL CHexerApp::InitInstance()
 {
 	CWinAppEx::InitInstance();
 
-	EnableTaskbarInteraction();
+	EnableTaskbarInteraction(FALSE);
 	SetRegistryKey(g_wstrAppName);
 	LoadStdProfileSettings(0); //Disable default "Recent File List".
 	InitTooltipManager();

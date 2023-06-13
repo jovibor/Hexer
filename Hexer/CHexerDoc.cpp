@@ -5,11 +5,10 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #include "stdafx.h"
-#include "CHexerDoc.h"
 #include "CHexerApp.h"
 #include "CMainFrame.h"
 #include "CChildFrame.h"
-#include <format>
+#include "CHexerDoc.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -19,6 +18,11 @@ IMPLEMENT_DYNCREATE(CHexerDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(CHexerDoc, CDocument)
 END_MESSAGE_MAP()
+
+auto CHexerDoc::GetCacheSize()const->DWORD
+{
+	return m_stFileLoader.GetCacheSize();
+}
 
 auto CHexerDoc::GetFileName()const->const std::wstring&
 {
@@ -30,76 +34,33 @@ auto CHexerDoc::GetFilePath()const->const std::wstring&
 	return m_wstrFilePath;
 }
 
-auto CHexerDoc::GetFileSize()const->std::size_t
+auto CHexerDoc::GetFileSize()const->std::uint64_t
 {
-	return static_cast<std::size_t>(m_stFileSize.QuadPart);
+	return m_stFileLoader.GetFileSize();
 }
 
 auto CHexerDoc::GetFileData()const->std::byte*
 {
-	return static_cast<std::byte*>(m_lpBase);
+	return m_stFileLoader.GetFileData();
 }
 
-bool CHexerDoc::GetFileRW()const
+auto CHexerDoc::GetVirtualInterface()->HEXCTRL::IHexVirtData*
 {
-	return m_fWritable;
+	return m_stFileLoader.GetVirtualInterface();
+}
+
+bool CHexerDoc::IsFileMutable()const
+{
+	return m_stFileLoader.IsMutable();
+}
+
+bool CHexerDoc::IsOpenedVirtual()const
+{
+	return m_stFileLoader.IsOpenedVirtual();
 }
 
 
 //Private methods.
-
-
-bool CHexerDoc::OpenFile(const wchar_t* pwszFileName)
-{
-	m_hFile = CreateFileW(pwszFileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
-		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-
-	if (m_hFile == INVALID_HANDLE_VALUE) {
-		m_hFile = CreateFileW(pwszFileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-		if (m_hFile == INVALID_HANDLE_VALUE) {
-			const auto dwError = GetLastError();
-			wchar_t buffErr[MAX_PATH];
-			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, NULL);
-			const auto wstrMsg = std::format(L"CreateFileW failed: 0x{:08X}\r\n{}", dwError, buffErr);
-			::MessageBoxW(nullptr, wstrMsg.data(), pwszFileName, MB_ICONERROR);
-			return false;
-		}
-	}
-	else {
-		m_fWritable = true;
-	}
-
-	GetFileSizeEx(m_hFile, &m_stFileSize);
-	if (m_stFileSize.QuadPart == 0) { //Zero size.
-		MessageBoxW(nullptr, L"File is zero size.", pwszFileName, MB_ICONERROR);
-		return false;
-	}
-
-	m_hMapObject = CreateFileMappingW(m_hFile, nullptr, m_fWritable ? PAGE_READWRITE : PAGE_READONLY, 0, 0, nullptr);
-	if (!m_hMapObject) {
-		CloseHandle(m_hFile);
-		MessageBoxW(nullptr, L"CreateFileMappingW failed.", pwszFileName, MB_ICONERROR);
-		return false;
-	}
-
-	m_lpBase = MapViewOfFile(m_hMapObject, m_fWritable ? FILE_MAP_WRITE : FILE_MAP_READ, 0, 0, 0);
-
-	return true;
-}
-
-void CHexerDoc::CloseFile()
-{
-	FlushViewOfFile(m_lpBase, 0);
-	UnmapViewOfFile(m_lpBase);
-	CloseHandle(m_hMapObject);
-	CloseHandle(m_hFile);
-
-	m_lpBase = nullptr;
-	m_hMapObject = nullptr;
-	m_hFile = nullptr;
-}
 
 BOOL CHexerDoc::OnNewDocument()
 {
@@ -111,7 +72,7 @@ BOOL CHexerDoc::OnNewDocument()
 
 BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 {
-	if (!OpenFile(lpszPathName)) {
+	if (!m_stFileLoader.OpenFile(lpszPathName)) {
 		return FALSE;
 	}
 
@@ -124,7 +85,7 @@ BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 
 void CHexerDoc::OnCloseDocument()
 {
-	CloseFile();
+	m_stFileLoader.CloseFile();
 
 	CDocument::OnCloseDocument();
 }

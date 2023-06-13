@@ -7,18 +7,21 @@
 #pragma once
 #include <cstddef>
 #include <string>
+#include "HexCtrl.h"
+#include "CFileLoader.h"
 
 class CHexerDoc final : public CDocument
 {
 public:
+	[[nodiscard]] auto GetCacheSize()const->DWORD;
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetFilePath()const->const std::wstring&;
-	[[nodiscard]] auto GetFileSize()const->std::size_t;
+	[[nodiscard]] auto GetFileSize()const->std::uint64_t;
 	[[nodiscard]] auto GetFileData()const->std::byte*;
-	[[nodiscard]] bool GetFileRW()const;
+	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
+	[[nodiscard]] bool IsFileMutable()const;
+	[[nodiscard]] bool IsOpenedVirtual()const;
 private:
-	bool OpenFile(const wchar_t* pwszFileName);
-	void CloseFile();
 	void SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU = TRUE)override;
 	BOOL OnNewDocument()override;
 	BOOL OnOpenDocument(LPCTSTR lpszPathName)override;
@@ -26,11 +29,7 @@ private:
 	DECLARE_DYNCREATE(CHexerDoc);
 	DECLARE_MESSAGE_MAP();
 private:
-	HANDLE m_hFile { };      //Returned by CreateFileW.
-	HANDLE m_hMapObject { }; //Returned by CreateFileMappingW.
-	LPVOID m_lpBase { };     //Returned by MapViewOfFile.
-	LARGE_INTEGER m_stFileSize { };
+	CFileLoader m_stFileLoader;
 	std::wstring m_wstrFileName;
 	std::wstring m_wstrFilePath;
-	bool m_fWritable { false }; //Is file opened RW or RO?
 };

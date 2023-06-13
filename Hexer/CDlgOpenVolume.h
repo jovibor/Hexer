@@ -20,7 +20,6 @@ private:
 	void OnOK()override;
 	void OnCancel()override;
 	afx_msg void OnListDblClick(NMHDR* pNMHDR, LRESULT* pResult);
-	DECLARE_DYNAMIC(CDlgOpenVolume);
 	DECLARE_MESSAGE_MAP();
 	[[nodiscard]] static auto GetVolumes() -> std::vector<Utility::VOLUME>;
 private:

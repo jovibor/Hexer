@@ -8,8 +8,6 @@
 #include "CDlgOpenPath.h"
 #include "resource.h"
 
-IMPLEMENT_DYNAMIC(CDlgOpenPath, CDialogEx)
-
 BEGIN_MESSAGE_MAP(CDlgOpenPath, CDialogEx)
 END_MESSAGE_MAP()
 

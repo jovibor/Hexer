@@ -25,7 +25,7 @@ auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU)->CDocu
 	CDocument* pOpenDocument = NULL;
 
 	while (pos != NULL) {
-		CDocTemplate* pTemplate = (CDocTemplate*)m_templateList.GetNext(pos);
+		CDocTemplate* pTemplate = static_cast<CDocTemplate*>(m_templateList.GetNext(pos));
 		ASSERT_KINDOF(CDocTemplate, pTemplate);
 
 		CDocTemplate::Confidence match;
@@ -53,7 +53,7 @@ auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU)->CDocu
 
 				if (pFrame->GetParent() != NULL) {
 					CFrameWnd* pAppFrame;
-					if (pFrame != (pAppFrame = (CFrameWnd*)AfxGetApp()->m_pMainWnd)) {
+					if (pFrame != (pAppFrame = static_cast<CFrameWnd*>(AfxGetApp()->m_pMainWnd))) {
 						ASSERT_KINDOF(CFrameWnd, pAppFrame);
 						pAppFrame->ActivateFrame();
 					}

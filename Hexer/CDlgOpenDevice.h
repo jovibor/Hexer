@@ -5,10 +5,10 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #pragma once
+#include <afxdialogex.h>
 #include "CDlgOpenDisk.h"
 #include "CDlgOpenVolume.h"
 #include "CDlgOpenPath.h"
-#include <afxdialogex.h>
 #include <memory>
 #include <string>
 #include <vector>

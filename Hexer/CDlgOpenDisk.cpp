@@ -14,8 +14,6 @@
 #pragma comment(lib, "wbemuuid.lib") //For Wbemidl.h
 using namespace Utility;
 
-IMPLEMENT_DYNAMIC(CDlgOpenDisk, CDialogEx)
-
 BEGIN_MESSAGE_MAP(CDlgOpenDisk, CDialogEx)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPEN_DISK_LIST_DISKS, &CDlgOpenDisk::OnListDblClick)
 END_MESSAGE_MAP()
@@ -140,9 +138,15 @@ auto CDlgOpenDisk::GetPhysicalDisks()->std::vector<PHYSICALDISK>
 		pStorage->Release();
 	}
 
-	pMSFT_PhysicalDisk->Release();
-	pWbemServices->Release();
-	pWbemLocator->Release();
+	if (pMSFT_PhysicalDisk != nullptr) {
+		pMSFT_PhysicalDisk->Release();
+	}
+	if (pWbemServices != nullptr) {
+		pWbemServices->Release();
+	}
+	if (pWbemLocator != nullptr) {
+		pWbemLocator->Release();
+	}
 	CoUninitialize();
 
 	return vecRet;
