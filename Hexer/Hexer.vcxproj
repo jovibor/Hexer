@@ -64,7 +64,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);Dialogs\;dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <BuildStlModules>false</BuildStlModules>
     </ClCompile>
@@ -93,7 +93,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);Dialogs\;dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <BuildStlModules>false</BuildStlModules>
     </ClCompile>
@@ -116,10 +116,6 @@
   <ItemGroup>
     <ClInclude Include="CAppSettings.h" />
     <ClInclude Include="CChildFrame.h" />
-    <ClInclude Include="CDlgOpenDevice.h" />
-    <ClInclude Include="CDlgOpenDisk.h" />
-    <ClInclude Include="CDlgOpenPath.h" />
-    <ClInclude Include="CDlgOpenVolume.h" />
     <ClInclude Include="CFileLoader.h" />
     <ClInclude Include="CHexerDoc.h" />
     <ClInclude Include="CHexerDocMgr.h" />
@@ -144,17 +140,17 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\HexUtility.h" />
+    <ClInclude Include="Dialogs\CDlgOpenDevice.h" />
+    <ClInclude Include="Dialogs\CDlgOpenDisk.h" />
+    <ClInclude Include="Dialogs\CDlgOpenPath.h" />
+    <ClInclude Include="Dialogs\CDlgOpenVolume.h" />
+    <ClInclude Include="Dialogs\CPaneFileProps.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="CPaneFileProps.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CAppSettings.cpp" />
     <ClCompile Include="CChildFrame.cpp" />
-    <ClCompile Include="CDlgOpenDevice.cpp" />
-    <ClCompile Include="CDlgOpenDisk.cpp" />
-    <ClCompile Include="CDlgOpenPath.cpp" />
-    <ClCompile Include="CDlgOpenVolume.cpp" />
     <ClCompile Include="CFileLoader.cpp" />
     <ClCompile Include="CHexerDoc.cpp" />
     <ClCompile Include="CHexerDocMgr.cpp" />
@@ -177,11 +173,15 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\HexUtility.cpp" />
+    <ClCompile Include="Dialogs\CDlgOpenDevice.cpp" />
+    <ClCompile Include="Dialogs\CDlgOpenDisk.cpp" />
+    <ClCompile Include="Dialogs\CDlgOpenPath.cpp" />
+    <ClCompile Include="Dialogs\CDlgOpenVolume.cpp" />
+    <ClCompile Include="Dialogs\CPaneFileProps.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="CPaneFileProps.cpp" />
     <ClCompile Include="Utility.ixx">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
