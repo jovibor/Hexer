@@ -6,30 +6,33 @@
 *******************************************************************************/
 #pragma once
 #include <afxdialogex.h>
-#include "CDlgOpenDisk.h"
-#include "CDlgOpenVolume.h"
-#include "CDlgOpenPath.h"
 #include <memory>
 #include <string>
 #include <vector>
 
+class CDlgOpenDisk;
+class CDlgOpenVolume;
+class CDlgOpenPath;
 class CDlgOpenDevice final : public CDialogEx
 {
 public:
 	CDlgOpenDevice(CWnd* pParent = nullptr);
+	~CDlgOpenDevice();
 	INT_PTR DoModal(int iTab = 0);
 	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	BOOL OnInitDialog()override;
-	void SetCurrentTab(int iTab);
+	afx_msg void OnDestroy();
 	afx_msg void OnTabSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
+	void SetCurrentTab(int iTab);
 	DECLARE_MESSAGE_MAP();
-	DECLARE_DYNAMIC(CDlgOpenDevice);
 private:
 	CTabCtrl m_tabMain;
-	const std::unique_ptr<CDlgOpenDisk> m_pDlgDisk { std::make_unique<CDlgOpenDisk>() };
-	const std::unique_ptr<CDlgOpenVolume> m_pDlgVolume { std::make_unique<CDlgOpenVolume>() };
-	const std::unique_ptr<CDlgOpenPath> m_pDlgPath { std::make_unique<CDlgOpenPath>() };
+	CRect m_rcWnd; //Dialog rect to set minimum size in the OnGetMinMaxInfo.
+	std::unique_ptr<CDlgOpenDisk> m_pDlgDisk;
+	std::unique_ptr<CDlgOpenVolume> m_pDlgVolume;
+	std::unique_ptr<CDlgOpenPath> m_pDlgPath;
 	int m_iCurTab { }; //Current tab. To avoid call m_tabMain.GetCurSel after dialog destroyed.
 };

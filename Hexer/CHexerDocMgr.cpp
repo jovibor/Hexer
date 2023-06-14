@@ -40,14 +40,15 @@ auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU)->CDocu
 	}
 
 	if (pOpenDocument != NULL) {
-		POSITION posOpenDoc = pOpenDocument->GetFirstViewPosition();
+		auto posOpenDoc = pOpenDocument->GetFirstViewPosition();
 		if (posOpenDoc != NULL) {
-			CView* pView = pOpenDocument->GetNextView(posOpenDoc); // get first one
+			const auto pView = pOpenDocument->GetNextView(posOpenDoc); // get first one
 			ASSERT_VALID(pView);
-			CFrameWnd* pFrame = pView->GetParentFrame();
+			const auto pFrame = pView->GetParentFrame();
 
-			if (pFrame == NULL)
+			if (pFrame == NULL) {
 				TRACE(traceAppMsg, 0, "Error: Can not find a frame for document to activate.\n");
+			}
 			else {
 				pFrame->ActivateFrame();
 
@@ -60,8 +61,9 @@ auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU)->CDocu
 				}
 			}
 		}
-		else
+		else {
 			TRACE(traceAppMsg, 0, "Error: Can not find a view for document to activate.\n");
+		}
 
 		return pOpenDocument;
 	}

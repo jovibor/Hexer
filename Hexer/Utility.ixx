@@ -14,7 +14,7 @@ export namespace Utility
 {
 	constexpr auto HEXER_VERSION_MAJOR = 0;
 	constexpr auto HEXER_VERSION_MINOR = 9;
-	constexpr auto HEXER_VERSION_PATCH = 0;
+	constexpr auto HEXER_VERSION_PATCH = 1;
 	constexpr wchar_t g_wstrAppName[] { L"Hexer" };
 
 	struct FILEPROPS {

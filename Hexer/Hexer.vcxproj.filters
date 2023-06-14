@@ -231,10 +231,46 @@
     <Image Include="res\IDR_TOOLBAR_MAIN.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_BKMS.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_CLPBRD_COPYHEX.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_CLPBRD_PASTEHEX.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_DATAINTERP.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_FONTCHOOSE.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_GROUP.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_LOGO.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_MODIFY.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_MODIFY_FILLZEROS.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SCROLL_ARROW.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SEARCH.bmp">
+      <Filter>HexCtrl</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\Hexer.rc2">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="dep\HexCtrl\HexCtrl\res\IDJ_HEXCTRL_KEYBIND.json">
+      <Filter>HexCtrl</Filter>
     </None>
   </ItemGroup>
 </Project>

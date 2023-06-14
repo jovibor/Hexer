@@ -17,7 +17,9 @@ protected:
 	void DoDataExchange(CDataExchange* pDX)override;
 	void OnOK()override;
 	void OnCancel()override;
+	void OnComboPathEdit();
 	DECLARE_MESSAGE_MAP();
 private:
+	CComboBox m_stComboPath;
 	std::vector<std::wstring> m_vecPaths; //Paths to open.
 };

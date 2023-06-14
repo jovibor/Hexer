@@ -28,6 +28,7 @@ private:
 	void OnCloseDocument()override;
 	DECLARE_DYNCREATE(CHexerDoc);
 	DECLARE_MESSAGE_MAP();
+	[[nodiscard]] static auto ResolveLNK(const wchar_t* pwszPath) -> std::wstring;
 private:
 	CFileLoader m_stFileLoader;
 	std::wstring m_wstrFileName;

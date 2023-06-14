@@ -72,11 +72,11 @@ BOOL CHexerDoc::OnNewDocument()
 
 BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 {
-	if (!m_stFileLoader.OpenFile(lpszPathName)) {
+	m_wstrFilePath = ResolveLNK(lpszPathName);
+	if (!m_stFileLoader.OpenFile(m_wstrFilePath)) {
 		return FALSE;
 	}
 
-	m_wstrFilePath = lpszPathName;
 	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 	theApp.AddToRFL(m_wstrFilePath);
 
@@ -103,4 +103,25 @@ void CHexerDoc::SetPathName(LPCTSTR lpszPathName, BOOL /*bAddToMRU*/)
 	ASSERT_VALID(this);
 	SetTitle(GetFileName().data());
 	ASSERT_VALID(this);
+}
+
+auto CHexerDoc::ResolveLNK(const wchar_t* pwszPath)->std::wstring
+{
+	if (!std::wstring_view(pwszPath).ends_with(L".lnk")) {
+		return pwszPath; //If it's not a `.lnk`, just return the path as is.
+	}
+
+	CComPtr<IShellLinkW> pIShellLinkW;
+	pIShellLinkW.CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER);
+	CComPtr<IPersistFile> pIPersistFile;
+	pIShellLinkW->QueryInterface(IID_PPV_ARGS(&pIPersistFile));
+	pIPersistFile->Load(pwszPath, STGM_READ);
+
+	std::wstring wstrPath;
+	wstrPath.resize_and_overwrite(MAX_PATH, [pIShellLinkW = pIShellLinkW](wchar_t* pData, std::size_t sSize) {
+		pIShellLinkW->GetPath(pData, static_cast<int>(sSize), nullptr, 0);
+		return sSize; });
+	wstrPath.resize(wstrPath.find_first_of(L'\0')); //Resize to the actual data size.
+
+	return wstrPath;
 }

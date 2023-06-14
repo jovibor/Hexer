@@ -18,7 +18,7 @@
 #define IDC_OPEN_DISK_LIST_DISKS        113
 #define IDC_OPENDEVICE_TAB              114
 #define IDC_OPEN_VOLUME_LIST_VOLUMES    115
-#define IDC_OPEN_PATH_EDIT_PATH         116
+#define IDC_OPEN_PATH_COMBO_PATH        116
 #define IDM_VIEW_PROPERTIES             32771
 #define IDM_EDIT_EDITMODE               32772
 #define IDM_TOOLBAR_CUSTOMIZE           32773

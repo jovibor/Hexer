@@ -8,20 +8,27 @@
 #include "CDlgOpenDisk.h"
 #include "StrToNum.h"
 #include "resource.h"
-#include <Wbemidl.h>
 #include <format>
 
-#pragma comment(lib, "wbemuuid.lib") //For Wbemidl.h
 using namespace Utility;
 
 BEGIN_MESSAGE_MAP(CDlgOpenDisk, CDialogEx)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPEN_DISK_LIST_DISKS, &CDlgOpenDisk::OnListDblClick)
+	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPEN_DISK_LIST_DISKS, &CDlgOpenDisk::OnListItemChanged)
 END_MESSAGE_MAP()
 
 auto CDlgOpenDisk::GetPaths()->std::vector<std::wstring>&
 {
 	return m_vecPaths;
 }
+
+void CDlgOpenDisk::SetIWbemServices(IWbemServices* pWbemServices)
+{
+	m_pWbemServices = pWbemServices;
+}
+
+
+//Private methods.
 
 void CDlgOpenDisk::DoDataExchange(CDataExchange* pDX)
 {
@@ -40,7 +47,7 @@ BOOL CDlgOpenDisk::OnInitDialog()
 	m_list.InsertColumn(3, L"Media Type", 0, 80);
 	m_list.InsertColumn(4, L"Bus Type", 0, 100);
 
-	m_vecPhysicalDisks = GetPhysicalDisks();
+	m_vecPhysicalDisks = GetPhysicalDisks(m_pWbemServices);
 	int index = 0;
 	for (const auto& it : m_vecPhysicalDisks) {
 		m_list.InsertItem(index, it.wstrFriendlyName.data());
@@ -69,7 +76,9 @@ void CDlgOpenDisk::OnOK()
 		m_vecPaths.emplace_back(std::move(m_vecPhysicalDisks.at(nItem).wstrPath));
 	}
 
-	static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDOK);
+	if (!m_vecPaths.empty()) {
+		static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDOK);
+	}
 }
 
 void CDlgOpenDisk::OnCancel()
@@ -85,27 +94,24 @@ void CDlgOpenDisk::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-auto CDlgOpenDisk::GetPhysicalDisks()->std::vector<PHYSICALDISK>
+void CDlgOpenDisk::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-	CoInitializeSecurity(nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_NONE, nullptr);
+	GetDlgItem(IDOK)->EnableWindow(m_list.GetSelectedCount() > 0);
+}
 
-	IWbemLocator *pWbemLocator { };
-	CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, reinterpret_cast<LPVOID*>(&pWbemLocator));
+auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<PHYSICALDISK>
+{
+	if (pWbemServices == nullptr) {
+		return { };
+	}
 
-	IWbemServices *pWbemServices { };
-	pWbemLocator->ConnectServer(_bstr_t(L"Root\\Microsoft\\Windows\\Storage"), nullptr, nullptr, nullptr, 0,
-		nullptr, nullptr, &pWbemServices);
-	CoSetProxyBlanket(pWbemServices, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, nullptr, RPC_C_AUTHN_LEVEL_CALL,
-		RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_NONE);
-
-	IEnumWbemClassObject* pMSFT_PhysicalDisk { };
+	CComPtr<IEnumWbemClassObject> pMSFT_PhysicalDisk;
 	pWbemServices->ExecQuery(_bstr_t(L"WQL"), _bstr_t(L"SELECT * FROM MSFT_PhysicalDisk"),
 		WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, nullptr, &pMSFT_PhysicalDisk);
 
 	std::vector<Utility::PHYSICALDISK> vecRet;
 	while (pMSFT_PhysicalDisk) {
-		IWbemClassObject *pStorage { };
+		IWbemClassObject* pStorage { };
 		ULONG uRet { 0 };
 		if (const auto hr = pMSFT_PhysicalDisk->Next(WBEM_INFINITE, 1, &pStorage, &uRet); hr != S_OK) {
 			break;
@@ -137,17 +143,6 @@ auto CDlgOpenDisk::GetPhysicalDisks()->std::vector<PHYSICALDISK>
 		vecRet.emplace_back(stDisk);
 		pStorage->Release();
 	}
-
-	if (pMSFT_PhysicalDisk != nullptr) {
-		pMSFT_PhysicalDisk->Release();
-	}
-	if (pWbemServices != nullptr) {
-		pWbemServices->Release();
-	}
-	if (pWbemLocator != nullptr) {
-		pWbemLocator->Release();
-	}
-	CoUninitialize();
 
 	return vecRet;
 }

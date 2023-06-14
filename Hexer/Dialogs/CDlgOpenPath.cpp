@@ -9,6 +9,7 @@
 #include "resource.h"
 
 BEGIN_MESSAGE_MAP(CDlgOpenPath, CDialogEx)
+	ON_CBN_EDITUPDATE(IDC_OPEN_PATH_COMBO_PATH, &CDlgOpenPath::OnComboPathEdit)
 END_MESSAGE_MAP()
 
 auto CDlgOpenPath::GetPaths()->std::vector<std::wstring>&
@@ -19,19 +20,27 @@ auto CDlgOpenPath::GetPaths()->std::vector<std::wstring>&
 void CDlgOpenPath::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_OPEN_PATH_COMBO_PATH, m_stComboPath);
 }
 
 void CDlgOpenPath::OnOK()
 {
-	CString cstrText;
-	GetDlgItemTextW(IDC_OPEN_PATH_EDIT_PATH, cstrText);
 	m_vecPaths.clear();
+	CString cstrText;
+	m_stComboPath.GetWindowTextW(cstrText);
 	m_vecPaths.emplace_back(cstrText);
 
-	static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDOK);
+	if (!m_vecPaths.empty()) {
+		static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDOK);
+	}
 }
 
 void CDlgOpenPath::OnCancel()
 {
 	static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDCANCEL);
+}
+
+void CDlgOpenPath::OnComboPathEdit()
+{
+	GetDlgItem(IDOK)->EnableWindow(m_stComboPath.GetWindowTextLengthW() > 0);
 }

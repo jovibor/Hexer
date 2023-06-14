@@ -5,8 +5,6 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #include "stdafx.h"
-#include "afxwinappex.h"
-#include "afxdialogex.h"
 #include "resource.h"
 #include "CHexerApp.h"
 #include "CMainFrame.h"
@@ -15,6 +13,7 @@
 #include "CHexerDoc.h"
 #include "CHexerView.h"
 #include "CDlgOpenDevice.h"
+#include <afxdialogex.h>
 #include <format>
 import Utility;
 
@@ -188,11 +187,14 @@ BOOL CHexerApp::InitInstance()
 		cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
 	}
 
+	//By default MFC shows all Panes at startup if they were visible on app's close.
+	//We hide panes before ProcessShellCommand() call, to work properly when file opens by HDROP.
+	pMainFrame->HidePanes();
+
 	if (!ProcessShellCommand(cmdInfo)) {
 		return FALSE;
 	}
 
-	pMainFrame->HidePanes(); //By default MFC shows all Panes at startup if they were visible on app's close.
 	pMainFrame->ShowWindow(m_nCmdShow);
 	pMainFrame->UpdateWindow();
 

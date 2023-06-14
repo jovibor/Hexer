@@ -192,11 +192,23 @@
     <ResourceCompile Include="Hexer.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_BKMS.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_CLPBRD_COPYHEX.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_CLPBRD_PASTEHEX.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_DATAINTERP.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_FONTCHOOSE.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_GROUP.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_LOGO.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_MODIFY.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_MODIFY_FILLZEROS.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SCROLL_ARROW.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SEARCH.bmp" />
     <Image Include="res\Hexer.ico" />
     <Image Include="res\IDI_PROPERTIES.ico" />
     <Image Include="res\IDR_TOOLBAR_MAIN.bmp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="dep\HexCtrl\HexCtrl\res\IDJ_HEXCTRL_KEYBIND.json" />
     <None Include="res\Hexer.rc2" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
