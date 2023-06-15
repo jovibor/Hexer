@@ -34,7 +34,7 @@ private:
 	static auto MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR dwData) -> LRESULT;
 	static void MDIClientSize(HWND hWnd, WPARAM wParam, LPARAM lParam);
 	inline static CFont m_fontMDIClient;
-	inline static int m_iLOGPIXELSY { };
+	inline static const Utility::HIDPIINFO m_HiDPIInfo { Utility::GetHiDPIInfo() };
 	CPaneFileProps m_wndFileProps;
 	CMFCToolBar m_wndToolBar;
 	CWnd* m_pWndMBtnCurrDown { };

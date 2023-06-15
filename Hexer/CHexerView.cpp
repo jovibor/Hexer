@@ -72,6 +72,7 @@ void CHexerView::OnInitialUpdate()
 	m_stFP.wsvFileName = pDoc->GetFileName();
 	m_stFP.wsvFilePath = pDoc->GetFilePath();
 	m_stFP.ullFileSize = pDoc->GetFileSize();
+	m_stFP.fWritable = pDoc->IsFileMutable();
 
 	GetHexCtrl()->Create({ .hWndParent { m_hWnd }, .uID { 0x1000 }, .dwStyle { WS_VISIBLE | WS_CHILD } });
 	GetHexCtrl()->SetData({ .spnData{ std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },

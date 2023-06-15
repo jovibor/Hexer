@@ -77,12 +77,12 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	CMFCToolBar::m_bDontScaleImages = TRUE;
 	const auto imgTB = CMFCToolBar::GetImages();    //Toolbar image.
 	const auto sizeImgCurr = imgTB->GetImageSize(); //One button's dimensions.
-	const auto fToolbarScaledFactor = sizeImgCurr.cx / 16.0; //How many times our toolbar is bigger than the standard one.
-	const auto fDPI = m_iLOGPIXELSY / 96.0F;  //Scale factor for HighDPI displays.
-	const auto fScale = fDPI / fToolbarScaledFactor;
-	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * fScale) + 7,
-		static_cast<int>(sizeImgCurr.cy * fScale) + 7 }; //Size of the toolbar's button.
-	imgTB->SmoothResize(fScale); //Resize image according to the current DPI.
+	const auto flToolbarScaledFactor = sizeImgCurr.cx / 16.0; //How many times our toolbar is bigger than the standard one.
+	const auto flScale = m_HiDPIInfo.flDPIScale; //Scale factor for HighDPI displays.
+	const auto flScaleTB = flScale / flToolbarScaledFactor;
+	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * flScaleTB) + 7,
+		static_cast<int>(sizeImgCurr.cy * flScaleTB) + 7 }; //Size of the toolbar's button.
+	imgTB->SmoothResize(flScaleTB); //Resize image according to the current DPI.
 	CMFCToolBar::SetSizes(sizeBtn, imgTB->GetImageSize());
 	CMFCToolBar::SetMenuSizes(sizeBtn, imgTB->GetImageSize());
 
@@ -130,10 +130,6 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 
 	if (CMDIFrameWndEx::OnCreateClient(lpcs, pContext) == FALSE)
 		return FALSE;
-
-	const auto hDC = ::GetDC(m_hWndMDIClient);
-	m_iLOGPIXELSY = GetDeviceCaps(hDC, LOGPIXELSY);
-	::ReleaseDC(m_hWndMDIClient, hDC);
 
 	SetWindowSubclass(m_hWndMDIClient, MDIClientProc, 1, reinterpret_cast<DWORD_PTR>(this));
 
@@ -276,7 +272,8 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	const auto pDC = CDC::FromHandle(::GetDC(hWnd));
 	const auto iWidthNew = LOWORD(lParam);
 	auto iFontSizeMin = 10;
-	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, m_iLOGPIXELSY, 72) }, .lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } };
+	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, m_HiDPIInfo.iLOGPIXELSY, 72) }, .lfPitchAndFamily { FIXED_PITCH },
+		.lfFaceName { L"Consolas" } };
 
 	m_fontMDIClient.DeleteObject();
 	m_fontMDIClient.CreateFontIndirectW(&lf);
@@ -284,7 +281,7 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	while (stSizeText.cx < (iWidthNew - 150)) { //Until the text size is not big enough to fill the window's width.
 		m_fontMDIClient.DeleteObject();
 		iFontSizeMin += 4;
-		lf.lfHeight = -MulDiv(iFontSizeMin, m_iLOGPIXELSY, 72);
+		lf.lfHeight = -MulDiv(iFontSizeMin, m_HiDPIInfo.iLOGPIXELSY, 72);
 		m_fontMDIClient.CreateFontIndirectW(&lf);
 		pDC->SelectObject(m_fontMDIClient);
 		stSizeText = pDC->GetTextExtent(Utility::g_wstrAppName, static_cast<int>(std::size(Utility::g_wstrAppName) - 1));

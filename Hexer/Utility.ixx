@@ -5,6 +5,8 @@ module;
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
+#include <SDKDDKVer.h>
+#include <afxwin.h>
 #include <span>
 #include <string>
 #include <unordered_map>
@@ -67,4 +69,21 @@ export namespace Utility
 		std::wstring  wstrDriveType;
 		std::uint64_t ullSize { };
 	};
+
+	struct HIDPIINFO {
+		int   iLOGPIXELSY { };
+		float flDPIScale { };
+	};
+
+	[[nodiscard]] auto GetHiDPIInfo() -> HIDPIINFO {
+		static const HIDPIINFO ret { []()->HIDPIINFO {
+			const auto hDC = ::GetDC(nullptr);
+			const auto iLOGPIXELSY = GetDeviceCaps(hDC, LOGPIXELSY);
+			const auto flScale = iLOGPIXELSY / 96.0F;
+			::ReleaseDC(nullptr, hDC);
+			return { .iLOGPIXELSY { iLOGPIXELSY }, .flDPIScale{ flScale } };
+		}() };
+
+		return ret;
+	}
 }

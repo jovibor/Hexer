@@ -225,7 +225,7 @@
     <Image Include="res\IDI_PROPERTIES.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="res\Hexer.ico">
+    <Image Include="res\IDR_HEXER_FRAME.ico">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="res\IDR_TOOLBAR_MAIN.bmp">
@@ -263,6 +263,9 @@
     </Image>
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SEARCH.bmp">
       <Filter>HexCtrl</Filter>
+    </Image>
+    <Image Include="res\IDB_OPENDEVICE.bmp">
+      <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>

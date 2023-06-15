@@ -101,6 +101,10 @@ BOOL CDlgOpenDevice::OnInitDialog()
 
 	SetCurrentTab(m_iCurTab);
 
+	const auto hIcon = AfxGetApp()->LoadIconW(IDR_HEXER_FRAME);
+	SetIcon(hIcon, TRUE);
+	SetIcon(hIcon, FALSE);
+
 	return TRUE;
 }
 

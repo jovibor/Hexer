@@ -203,7 +203,8 @@
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_MODIFY_FILLZEROS.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SCROLL_ARROW.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SEARCH.bmp" />
-    <Image Include="res\Hexer.ico" />
+    <Image Include="res\IDR_HEXER_FRAME.ico" />
+    <Image Include="res\IDB_OPENDEVICE.bmp" />
     <Image Include="res\IDI_PROPERTIES.ico" />
     <Image Include="res\IDR_TOOLBAR_MAIN.bmp" />
   </ItemGroup>

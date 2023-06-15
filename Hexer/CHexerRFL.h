@@ -13,7 +13,7 @@ class CHexerRFL final //Recent File List.
 {
 public:
 	CHexerRFL() = default;
-	void Initialize(HMENU hMenu, int iMenuFirstID, std::vector<std::wstring>* pVecData, int iMaxEntry = 20);
+	void Initialize(HMENU hMenu, int iMenuFirstID, HBITMAP hBMPDisk, std::vector<std::wstring>* pVecData, int iMaxEntry = 20);
 	void AddToRFL(std::wstring_view wsvPath);
 	[[nodiscard]] auto GetPathFromRFL(UINT uID)const->std::wstring;
 private:
@@ -21,6 +21,7 @@ private:
 private:
 	std::vector<std::wstring>* m_pVecData { };
 	HMENU m_hMenu { };
+	HBITMAP m_hBMPDisk { }; //Bitmap for disk icon.
 	int m_iMaxEntry { };
 	int m_iIDMenuFirst { };
 	bool m_fInit { };

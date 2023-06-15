@@ -70,7 +70,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDR_HEXER_FRAME         ICON                    "res\\Hexer.ico"
+IDR_HEXER_FRAME         ICON                    "res\\IDR_HEXER_FRAME.ico"
 
 IDI_PANE_PROPERTIES     ICON                    "res\\IDI_PROPERTIES.ico"
 
@@ -81,6 +81,8 @@ IDI_PANE_PROPERTIES     ICON                    "res\\IDI_PROPERTIES.ico"
 //
 
 IDR_TOOLBAR_MAIN        BITMAP                  "res\\IDR_TOOLBAR_MAIN.bmp"
+
+IDB_OPENDEVICE          BITMAP                  "res\\IDB_OPENDEVICE.bmp"
 
 
 /////////////////////////////////////////////////////////////////////////////

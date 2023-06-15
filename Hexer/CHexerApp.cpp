@@ -169,9 +169,15 @@ BOOL CHexerApp::InitInstance()
 	pMainFrame->LoadFrame(IDR_HEXER_FRAME);
 	m_pMainWnd = pMainFrame;
 
+	const auto iSizeIcon = static_cast<int>(16 * Utility::GetHiDPIInfo().flDPIScale);
+	const auto hBMPDisk = static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDB_OPENDEVICE), IMAGE_BITMAP,
+		iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
+
+	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPDisk } };
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
-	const auto pRecentFilesMenu = pFileMenu->GetSubMenu(3);      //"Recent Files" sub-menu.
-	m_stRFL.Initialize(pRecentFilesMenu->m_hMenu, IDM_FILE_RFL00, &m_stAppSettings.GetRFL());
+	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Setting the icon for the "Open Device..." menu.
+	const auto pRFSubMenu = pFileMenu->GetSubMenu(3); //"Recent Files" sub-menu.
+	m_stRFL.Initialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk, &m_stAppSettings.GetRFL());
 	DrawMenuBar(pMainFrame->m_hWnd);
 
 	//For Drag'n Drop to work, even in elevated mode.

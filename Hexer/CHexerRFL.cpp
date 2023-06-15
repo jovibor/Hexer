@@ -9,8 +9,9 @@
 #include <algorithm>
 #include <cassert>
 #include <format>
+import Utility;
 
-void CHexerRFL::Initialize(HMENU hMenu, int iIDMenuFirst, std::vector<std::wstring>* pVecData, int iMaxEntry)
+void CHexerRFL::Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, std::vector<std::wstring>* pVecData, int iMaxEntry)
 {
 	assert(IsMenu(hMenu));
 	assert(pVecData != nullptr);
@@ -20,6 +21,7 @@ void CHexerRFL::Initialize(HMENU hMenu, int iIDMenuFirst, std::vector<std::wstri
 
 	m_hMenu = hMenu;
 	m_iIDMenuFirst = iIDMenuFirst;
+	m_hBMPDisk = hBMPDisk;
 	m_pVecData = pVecData;
 	m_iMaxEntry = iMaxEntry;
 	m_fInit = true;
@@ -66,8 +68,17 @@ void CHexerRFL::RebuildRFLMenu()
 		if (uIndex >= m_iMaxEntry) //Adding not more than m_iMaxEntry.
 			break;
 
-		const auto wstrMenu = std::vformat(wstr.starts_with(L"\\\\") ? L"{} Device: {}" : L"{} {}",
+		const auto fDevice = wstr.starts_with(L"\\\\");
+		const auto wstrMenu = std::vformat(fDevice ? L"{} Device: {}" : L"{} {}",
 			std::make_wformat_args(uIndex + 1, wstr));
-		AppendMenuW(m_hMenu, MF_STRING, m_iIDMenuFirst + uIndex++, wstrMenu.data());
+		const auto iMenuID = m_iIDMenuFirst + uIndex;
+		AppendMenuW(m_hMenu, MF_STRING, iMenuID, wstrMenu.data());
+
+		if (fDevice) {
+			MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { m_hBMPDisk } };
+			SetMenuItemInfoW(m_hMenu, iMenuID, FALSE, &mii);
+		}
+
+		++uIndex;
 	}
 }
