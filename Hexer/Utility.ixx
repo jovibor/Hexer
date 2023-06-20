@@ -7,7 +7,6 @@ module;
 *******************************************************************************/
 #include <SDKDDKVer.h>
 #include <afxwin.h>
-#include <span>
 #include <string>
 #include <unordered_map>
 export module Utility;
@@ -73,6 +72,12 @@ export namespace Utility
 	struct HIDPIINFO {
 		int   iLOGPIXELSY { };
 		float flDPIScale { };
+	};
+
+	struct FILEOPEN {
+		std::wstring  wstrFilePath;
+		std::uint64_t ullFileSize { };
+		bool          fNewFile { };
 	};
 
 	[[nodiscard]] auto GetHiDPIInfo() -> HIDPIINFO {

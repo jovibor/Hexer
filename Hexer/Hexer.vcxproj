@@ -119,6 +119,7 @@
     <ClInclude Include="CFileLoader.h" />
     <ClInclude Include="CHexerDoc.h" />
     <ClInclude Include="CHexerDocMgr.h" />
+    <ClInclude Include="CHexerMDTemplate.h" />
     <ClInclude Include="CHexerRFL.h" />
     <ClInclude Include="CHexerView.h" />
     <ClInclude Include="CMainFrame.h" />
@@ -131,8 +132,8 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\CScrollEx.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgBkmMgr.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCallback.h" />
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCodepage.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.h" />
-    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgEncoding.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgGoTo.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgModify.h" />
@@ -140,6 +141,7 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\HexUtility.h" />
+    <ClInclude Include="Dialogs\CDlgNewFile.h" />
     <ClInclude Include="Dialogs\CDlgOpenDevice.h" />
     <ClInclude Include="Dialogs\CDlgOpenDisk.h" />
     <ClInclude Include="Dialogs\CDlgOpenPath.h" />
@@ -154,6 +156,7 @@
     <ClCompile Include="CFileLoader.cpp" />
     <ClCompile Include="CHexerDoc.cpp" />
     <ClCompile Include="CHexerDocMgr.cpp" />
+    <ClCompile Include="CHexerMDTemplate.cpp" />
     <ClCompile Include="CHexerRFL.cpp" />
     <ClCompile Include="CHexerView.cpp" />
     <ClCompile Include="CMainFrame.cpp" />
@@ -164,8 +167,8 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\CScrollEx.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgBkmMgr.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCallback.cpp" />
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCodepage.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.cpp" />
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgEncoding.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgGoTo.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgModify.cpp" />
@@ -173,6 +176,7 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\HexUtility.cpp" />
+    <ClCompile Include="Dialogs\CDlgNewFile.cpp" />
     <ClCompile Include="Dialogs\CDlgOpenDevice.cpp" />
     <ClCompile Include="Dialogs\CDlgOpenDisk.cpp" />
     <ClCompile Include="Dialogs\CDlgOpenPath.cpp" />

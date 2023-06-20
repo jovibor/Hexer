@@ -69,8 +69,8 @@ void CHexerView::OnInitialUpdate()
 	CView::OnInitialUpdate();
 
 	const auto pDoc = GetDocument();
-	m_stFP.wsvFileName = pDoc->GetFileName();
 	m_stFP.wsvFilePath = pDoc->GetFilePath();
+	m_stFP.wsvFileName = pDoc->GetFileName();
 	m_stFP.ullFileSize = pDoc->GetFileSize();
 	m_stFP.fWritable = pDoc->IsFileMutable();
 

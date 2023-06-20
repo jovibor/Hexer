@@ -7,12 +7,14 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "CHexerApp.h"
+#include "CHexerDocMgr.h"
+#include "CHexerMDTemplate.h"
 #include "CMainFrame.h"
 #include "CChildFrame.h"
-#include "CHexerDocMgr.h"
 #include "CHexerDoc.h"
 #include "CHexerView.h"
 #include "CDlgOpenDevice.h"
+#include "CDlgNewFile.h"
 #include <afxdialogex.h>
 #include <format>
 import Utility;
@@ -60,7 +62,7 @@ BOOL CAboutDlg::OnInitDialog()
 //CHexerApp.
 
 BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
-	ON_COMMAND(ID_FILE_NEW, &CWinAppEx::OnFileNew)
+	ON_COMMAND(ID_FILE_NEW, &CHexerApp::OnFileNew)
 	ON_COMMAND(ID_FILE_OPEN, &CHexerApp::OnFileOpen)
 	ON_COMMAND(IDM_FILE_OPENDEVICE, &CHexerApp::OnFileOpenDevice)
 	ON_COMMAND(ID_APP_ABOUT, &CHexerApp::OnAppAbout)
@@ -89,7 +91,6 @@ void CHexerApp::OnFileOpen()
 			CComPtr<IFileOpenDialog> pIFOD = fd.GetIFileOpenDialog();
 			CComPtr<IShellItemArray> pResults;
 			pIFOD->GetResults(&pResults);
-
 			bool fOpened { false };
 			DWORD dwCount { };
 			pResults->GetCount(&dwCount);
@@ -98,7 +99,7 @@ void CHexerApp::OnFileOpen()
 				pResults->GetItemAt(i, &pItem);
 				CComHeapPtr<wchar_t> pwstrPath;
 				pItem->GetDisplayName(SIGDN_FILESYSPATH, &pwstrPath);
-				const auto pDoc = OpenDocumentFile(pwstrPath);
+				const auto pDoc = OpenDocumentFile(Utility::FILEOPEN {.wstrFilePath{ pwstrPath }, .fNewFile{ false } });
 				fOpened = !fOpened ? pDoc != nullptr : true;
 			}
 			return fOpened;
@@ -111,36 +112,6 @@ void CHexerApp::OnFileOpen()
 
 
 //Private methods.
-
-void CHexerApp::OnAppAbout()
-{
-	CAboutDlg aboutDlg;
-	aboutDlg.DoModal();
-}
-
-void CHexerApp::OnFileOpenDevice()
-{
-	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
-		for (const auto& wstrPath : dlg.GetPaths()) {
-			OpenDocumentFile(wstrPath.data());
-		}
-	}
-}
-
-void CHexerApp::OnFileRFL(UINT uID)
-{
-	OpenDocumentFile(m_stRFL.GetPathFromRFL(uID).data());
-}
-
-void CHexerApp::OnUpdateFileNew(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(FALSE);
-}
-
-void CHexerApp::OnUpdateFileRFL(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(TRUE);
-}
 
 BOOL CHexerApp::InitInstance()
 {
@@ -157,7 +128,7 @@ BOOL CHexerApp::InitInstance()
 	theApp.GetTooltipManager()->SetTooltipParams(AFX_TOOLTIP_TYPE_ALL, RUNTIME_CLASS(CMFCToolTipCtrl), &ttParams);
 
 	m_pDocManager = new CHexerDocMgr;
-	const auto pDocTemplate = new CMultiDocTemplate(IDR_MAINFRAME, RUNTIME_CLASS(CHexerDoc),
+	const auto pDocTemplate = new CHexerMDTemplate(IDR_MAINFRAME, RUNTIME_CLASS(CHexerDoc),
 		RUNTIME_CLASS(CChildFrame), RUNTIME_CLASS(CHexerView));
 	AddDocTemplate(pDocTemplate);
 
@@ -212,4 +183,47 @@ int CHexerApp::ExitInstance()
 	m_stAppSettings.SaveSettings(g_wstrAppName);
 
 	return CWinAppEx::ExitInstance();
+}
+
+auto CHexerApp::OpenDocumentFile(const Utility::FILEOPEN& fos)->CDocument*
+{
+	ENSURE_VALID(m_pDocManager);
+	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentFile(fos);
+}
+
+void CHexerApp::OnAppAbout()
+{
+	CAboutDlg aboutDlg;
+	aboutDlg.DoModal();
+}
+
+void CHexerApp::OnFileNew()
+{
+	if (CDlgNewFile dlg; dlg.DoModal() == IDOK) {
+		OpenDocumentFile(dlg.GetNewFileInfo());
+	}
+}
+
+void CHexerApp::OnFileOpenDevice()
+{
+	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
+		for (const auto& wstrPath : dlg.GetPaths()) {
+			OpenDocumentFile({ .wstrFilePath{ wstrPath }, .fNewFile { false } });
+		}
+	}
+}
+
+void CHexerApp::OnFileRFL(UINT uID)
+{
+	OpenDocumentFile({ .wstrFilePath { m_stRFL.GetPathFromRFL(uID) }, .fNewFile{ false } });
+}
+
+void CHexerApp::OnUpdateFileNew(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(TRUE);
+}
+
+void CHexerApp::OnUpdateFileRFL(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(TRUE);
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "HexCtrl.h"
 #include <memory>
+import Utility;
 
 class CFileLoader : public HEXCTRL::IHexVirtData
 {
@@ -12,7 +13,7 @@ public:
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsOpenedVirtual()const;
 	[[nodiscard]] bool IsMutable()const;
-	[[nodiscard]] bool OpenFile(std::wstring_view wsvPath);
+	[[nodiscard]] bool OpenFile(const Utility::FILEOPEN& fos);
 	void CloseFile();
 private:
 	void OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)override;

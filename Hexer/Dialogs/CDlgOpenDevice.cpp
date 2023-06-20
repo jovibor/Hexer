@@ -59,9 +59,9 @@ BOOL CDlgOpenDevice::OnInitDialog()
 
 	GetWindowRect(m_rcWnd);
 
-	m_tabMain.InsertItem(0, L"Open Physical Disk");
-	m_tabMain.InsertItem(1, L"Open Volume");
-	m_tabMain.InsertItem(3, L"Open Path");
+	m_tabMain.InsertItem(0, L"Physical Disks");
+	m_tabMain.InsertItem(1, L"Volumes");
+	m_tabMain.InsertItem(3, L"Path");
 	CRect rcTab;
 	m_tabMain.GetItemRect(0, rcTab);
 

@@ -59,28 +59,30 @@ bool CHexerDoc::IsOpenedVirtual()const
 	return m_stFileLoader.IsOpenedVirtual();
 }
 
-
-//Private methods.
-
-BOOL CHexerDoc::OnNewDocument()
+bool CHexerDoc::OnOpenDocument(const Utility::FILEOPEN& fos)
 {
-	if (!CDocument::OnNewDocument())
-		return FALSE;
-
-	return TRUE;
-}
-
-BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
-{
-	m_wstrFilePath = ResolveLNK(lpszPathName);
-	if (!m_stFileLoader.OpenFile(m_wstrFilePath)) {
-		return FALSE;
+	Utility::FILEOPEN foLocal = fos;
+	if (!fos.fNewFile) {
+		foLocal.wstrFilePath = ResolveLNK(fos.wstrFilePath.data());
 	}
 
+	if (!m_stFileLoader.OpenFile(foLocal)) {
+		return false;
+	}
+
+	m_wstrFilePath = foLocal.wstrFilePath;
 	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 	theApp.AddToRFL(m_wstrFilePath);
 
-	return TRUE;
+	return true;
+}
+
+
+//Private methods.
+
+BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
+{
+	return OnOpenDocument(Utility::FILEOPEN{.wstrFilePath{ lpszPathName }, .fNewFile{ false }});
 }
 
 void CHexerDoc::OnCloseDocument()

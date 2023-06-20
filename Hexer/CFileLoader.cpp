@@ -40,31 +40,37 @@ bool CFileLoader::IsMutable()const
 	return m_fWritable;
 }
 
-bool CFileLoader::OpenFile(std::wstring_view wsvPath)
+bool CFileLoader::OpenFile(const Utility::FILEOPEN& fos)
 {
 	assert(m_hFile == nullptr);
 	if (m_hFile != nullptr) { //Already opened.
 		return false;
 	}
 
-	if (wsvPath.starts_with(L"\\\\")) { //Special path.
+	if (fos.wstrFilePath.starts_with(L"\\\\")) { //Special path.
 		m_fVirtual = true;
 	}
 
-	m_wstrPath = std::wstring { wsvPath }; //To make sure the path is null-terminated.
+	m_wstrPath = fos.wstrFilePath;
 	m_hFile = CreateFileW(m_wstrPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
-		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		fos.fNewFile ? CREATE_ALWAYS : OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+	if (fos.fNewFile) { //Setting the size of the new file.
+		if (SetFilePointerEx(m_hFile, { .QuadPart { static_cast<LONGLONG>(fos.ullFileSize)} }, nullptr, FILE_BEGIN) == FALSE) {
+			PrintLastError(L"SetFilePointerEx");
+			return false;
+		}
+		SetEndOfFile(m_hFile);
+	}
 
 	if (m_hFile == INVALID_HANDLE_VALUE) {
-		m_hFile = CreateFileW(m_wstrPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		if (!fos.fNewFile) { //Trying to open in ReadOnly mode.
+			m_hFile = CreateFileW(m_wstrPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		}
+
 		if (m_hFile == INVALID_HANDLE_VALUE) {
-			const auto dwError = GetLastError();
-			wchar_t buffErr[MAX_PATH];
-			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, nullptr);
-			const auto wstrMsg = std::format(L"CreateFileW failed: 0x{:08X}\r\n{}", dwError, buffErr);
-			::MessageBoxW(nullptr, wstrMsg.data(), m_wstrPath.data(), MB_ICONERROR);
+			PrintLastError(L"CreateFileW");
 			return false;
 		}
 	}
@@ -76,16 +82,15 @@ bool CFileLoader::OpenFile(std::wstring_view wsvPath)
 		return OpenVirtual();
 	}
 
-	GetFileSizeEx(m_hFile, &m_stFileSize);
-	if (m_stFileSize.QuadPart == 0) { //Zero size.
+	if (GetFileSizeEx(m_hFile, &m_stFileSize); m_stFileSize.QuadPart == 0) { //Zero size.
 		MessageBoxW(nullptr, L"File is zero size.", m_wstrPath.data(), MB_ICONERROR);
 		return false;
 	}
 
-	m_hMapObject = CreateFileMappingW(m_hFile, nullptr, m_fWritable ? PAGE_READWRITE : PAGE_READONLY, 0, 0, nullptr);
-	if (!m_hMapObject) {
+	if (m_hMapObject = CreateFileMappingW(m_hFile, nullptr, m_fWritable ? PAGE_READWRITE : PAGE_READONLY, 0, 0, nullptr);
+		m_hMapObject == nullptr) {
+		PrintLastError(L"CreateFileMappingW");
 		CloseHandle(m_hFile);
-		MessageBoxW(nullptr, L"CreateFileMappingW failed.", m_wstrPath.data(), MB_ICONERROR);
 		return false;
 	}
 

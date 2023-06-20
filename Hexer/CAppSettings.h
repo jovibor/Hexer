@@ -5,7 +5,7 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #pragma once
-#include <string_view>
+#include <string>
 #include <vector>
 
 class CAppSettings final

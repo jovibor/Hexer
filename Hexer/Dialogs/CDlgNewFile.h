@@ -5,25 +5,25 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #pragma once
-#include <afxcontrolbars.h>
+#include <afxdialogex.h>
 #include <string>
-#include <vector>
 import Utility;
 
-class CPaneFileProps final : public CDockablePane
+class CDlgNewFile final : public CDialogEx
 {
 public:
-	void UpdatePaneFileProps(const Utility::FILEPROPS& stFP);
+	CDlgNewFile(CWnd* pParent = nullptr);
+	[[nodiscard]] auto GetNewFileInfo() -> Utility::FILEOPEN;
 private:
-	void AdjustLayout();
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
+	void DoDataExchange(CDataExchange* pDX)override;
+	BOOL OnInitDialog()override;
+	afx_msg void OnBtnBrowse();
+	afx_msg void OnChangeEditPath();
 	DECLARE_MESSAGE_MAP();
 private:
-	enum class EPropName : std::uint8_t {
-		FILE_PATH = 0x1, FILE_NAME, FILE_SIZE, PAGE_SIZE, IS_WRITABLE
-	};
-	CMFCPropertyGridCtrl m_wndProperty;
-	std::vector<CMFCPropertyGridProperty*> m_vecProps;
-	CFont m_fntProperty;
+	Utility::FILEOPEN m_stFOS { };
+	CEdit m_stEditSize;
+	CEdit m_stEditPath;
+	CComboBox m_stComboMeasure;
+	virtual void OnOK();
 };

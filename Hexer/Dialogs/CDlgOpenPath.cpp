@@ -29,10 +29,7 @@ void CDlgOpenPath::OnOK()
 	CString cstrText;
 	m_stComboPath.GetWindowTextW(cstrText);
 	m_vecPaths.emplace_back(cstrText);
-
-	if (!m_vecPaths.empty()) {
-		static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDOK);
-	}
+	static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDOK);
 }
 
 void CDlgOpenPath::OnCancel()

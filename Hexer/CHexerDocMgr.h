@@ -6,10 +6,13 @@
 *******************************************************************************/
 #pragma once
 #include <afxwin.h>
+#include <string>
+import Utility;
 
 class CHexerDocMgr final : public CDocManager
 {
-private:
+public:
 	auto OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU) -> CDocument* override;
+	auto OpenDocumentFile(const Utility::FILEOPEN& fos) -> CDocument*;
 	DECLARE_DYNCREATE(CHexerDocMgr);
 };

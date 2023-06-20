@@ -20,6 +20,11 @@
 #define IDC_OPEN_VOLUME_LIST_VOLUMES    115
 #define IDC_OPEN_PATH_COMBO_PATH        116
 #define IDB_OPENDEVICE                  117
+#define IDD_NEWFILE                     118
+#define IDC_NEWFILE_EDIT_SIZE           119
+#define IDC_NEWFILE_COMBO_MEASURE       120
+#define IDC_NEWFILE_EDIT_PATH           121
+#define IDC_NEWFILE_BTN_BROWSE          122
 #define IDM_VIEW_PROPERTIES             32771
 #define IDM_EDIT_EDITMODE               32772
 #define IDM_TOOLBAR_CUSTOMIZE           32773
@@ -50,9 +55,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        118
+#define _APS_NEXT_RESOURCE_VALUE        123
 #define _APS_NEXT_COMMAND_VALUE         32800
-#define _APS_NEXT_CONTROL_VALUE         118
-#define _APS_NEXT_SYMED_VALUE           118
+#define _APS_NEXT_CONTROL_VALUE         123
+#define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

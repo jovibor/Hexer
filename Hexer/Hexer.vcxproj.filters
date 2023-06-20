@@ -69,9 +69,6 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.h">
       <Filter>HexCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgEncoding.h">
-      <Filter>HexCtrl</Filter>
-    </ClInclude>
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.h">
       <Filter>HexCtrl</Filter>
     </ClInclude>
@@ -115,6 +112,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Dialogs\CPaneFileProps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dialogs\CDlgNewFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCodepage.h">
+      <Filter>HexCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="CHexerMDTemplate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -164,9 +170,6 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.cpp">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgEncoding.cpp">
-      <Filter>HexCtrl</Filter>
-    </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.cpp">
       <Filter>HexCtrl</Filter>
     </ClCompile>
@@ -210,6 +213,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Dialogs\CPaneFileProps.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialogs\CDlgNewFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCodepage.cpp">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="CHexerMDTemplate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

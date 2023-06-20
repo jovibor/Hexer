@@ -7,7 +7,6 @@
 #pragma once
 #include <afxcontrolbars.h>
 #include "CPaneFileProps.h"
-#include <span>
 #include <string>
 import Utility;
 

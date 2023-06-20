@@ -21,9 +21,9 @@ public:
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsFileMutable()const;
 	[[nodiscard]] bool IsOpenedVirtual()const;
-private:
+	[[nodiscard]] bool OnOpenDocument(const Utility::FILEOPEN& fos);
 	void SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU = TRUE)override;
-	BOOL OnNewDocument()override;
+private:
 	BOOL OnOpenDocument(LPCTSTR lpszPathName)override;
 	void OnCloseDocument()override;
 	DECLARE_DYNCREATE(CHexerDoc);
@@ -31,6 +31,6 @@ private:
 	[[nodiscard]] static auto ResolveLNK(const wchar_t* pwszPath) -> std::wstring;
 private:
 	CFileLoader m_stFileLoader;
-	std::wstring m_wstrFileName;
 	std::wstring m_wstrFilePath;
+	std::wstring m_wstrFileName;
 };
