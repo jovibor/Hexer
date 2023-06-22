@@ -9,6 +9,7 @@
 #include "CMainFrame.h"
 #include "CChildFrame.h"
 #include "CHexerDoc.h"
+import Utility;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -87,8 +88,6 @@ BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 
 void CHexerDoc::OnCloseDocument()
 {
-	m_stFileLoader.CloseFile();
-
 	CDocument::OnCloseDocument();
 }
 

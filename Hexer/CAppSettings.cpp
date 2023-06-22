@@ -17,7 +17,10 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		DWORD dwShowPaneFileProps { };
 		regSettings.QueryDWORDValue(L"ShowPaneFileProps", dwShowPaneFileProps);
 		SetShowPaneFileProps(dwShowPaneFileProps > 0);
-		regSettings.Close();
+
+		DWORD dwShowPaneDataInterp { };
+		regSettings.QueryDWORDValue(L"ShowPaneDataInterp", dwShowPaneDataInterp);
+		SetShowPaneDataInterp(dwShowPaneDataInterp > 0);
 	}
 
 	//Recent File List.
@@ -53,7 +56,9 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 	if (regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) != ERROR_SUCCESS) {
 		regSettings.Create(HKEY_CURRENT_USER, wstrKeySettings.data());
 	}
+
 	regSettings.SetDWORDValue(L"ShowPaneFileProps", GetShowPaneFileProps());
+	regSettings.SetDWORDValue(L"ShowPaneDataInterp", GetShowPaneDataInterp());
 
 	//Recent File List.
 	CRegKey regRFL;
@@ -72,6 +77,11 @@ bool CAppSettings::GetShowPaneFileProps()const
 	return m_fShowPaneFileProps;
 }
 
+bool CAppSettings::GetShowPaneDataInterp()const
+{
+	return m_fShowPaneDataInterp;
+}
+
 auto CAppSettings::GetRFL()->std::vector<std::wstring>&
 {
 	return m_vecRFL;
@@ -80,4 +90,9 @@ auto CAppSettings::GetRFL()->std::vector<std::wstring>&
 void CAppSettings::SetShowPaneFileProps(bool fShow)
 {
 	m_fShowPaneFileProps = fShow;
+}
+
+void CAppSettings::SetShowPaneDataInterp(bool fShow)
+{
+	m_fShowPaneDataInterp = fShow;
 }

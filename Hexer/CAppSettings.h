@@ -19,9 +19,12 @@ public:
 	void LoadSettings(std::wstring_view wsvKeyName);
 	void SaveSettings(std::wstring_view wsvKeyName);
 	[[nodiscard]] bool GetShowPaneFileProps()const;
+	[[nodiscard]] bool GetShowPaneDataInterp()const;
 	[[nodiscard]] auto GetRFL() -> std::vector<std::wstring>&;
 	void SetShowPaneFileProps(bool fShow);
+	void SetShowPaneDataInterp(bool fShow);
 private:
 	std::vector<std::wstring> m_vecRFL;
-	bool m_fShowPaneFileProps { }; //Show "File Properties" pane on the first file opened?
+	bool m_fShowPaneFileProps { };  //Show "File Properties" pane on the first file opened?
+	bool m_fShowPaneDataInterp { }; //Show "Data Interpreter" pane on the first file opened?
 };

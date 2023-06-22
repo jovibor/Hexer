@@ -24,6 +24,7 @@ private:
 	afx_msg void OnUpdateFileSave(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFileSaveAs(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateEditEditMode(CCmdUI* pCmdUI);
+	afx_msg void OnHexCtrlDLGDI(NMHDR* pNMHDR, LRESULT* pResult);
 	DECLARE_DYNCREATE(CHexerView);
 	DECLARE_MESSAGE_MAP();
 private:

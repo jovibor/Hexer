@@ -72,8 +72,6 @@ END
 // remains consistent on all systems.
 IDR_HEXER_FRAME         ICON                    "res\\IDR_HEXER_FRAME.ico"
 
-IDI_PANE_PROPERTIES     ICON                    "res\\IDI_PROPERTIES.ico"
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -136,7 +134,9 @@ BEGIN
     END
     POPUP "&View"
     BEGIN
-        MENUITEM "Properties",                  IDM_VIEW_PROPERTIES
+        MENUITEM "File Properties",             IDM_VIEW_FILEPROPS
+        MENUITEM "Data Interpreter",            IDM_VIEW_DATAINTERP
+        MENUITEM SEPARATOR
         MENUITEM "Toolbar",                     ID_VIEW_TOOLBAR
     END
     POPUP "Tools", INACTIVE
@@ -368,6 +368,12 @@ END
 STRINGTABLE
 BEGIN
     IDR_HEXER_FRAME         "Hexer"
+END
+
+STRINGTABLE
+BEGIN
+    IDC_PANE_FILEPROPS      "Properties"
+    IDC_PANE_DATAINTERP     "Data Interpreter"
 END
 
 #endif    // English (United States) resources

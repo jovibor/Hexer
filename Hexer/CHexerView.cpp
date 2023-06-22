@@ -33,6 +33,7 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_UPDATE_COMMAND_UI(ID_FILE_PRINT_SETUP, &CHexerView::OnUpdateFilePrintSetup)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, &CHexerView::OnUpdateFileSave)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE_AS, &CHexerView::OnUpdateFileSaveAs)
+	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLGDI)
 END_MESSAGE_MAP()
 
 auto CHexerView::GetMainFrame()const->CMainFrame*
@@ -59,6 +60,7 @@ void CHexerView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDe
 {
 	if (bActivate) {
 		GetMainFrame()->UpdatePaneFileProps(m_stFP);
+		GetMainFrame()->UpdatePaneDataInterp(GetHexCtrl()->GetWindowHandle(HEXCTRL::EHexWnd::DLG_DATAINTERP));
 	}
 
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
@@ -74,14 +76,13 @@ void CHexerView::OnInitialUpdate()
 	m_stFP.ullFileSize = pDoc->GetFileSize();
 	m_stFP.fWritable = pDoc->IsFileMutable();
 
-	GetHexCtrl()->Create({ .hWndParent { m_hWnd }, .uID { 0x1000 }, .dwStyle { WS_VISIBLE | WS_CHILD } });
+	GetHexCtrl()->Create({ .hWndParent { m_hWnd }, .uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD } });
 	GetHexCtrl()->SetData({ .spnData{ std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },
 		 .pHexVirtData { pDoc->GetVirtualInterface() }, .dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }
 
 void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM /*lHint*/, CObject* /*pHint*/)
 {
-	// TODO: Add your specialized code here and/or call the base class
 }
 
 void CHexerView::OnSize(UINT nType, int cx, int cy)
@@ -123,6 +124,11 @@ void CHexerView::OnUpdateEditEditMode(CCmdUI* pCmdUI)
 		pCmdUI->Enable(FALSE);
 		pCmdUI->SetCheck(FALSE);
 	}
+}
+
+void CHexerView::OnHexCtrlDLGDI(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+{
+	GetMainFrame()->ShowPaneDataInterp();
 }
 
 void CHexerView::OnUpdateFilePrint(CCmdUI* pCmdUI)

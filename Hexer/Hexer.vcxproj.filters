@@ -111,7 +111,7 @@
     <ClInclude Include="Dialogs\CDlgOpenVolume.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Dialogs\CPaneFileProps.h">
+    <ClInclude Include="Dialogs\CPaneMainFrame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Dialogs\CDlgNewFile.h">
@@ -212,7 +212,7 @@
     <ClCompile Include="Dialogs\CDlgOpenVolume.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Dialogs\CPaneFileProps.cpp">
+    <ClCompile Include="Dialogs\CPaneMainFrame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Dialogs\CDlgNewFile.cpp">
