@@ -43,7 +43,8 @@ void CPaneMainFrame::SetAsNested(HWND hWnd)
 	}
 
 	const auto llStyle = GetWindowLongPtrW(hWnd, GWL_STYLE);
-	const auto llStyleNew = llStyle & ~(WS_BORDER | WS_DLGFRAME);
+	//WS_THICKFRAME is responsible for resizability.
+	const auto llStyleNew = llStyle & ~(WS_BORDER | WS_DLGFRAME | WS_THICKFRAME);
 	SetWindowLongPtrW(hWnd, GWL_STYLE, llStyleNew);
 	::SetParent(hWnd, m_hWnd);
 	m_hWndNested = hWnd;

@@ -136,6 +136,7 @@ BEGIN
     BEGIN
         MENUITEM "File Properties",             IDM_VIEW_FILEPROPS
         MENUITEM "Data Interpreter",            IDM_VIEW_DATAINTERP
+        MENUITEM "Template Manager",            IDM_VIEW_TEMPLMGR
         MENUITEM SEPARATOR
         MENUITEM "Toolbar",                     ID_VIEW_TOOLBAR
     END
@@ -374,6 +375,7 @@ STRINGTABLE
 BEGIN
     IDC_PANE_FILEPROPS      "Properties"
     IDC_PANE_DATAINTERP     "Data Interpreter"
+    IDC_PANE_TEMPLMGR       "Template Manager"
 END
 
 #endif    // English (United States) resources

@@ -22,8 +22,10 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
 	ON_COMMAND(IDM_VIEW_FILEPROPS, &CMainFrame::OnViewFileProps)
 	ON_COMMAND(IDM_VIEW_DATAINTERP, &CMainFrame::OnViewDataInterp)
+	ON_COMMAND(IDM_VIEW_TEMPLMGR, &CMainFrame::OnViewTemplMgr)
 	ON_UPDATE_COMMAND_UI(IDM_VIEW_FILEPROPS, &CMainFrame::OnUpdateViewFileProps)
 	ON_UPDATE_COMMAND_UI(IDM_VIEW_DATAINTERP, &CMainFrame::OnUpdateViewDataInterp)
+	ON_UPDATE_COMMAND_UI(IDM_VIEW_TEMPLMGR, &CMainFrame::OnUpdateViewTemplMgr)
 END_MESSAGE_MAP()
 
 int& CMainFrame::GetChildFramesCount()
@@ -35,6 +37,7 @@ void CMainFrame::HidePanes()
 {
 	m_paneFileProps.ShowPane(FALSE, FALSE, FALSE);
 	m_paneDataInterp.ShowPane(FALSE, FALSE, FALSE);
+	m_paneTemplMgr.ShowPane(FALSE, FALSE, FALSE);
 }
 
 void CMainFrame::OnOpenFirstTab()
@@ -47,6 +50,11 @@ void CMainFrame::OnOpenFirstTab()
 	//Show "Data Interpreter" pane according to app's settings.
 	if (theApp.GetAppSettings().GetShowPaneDataInterp()) {
 		m_paneDataInterp.ShowPane(TRUE, FALSE, TRUE);
+	}
+
+	//Show "Template Manager" pane according to app's settings.
+	if (theApp.GetAppSettings().GetShowPaneDataInterp()) {
+		m_paneTemplMgr.ShowPane(TRUE, FALSE, TRUE);
 	}
 }
 
@@ -79,12 +87,17 @@ void CMainFrame::UpdatePaneFileProps(const Utility::FILEPROPS& stFP)
 			break;
 		}
 	};
-	std::ranges::for_each(m_vecProps, lmbSetValue);
+	std::ranges::for_each(m_vecPropsFileProps, lmbSetValue);
 }
 
 void CMainFrame::UpdatePaneDataInterp(HWND hWnd)
 {
 	m_paneDataInterp.SetAsNested(hWnd);
+}
+
+void CMainFrame::UpdatePaneTemplMgr(HWND hWnd)
+{
+	m_paneTemplMgr.SetAsNested(hWnd);
 }
 
 void CMainFrame::ShowPaneDataInterp()
@@ -93,8 +106,65 @@ void CMainFrame::ShowPaneDataInterp()
 	theApp.GetAppSettings().SetShowPaneDataInterp(true);
 }
 
+void CMainFrame::ShowPaneTemplMgr()
+{
+	m_paneTemplMgr.ShowPane(TRUE, FALSE, TRUE);
+	theApp.GetAppSettings().SetShowPaneTemplMgr(true);
+}
+
 
 //Private methods.
+
+void CMainFrame::CreateGridFileProps()
+{
+	m_wndGridFileProps.Create(WS_VISIBLE | WS_CHILD, { }, this, 1);
+	m_wndGridFileProps.SetVSDotNetLook();
+	m_wndGridFileProps.EnableHeaderCtrl(TRUE, L"Property", L"Value");
+
+	//Set new bigger font to the property.
+	const auto pFont = m_wndGridFileProps.GetFont();
+	LOGFONTW lf { };
+	pFont->GetLogFont(&lf);
+	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Utility::GetHiDPIInfo().iLOGPIXELSY) + 2;
+	lf.lfHeight = -MulDiv(lFontSize, Utility::GetHiDPIInfo().iLOGPIXELSY, 72);
+	m_fntFilePropsGrid.CreateFontIndirectW(&lf);
+	m_wndGridFileProps.SetFont(&m_fntFilePropsGrid);
+
+	using enum EPropName;
+	const auto pFilePath = new CMFCPropertyGridProperty(L"File path:", L"");
+	pFilePath->SetData(static_cast<DWORD_PTR>(FILE_PATH));
+	pFilePath->AllowEdit(FALSE);
+	m_vecPropsFileProps.emplace_back(pFilePath);
+	m_wndGridFileProps.AddProperty(pFilePath);
+
+	const auto pFileName = new CMFCPropertyGridProperty(L"File name:", L"");
+	pFileName->SetData(static_cast<DWORD_PTR>(FILE_NAME));
+	pFileName->AllowEdit(FALSE);
+	m_vecPropsFileProps.emplace_back(pFileName);
+	m_wndGridFileProps.AddProperty(pFileName);
+
+	const auto pFileSize = new CMFCPropertyGridProperty(L"File size:", L"");
+	pFileSize->SetData(static_cast<DWORD_PTR>(FILE_SIZE));
+	pFileSize->AllowEdit(FALSE);
+	m_vecPropsFileProps.emplace_back(pFileSize);
+	m_wndGridFileProps.AddProperty(pFileSize);
+
+	const auto pPageSize = new CMFCPropertyGridProperty(L"Page size:", L"");
+	pPageSize->SetData(static_cast<DWORD_PTR>(PAGE_SIZE));
+	pPageSize->AllowEdit(FALSE);
+	m_vecPropsFileProps.emplace_back(pPageSize);
+	m_wndGridFileProps.AddProperty(pPageSize);
+	pPageSize->Show(FALSE);
+
+	const auto pIsWritable = new CMFCPropertyGridProperty(L"Writable:", L"");
+	pIsWritable->SetData(static_cast<DWORD_PTR>(IS_WRITABLE));
+	pIsWritable->AllowEdit(FALSE);
+	m_vecPropsFileProps.emplace_back(pIsWritable);
+	m_wndGridFileProps.AddProperty(pIsWritable);
+
+	//HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 80 };
+	//m_wndProperty.GetHeaderCtrl().SetItem(0, &hdPropGrid);
+}
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
@@ -156,9 +226,16 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	DockPane(&m_paneDataInterp);
 	m_paneFileProps.AttachToTabWnd(&m_paneDataInterp, DM_SHOW, FALSE);
 
+	//Pane "Template Manager".
+	strStr.LoadStringW(IDC_PANE_TEMPLMGR);
+	m_paneTemplMgr.Create(strStr, this, CRect(0, 0, 400, 200), TRUE, IDC_PANE_TEMPLMGR,
+		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_BOTTOM | CBRS_FLOAT_MULTI);
+	m_paneTemplMgr.EnableDocking(CBRS_ALIGN_TOP | CBRS_ALIGN_BOTTOM);
+	DockPane(&m_paneTemplMgr);
+
 	UpdateMDITabbedBarsIcons();
 
-	//	EnablePaneMenu(TRUE, IDM_TOOLBAR_CUSTOMIZE, L"Customize...", ID_VIEW_TOOLBAR); //MainFrame and Pane context menu.
+	//EnablePaneMenu(TRUE, IDM_TOOLBAR_CUSTOMIZE, L"Customize...", ID_VIEW_TOOLBAR); //MainFrame and Pane context menu.
 	CMFCToolBar::EnableQuickCustomization(); // enable quick (Alt+drag) toolbar customization
 	ModifyStyle(0, FWS_PREFIXTITLE);
 
@@ -191,14 +268,17 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 
 BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pWnd)
 {
-	CStringW str;
-	pWnd->GetWindowTextW(str);
+	CStringW strPane;
+	pWnd->GetWindowTextW(strPane);
 	CStringW strRes;
-	if (strRes.LoadStringW(IDC_PANE_FILEPROPS); strRes == str) {
+	if (strRes.LoadStringW(IDC_PANE_FILEPROPS); strRes == strPane) {
 		theApp.GetAppSettings().SetShowPaneFileProps(false);
 	}
-	else if (strRes.LoadStringW(IDC_PANE_DATAINTERP); strRes == str) {
+	else if (strRes.LoadStringW(IDC_PANE_DATAINTERP); strRes == strPane) {
 		theApp.GetAppSettings().SetShowPaneDataInterp(false);
+	}
+	else if (strRes.LoadStringW(IDC_PANE_TEMPLMGR); strRes == strPane) {
+		theApp.GetAppSettings().SetShowPaneTemplMgr(false);
 	}
 
 	return CMDIFrameWndEx::OnCloseDockingPane(pWnd);
@@ -230,67 +310,29 @@ void CMainFrame::OnViewDataInterp()
 	theApp.GetAppSettings().SetShowPaneDataInterp(fShow);
 }
 
+void CMainFrame::OnViewTemplMgr()
+{
+	const auto fShow = !m_paneTemplMgr.IsVisible();
+	m_paneTemplMgr.ShowPane(fShow, FALSE, TRUE);
+	theApp.GetAppSettings().SetShowPaneTemplMgr(fShow);
+}
+
 void CMainFrame::OnUpdateViewFileProps(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(TRUE);
 	pCmdUI->SetCheck(m_paneFileProps.IsVisible());
 }
 
-void CMainFrame::OnUpdateViewDataInterp(CCmdUI * pCmdUI)
+void CMainFrame::OnUpdateViewDataInterp(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(TRUE);
 	pCmdUI->SetCheck(m_paneDataInterp.IsVisible());
 }
 
-void CMainFrame::CreateGridFileProps()
+void CMainFrame::OnUpdateViewTemplMgr(CCmdUI* pCmdUI)
 {
-	m_wndGridFileProps.Create(WS_VISIBLE | WS_CHILD, { }, this, 1);
-	m_wndGridFileProps.SetVSDotNetLook();
-	m_wndGridFileProps.EnableHeaderCtrl(TRUE, L"Property", L"Value");
-
-	//Set new bigger font to the property.
-	const auto pFont = m_wndGridFileProps.GetFont();
-	LOGFONTW lf { };
-	pFont->GetLogFont(&lf);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Utility::GetHiDPIInfo().iLOGPIXELSY) + 2;
-	lf.lfHeight = -MulDiv(lFontSize, Utility::GetHiDPIInfo().iLOGPIXELSY, 72);
-	m_fntProperty.CreateFontIndirectW(&lf);
-	m_wndGridFileProps.SetFont(&m_fntProperty);
-
-	using enum EPropName;
-	const auto pFilePath = new CMFCPropertyGridProperty(L"File path:", L"");
-	pFilePath->SetData(static_cast<DWORD_PTR>(FILE_PATH));
-	pFilePath->AllowEdit(FALSE);
-	m_vecProps.emplace_back(pFilePath);
-	m_wndGridFileProps.AddProperty(pFilePath);
-
-	const auto pFileName = new CMFCPropertyGridProperty(L"File name:", L"");
-	pFileName->SetData(static_cast<DWORD_PTR>(FILE_NAME));
-	pFileName->AllowEdit(FALSE);
-	m_vecProps.emplace_back(pFileName);
-	m_wndGridFileProps.AddProperty(pFileName);
-
-	const auto pFileSize = new CMFCPropertyGridProperty(L"File size:", L"");
-	pFileSize->SetData(static_cast<DWORD_PTR>(FILE_SIZE));
-	pFileSize->AllowEdit(FALSE);
-	m_vecProps.emplace_back(pFileSize);
-	m_wndGridFileProps.AddProperty(pFileSize);
-
-	const auto pPageSize = new CMFCPropertyGridProperty(L"Page size:", L"");
-	pPageSize->SetData(static_cast<DWORD_PTR>(PAGE_SIZE));
-	pPageSize->AllowEdit(FALSE);
-	m_vecProps.emplace_back(pPageSize);
-	m_wndGridFileProps.AddProperty(pPageSize);
-	pPageSize->Show(FALSE);
-
-	const auto pIsWritable = new CMFCPropertyGridProperty(L"Writable:", L"");
-	pIsWritable->SetData(static_cast<DWORD_PTR>(IS_WRITABLE));
-	pIsWritable->AllowEdit(FALSE);
-	m_vecProps.emplace_back(pIsWritable);
-	m_wndGridFileProps.AddProperty(pIsWritable);
-
-	//HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 80 };
-	//m_wndProperty.GetHeaderCtrl().SetItem(0, &hdPropGrid);
+	pCmdUI->Enable(TRUE);
+	pCmdUI->SetCheck(m_paneTemplMgr.IsVisible());
 }
 
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
@@ -354,7 +396,7 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	return CMDIFrameWndEx::PreTranslateMessage(pMsg);
 }
 
-auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR dwData)->LRESULT
+auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR /*uID*/, DWORD_PTR dwData)->LRESULT
 {
 	const auto pMainFrame = reinterpret_cast<CMainFrame*>(dwData);
 	if (pMainFrame->GetChildFramesCount() != 0) {

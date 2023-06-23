@@ -34,6 +34,7 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, &CHexerView::OnUpdateFileSave)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE_AS, &CHexerView::OnUpdateFileSaveAs)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLGDI)
+	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlTemplMgr)
 END_MESSAGE_MAP()
 
 auto CHexerView::GetMainFrame()const->CMainFrame*
@@ -61,6 +62,7 @@ void CHexerView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDe
 	if (bActivate) {
 		GetMainFrame()->UpdatePaneFileProps(m_stFP);
 		GetMainFrame()->UpdatePaneDataInterp(GetHexCtrl()->GetWindowHandle(HEXCTRL::EHexWnd::DLG_DATAINTERP));
+		GetMainFrame()->UpdatePaneTemplMgr(GetHexCtrl()->GetWindowHandle(HEXCTRL::EHexWnd::DLG_TEMPLMGR));
 	}
 
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
@@ -129,6 +131,11 @@ void CHexerView::OnUpdateEditEditMode(CCmdUI* pCmdUI)
 void CHexerView::OnHexCtrlDLGDI(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
 	GetMainFrame()->ShowPaneDataInterp();
+}
+
+void CHexerView::OnHexCtrlTemplMgr(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+{
+	GetMainFrame()->ShowPaneTemplMgr();
 }
 
 void CHexerView::OnUpdateFilePrint(CCmdUI* pCmdUI)

@@ -25,7 +25,8 @@
 #define IDC_OPEN_PATH_COMBO_PATH        120
 #define IDC_PANE_FILEPROPS              121
 #define IDC_PANE_DATAINTERP             122
-#define IDC_HEXCTRL_MAIN                123
+#define IDC_PANE_TEMPLMGR               123
+#define IDC_HEXCTRL_MAIN                124
 #define IDM_VIEW_FILEPROPS              32771
 #define IDM_VIEW_DATAINTERP             32772
 #define IDM_EDIT_EDITMODE               32773
@@ -52,14 +53,15 @@
 #define IDM_FILE_RFL17                  32797
 #define IDM_FILE_RFL18                  32798
 #define IDM_FILE_RFL19                  32799
+#define IDM_VIEW_TEMPLMGR               32801
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        124
-#define _APS_NEXT_COMMAND_VALUE         32800
-#define _APS_NEXT_CONTROL_VALUE         124
-#define _APS_NEXT_SYMED_VALUE           124
+#define _APS_NEXT_RESOURCE_VALUE        125
+#define _APS_NEXT_COMMAND_VALUE         32802
+#define _APS_NEXT_CONTROL_VALUE         125
+#define _APS_NEXT_SYMED_VALUE           125
 #endif
 #endif

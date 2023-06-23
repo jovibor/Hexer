@@ -13,14 +13,20 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 	//Settings.
 	const std::wstring wstrKeySettings = std::wstring { L"SOFTWARE\\" } + std::wstring { wsvKeyName } + L"\\Settings";
 	if (CRegKey regSettings; regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) == ERROR_SUCCESS) {
-		//ShowPaneFileProps.
+		//SetShowPaneFileProps.
 		DWORD dwShowPaneFileProps { };
 		regSettings.QueryDWORDValue(L"ShowPaneFileProps", dwShowPaneFileProps);
 		SetShowPaneFileProps(dwShowPaneFileProps > 0);
 
+		//SetShowPaneDataInterp.
 		DWORD dwShowPaneDataInterp { };
 		regSettings.QueryDWORDValue(L"ShowPaneDataInterp", dwShowPaneDataInterp);
 		SetShowPaneDataInterp(dwShowPaneDataInterp > 0);
+
+		//SetShowPaneTemplMgr.
+		DWORD dwShowPaneTemplMgr { };
+		regSettings.QueryDWORDValue(L"ShowPaneTemplMgr", dwShowPaneTemplMgr);
+		SetShowPaneTemplMgr(dwShowPaneTemplMgr > 0);
 	}
 
 	//Recent File List.
@@ -57,8 +63,10 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 		regSettings.Create(HKEY_CURRENT_USER, wstrKeySettings.data());
 	}
 
+	//SetShowPane*.
 	regSettings.SetDWORDValue(L"ShowPaneFileProps", GetShowPaneFileProps());
 	regSettings.SetDWORDValue(L"ShowPaneDataInterp", GetShowPaneDataInterp());
+	regSettings.SetDWORDValue(L"ShowPaneTemplMgr", GetShowPaneTemplMgr());
 
 	//Recent File List.
 	CRegKey regRFL;
@@ -82,6 +90,11 @@ bool CAppSettings::GetShowPaneDataInterp()const
 	return m_fShowPaneDataInterp;
 }
 
+bool CAppSettings::GetShowPaneTemplMgr()const
+{
+	return m_fShowPaneTemplMgr;
+}
+
 auto CAppSettings::GetRFL()->std::vector<std::wstring>&
 {
 	return m_vecRFL;
@@ -95,4 +108,9 @@ void CAppSettings::SetShowPaneFileProps(bool fShow)
 void CAppSettings::SetShowPaneDataInterp(bool fShow)
 {
 	m_fShowPaneDataInterp = fShow;
+}
+
+void CAppSettings::SetShowPaneTemplMgr(bool fShow)
+{
+	m_fShowPaneTemplMgr = fShow;
 }
