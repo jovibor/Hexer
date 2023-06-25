@@ -18,7 +18,7 @@ export namespace Utility
 {
 	constexpr auto HEXER_VERSION_MAJOR = 0;
 	constexpr auto HEXER_VERSION_MINOR = 9;
-	constexpr auto HEXER_VERSION_PATCH = 1;
+	constexpr auto HEXER_VERSION_PATCH = 2;
 	constexpr wchar_t g_wstrAppName[] { L"Hexer" };
 	constexpr UINT g_arrPanes[] { IDC_PANE_FILEPROPS, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR };
 
@@ -32,14 +32,6 @@ export namespace Utility
 			return std::nullopt;
 		}
 	}
-
-	struct FILEPROPS {
-		std::wstring_view wsvFilePath { };
-		std::wstring_view wsvFileName { };
-		std::uint64_t     ullFileSize { };
-		std::uint32_t     dwPageSize { };
-		bool              fWritable { };
-	};
 
 	enum class EBusType :std::uint16_t {
 		TYPE_Unknown = 0, TYPE_SCSI = 1, TYPE_ATAPI = 2, TYPE_ATA = 3, TYPE_1394 = 4, TYPE_SSA = 5, TYPE_Fibre_Channel = 6,

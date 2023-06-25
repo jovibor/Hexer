@@ -10,8 +10,6 @@
 #include "CMainFrame.h"
 #include "CChildFrame.h"
 #include "CHexerView.h"
-#include <format>
-#include <algorithm>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -87,33 +85,6 @@ void CMainFrame::OnCloseLastTab()
 	HidePanes();
 }
 
-void CMainFrame::SetPaneFileProps(const Utility::FILEPROPS& stFP)
-{
-	const auto lmbSetValue = [&](CMFCPropertyGridProperty* pProp) {
-		using enum EPropName;
-		switch (static_cast<EPropName>(pProp->GetData())) {
-		case FILE_PATH:
-			pProp->SetValue(stFP.wsvFilePath.data());
-			break;
-		case FILE_NAME:
-			pProp->SetValue(stFP.wsvFileName.data());
-			break;
-		case FILE_SIZE:
-			pProp->SetValue(std::format(std::locale("en_US.UTF-8"), L"{:L} bytes", stFP.ullFileSize).data());
-			break;
-		case PAGE_SIZE:
-			pProp->SetValue(std::format(L"{}", stFP.dwPageSize).data());
-			break;
-		case IS_WRITABLE:
-			pProp->SetValue(std::format(L"{}", stFP.fWritable).data());
-			break;
-		default:
-			break;
-		}
-	};
-	std::ranges::for_each(m_vecPropsFileProps, lmbSetValue);
-}
-
 void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 {
 	CPaneMainFrame* pPane { };
@@ -137,15 +108,10 @@ void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 			return;
 		}
 
-		if (uPaneID == IDC_PANE_FILEPROPS) {
-			SetPaneFileProps(pView->GetFileProps());
-		}
-		else {
-			const auto hWndForPane = pView->GetHWNDForPane(uPaneID);
-			const auto hWndCurr = pPane->GetNestedHWND();
-			if (hWndForPane != nullptr && hWndForPane != hWndCurr) {
-				pPane->SetNestedHWND(hWndForPane);
-			}
+		const auto hWndForPane = pView->GetHWNDForPane(uPaneID);
+		const auto hWndCurr = pPane->GetNestedHWND();
+		if (hWndForPane != nullptr && hWndForPane != hWndCurr) {
+			pPane->SetNestedHWND(hWndForPane);
 		}
 	}
 
@@ -155,57 +121,6 @@ void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 
 
 //Private methods.
-
-void CMainFrame::CreateGridFileProps()
-{
-	m_wndGridFileProps.Create(WS_VISIBLE | WS_CHILD, { }, this, 1);
-	m_wndGridFileProps.SetVSDotNetLook();
-	m_wndGridFileProps.EnableHeaderCtrl(TRUE, L"Property", L"Value");
-
-	//Set new bigger font to the property.
-	const auto pFont = m_wndGridFileProps.GetFont();
-	LOGFONTW lf { };
-	pFont->GetLogFont(&lf);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Utility::GetHiDPIInfo().iLOGPIXELSY) + 2;
-	lf.lfHeight = -MulDiv(lFontSize, Utility::GetHiDPIInfo().iLOGPIXELSY, 72);
-	m_fntFilePropsGrid.CreateFontIndirectW(&lf);
-	m_wndGridFileProps.SetFont(&m_fntFilePropsGrid);
-
-	using enum EPropName;
-	const auto pFilePath = new CMFCPropertyGridProperty(L"File path:", L"");
-	pFilePath->SetData(static_cast<DWORD_PTR>(FILE_PATH));
-	pFilePath->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pFilePath);
-	m_wndGridFileProps.AddProperty(pFilePath);
-
-	const auto pFileName = new CMFCPropertyGridProperty(L"File name:", L"");
-	pFileName->SetData(static_cast<DWORD_PTR>(FILE_NAME));
-	pFileName->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pFileName);
-	m_wndGridFileProps.AddProperty(pFileName);
-
-	const auto pFileSize = new CMFCPropertyGridProperty(L"File size:", L"");
-	pFileSize->SetData(static_cast<DWORD_PTR>(FILE_SIZE));
-	pFileSize->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pFileSize);
-	m_wndGridFileProps.AddProperty(pFileSize);
-
-	const auto pPageSize = new CMFCPropertyGridProperty(L"Page size:", L"");
-	pPageSize->SetData(static_cast<DWORD_PTR>(PAGE_SIZE));
-	pPageSize->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pPageSize);
-	m_wndGridFileProps.AddProperty(pPageSize);
-	pPageSize->Show(FALSE);
-
-	const auto pIsWritable = new CMFCPropertyGridProperty(L"Writable:", L"");
-	pIsWritable->SetData(static_cast<DWORD_PTR>(IS_WRITABLE));
-	pIsWritable->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pIsWritable);
-	m_wndGridFileProps.AddProperty(pIsWritable);
-
-	//HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 80 };
-	//m_wndProperty.GetHeaderCtrl().SetItem(0, &hdPropGrid);
-}
 
 auto CMainFrame::GetHexCtrl()->HEXCTRL::IHexCtrl*
 {
@@ -275,8 +190,6 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_paneFileProps.Create(strStr, this, CRect(0, 0, 200, 400), TRUE, IDC_PANE_FILEPROPS,
 			WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_RIGHT | CBRS_FLOAT_MULTI);
 	m_paneFileProps.EnableDocking(CBRS_ALIGN_ANY);
-	CreateGridFileProps();
-	m_paneFileProps.SetNestedHWND(m_wndGridFileProps.m_hWnd);
 	DockPane(&m_paneFileProps);
 
 	//Pane "Data Interpreter".
@@ -480,12 +393,13 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 void CMainFrame::SavePanesSettings()
 {
 	if (const auto pView = GetHexerView(); pView != nullptr) {
+		auto& refSett = theApp.GetAppSettings();
 		for (auto id : Utility::g_arrPanes) {
-			theApp.GetAppSettings().SetShowPane(id, IsPaneVisible(id));
-			theApp.GetAppSettings().SetPaneActive(id, IsPaneActive(id));
+			refSett.SetShowPane(id, IsPaneVisible(id));
+			refSett.SetPaneActive(id, IsPaneActive(id));
 
 			if (const auto optDlg = Utility::PaneIDToEHexWnd(id); optDlg && IsPaneVisible(id)) {
-				theApp.GetAppSettings().SetPaneData(id, GetHexCtrl()->GetDlgData(*optDlg));
+				refSett.SetPaneData(id, GetHexCtrl()->GetDlgData(*optDlg));
 			}
 		}
 	}

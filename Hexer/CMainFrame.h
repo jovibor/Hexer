@@ -22,10 +22,8 @@ public:
 	[[nodiscard]] bool IsPaneActive(UINT uPaneID)const;  //Is Pane itself visible atm.
 	void OnOpenFirstTab(); //When the first tab is opened.
 	void OnCloseLastTab(); //When the last tab is closed.
-	void SetPaneFileProps(const Utility::FILEPROPS& stFP);
 	void ShowPane(UINT uPaneID, bool fShow, bool fActivate);
 protected:
-	void CreateGridFileProps();
 	[[nodiscard]] auto GetHexerView() -> CHexerView*;
 	[[nodiscard]] auto GetHexCtrl() -> HEXCTRL::IHexCtrl*;
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -55,12 +53,6 @@ private:
 	CPaneMainFrame m_paneDataInterp;
 	CPaneMainFrame m_paneFileProps;
 	CPaneMainFrame m_paneTemplMgr;
-	enum class EPropName : std::uint8_t {
-		FILE_PATH = 0x1, FILE_NAME, FILE_SIZE, PAGE_SIZE, IS_WRITABLE
-	};
-	CMFCPropertyGridCtrl m_wndGridFileProps;
-	std::vector<CMFCPropertyGridProperty*> m_vecPropsFileProps;
-	CFont m_fntFilePropsGrid;
 	int m_iChildFrames { };    //Amount of active child frames.
 	bool m_fClosing { false }; //Indicates that the app is closing now.
 };
