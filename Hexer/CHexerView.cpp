@@ -19,23 +19,41 @@
 IMPLEMENT_DYNCREATE(CHexerView, CView)
 
 BEGIN_MESSAGE_MAP(CHexerView, CView)
-	ON_WM_CONTEXTMENU()
-	ON_WM_RBUTTONUP()
 	ON_WM_SIZE()
-	ON_WM_ERASEBKGND()
 	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CHexerView::OnFilePrintPreview)
 	ON_COMMAND(IDM_EDIT_EDITMODE, &CHexerView::OnEditEditMode)
 	ON_UPDATE_COMMAND_UI(IDM_EDIT_EDITMODE, &CHexerView::OnUpdateEditEditMode)
-	ON_UPDATE_COMMAND_UI(ID_FILE_PRINT, &CHexerView::OnUpdateFilePrint)
-	ON_UPDATE_COMMAND_UI(ID_FILE_PRINT_PREVIEW, &CHexerView::OnUpdateFilePrintPreview)
-	ON_UPDATE_COMMAND_UI(ID_FILE_PRINT_SETUP, &CHexerView::OnUpdateFilePrintSetup)
-	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, &CHexerView::OnUpdateFileSave)
-	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE_AS, &CHexerView::OnUpdateFileSaveAs)
-	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLGDI)
-	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlTemplMgr)
+	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
+	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 END_MESSAGE_MAP()
+
+auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
+{
+	return &*m_pHexCtrl;
+}
+
+auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
+{
+	if (const auto optDlg = Utility::PaneIDToEHexWnd(uPaneID); optDlg) {
+		if (!IsAlreadyLaunch(uPaneID)) {
+			SetPaneAlreadyLaunched(uPaneID);
+			return GetHexCtrl()->SetDlgData(*optDlg, theApp.GetAppSettings().GetPaneData(uPaneID));
+		}
+		return GetHexCtrl()->GetWindowHandle(*optDlg);
+	}
+
+	return { };
+}
+
+auto CHexerView::GetFileProps()->Utility::FILEPROPS&
+{
+	return m_stFP;
+}
+
+
+//Private methods.
 
 auto CHexerView::GetMainFrame()const->CMainFrame*
 {
@@ -52,25 +70,28 @@ auto CHexerView::GetDocument()const->CHexerDoc*
 	return reinterpret_cast<CHexerDoc*>(m_pDocument);
 }
 
-auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
+bool CHexerView::IsAlreadyLaunch(UINT uPaneID)
 {
-	return &*m_pHexCtrl;
+	switch (uPaneID) {
+	case IDC_PANE_DATAINTERP:
+		return m_fIsAlreadyLaunchDlgDataInterp;
+	case IDC_PANE_TEMPLMGR:
+		return m_fIsAlreadyLaunchDlgTemplMgr;
+	default:
+		return { };
+	}
 }
 
 void CHexerView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView)
 {
-	if (bActivate) {
-		GetMainFrame()->UpdatePaneFileProps(m_stFP);
-		GetMainFrame()->UpdatePaneDataInterp(GetHexCtrl()->GetWindowHandle(HEXCTRL::EHexWnd::DLG_DATAINTERP));
-		GetMainFrame()->UpdatePaneTemplMgr(GetHexCtrl()->GetWindowHandle(HEXCTRL::EHexWnd::DLG_TEMPLMGR));
-	}
-
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
 }
 
 void CHexerView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
+
+	GetChildFrame()->SetHexerView(this);
 
 	const auto pDoc = GetDocument();
 	m_stFP.wsvFilePath = pDoc->GetFilePath();
@@ -113,7 +134,24 @@ void CHexerView::OnEditEditMode()
 {
 	GetHexCtrl()->SetMutable(!GetHexCtrl()->IsMutable());
 	m_stFP.fWritable = GetHexCtrl()->IsMutable();
-	GetMainFrame()->UpdatePaneFileProps(m_stFP);
+	GetMainFrame()->SetPaneFileProps(m_stFP);
+}
+
+void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	UINT uPaineID;
+	switch (pNMHDR->code) {
+	case HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP:
+		uPaineID = IDC_PANE_DATAINTERP;
+		break;
+	case HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR:
+		uPaineID = IDC_PANE_TEMPLMGR;
+		break;
+	default:
+		return;
+	}
+
+	GetMainFrame()->ShowPane(uPaineID, true, true);
 }
 
 void CHexerView::OnUpdateEditEditMode(CCmdUI* pCmdUI)
@@ -128,37 +166,16 @@ void CHexerView::OnUpdateEditEditMode(CCmdUI* pCmdUI)
 	}
 }
 
-void CHexerView::OnHexCtrlDLGDI(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+void CHexerView::SetPaneAlreadyLaunched(UINT uPaneID)
 {
-	GetMainFrame()->ShowPaneDataInterp();
-}
-
-void CHexerView::OnHexCtrlTemplMgr(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
-	GetMainFrame()->ShowPaneTemplMgr();
-}
-
-void CHexerView::OnUpdateFilePrint(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(FALSE);
-}
-
-void CHexerView::OnUpdateFilePrintPreview(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(FALSE);
-}
-
-void CHexerView::OnUpdateFilePrintSetup(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(FALSE);
-}
-
-void CHexerView::OnUpdateFileSave(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(FALSE);
-}
-
-void CHexerView::OnUpdateFileSaveAs(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(FALSE);
+	switch (uPaneID) {
+	case IDC_PANE_DATAINTERP:
+		m_fIsAlreadyLaunchDlgDataInterp = true;
+		break;
+	case IDC_PANE_TEMPLMGR:
+		m_fIsAlreadyLaunchDlgTemplMgr = true;
+		break;
+	default:
+		break;
+	}
 }

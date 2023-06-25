@@ -5,8 +5,11 @@ module;
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
+#include "resource.h"
 #include <SDKDDKVer.h>
+#include "HexCtrl.h"
 #include <afxwin.h>
+#include <optional>
 #include <string>
 #include <unordered_map>
 export module Utility;
@@ -17,6 +20,18 @@ export namespace Utility
 	constexpr auto HEXER_VERSION_MINOR = 9;
 	constexpr auto HEXER_VERSION_PATCH = 1;
 	constexpr wchar_t g_wstrAppName[] { L"Hexer" };
+	constexpr UINT g_arrPanes[] { IDC_PANE_FILEPROPS, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR };
+
+	[[nodiscard]] constexpr auto PaneIDToEHexWnd(UINT uPaneID) -> std::optional<HEXCTRL::EHexWnd> {
+		switch (uPaneID) {
+		case IDC_PANE_DATAINTERP:
+			return HEXCTRL::EHexWnd::DLG_DATAINTERP;
+		case IDC_PANE_TEMPLMGR:
+			return HEXCTRL::EHexWnd::DLG_TEMPLMGR;
+		default:
+			return std::nullopt;
+		}
+	}
 
 	struct FILEPROPS {
 		std::wstring_view wsvFilePath { };

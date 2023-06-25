@@ -31,7 +31,7 @@ BEGIN_MESSAGE_MAP(CPaneMainFrame, CDockablePane)
 	ON_WM_PAINT()
 END_MESSAGE_MAP()
 
-void CPaneMainFrame::SetAsNested(HWND hWnd)
+void CPaneMainFrame::SetNestedHWND(HWND hWnd)
 {
 	assert(hWnd != nullptr);
 	if (hWnd == nullptr || hWnd == m_hWndNested)
@@ -50,6 +50,11 @@ void CPaneMainFrame::SetAsNested(HWND hWnd)
 	m_hWndNested = hWnd;
 	m_hWndOrigParent = ::GetParent(hWnd);
 	AdjustLayout();
+}
+
+auto CPaneMainFrame::GetNestedHWND()const->HWND
+{
+	return m_hWndNested;
 }
 
 void CPaneMainFrame::AdjustLayout()

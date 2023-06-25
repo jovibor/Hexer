@@ -26,7 +26,8 @@ class CPaneTabbedPane final : public CTabbedPane {
 class CPaneMainFrame final : public CDockablePane
 {
 public:
-	void SetAsNested(HWND hWnd);
+	void SetNestedHWND(HWND hWnd);
+	[[nodiscard]] auto GetNestedHWND()const->HWND;
 private:
 	void AdjustLayout()override;
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);

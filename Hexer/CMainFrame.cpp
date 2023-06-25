@@ -8,6 +8,8 @@
 #include "resource.h"
 #include "CHexerApp.h"
 #include "CMainFrame.h"
+#include "CChildFrame.h"
+#include "CHexerView.h"
 #include <format>
 #include <algorithm>
 
@@ -19,6 +21,8 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWndEx)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_WM_CREATE()
+	ON_WM_CLOSE()
+	ON_REGISTERED_MESSAGE(AFX_WM_CHANGE_ACTIVE_TAB, &CMainFrame::OnTabActivate)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
 	ON_COMMAND(IDM_VIEW_FILEPROPS, &CMainFrame::OnViewFileProps)
 	ON_COMMAND(IDM_VIEW_DATAINTERP, &CMainFrame::OnViewDataInterp)
@@ -40,30 +44,50 @@ void CMainFrame::HidePanes()
 	m_paneTemplMgr.ShowPane(FALSE, FALSE, FALSE);
 }
 
+bool CMainFrame::IsPaneActive(UINT uPaneID)const
+{
+	switch (uPaneID) {
+	case IDC_PANE_FILEPROPS:
+		return m_paneFileProps.IsPaneVisible();
+	case IDC_PANE_DATAINTERP:
+		return m_paneDataInterp.IsPaneVisible();
+	case IDC_PANE_TEMPLMGR:
+		return m_paneTemplMgr.IsPaneVisible();
+	default:
+		return{ };
+	}
+}
+
+bool CMainFrame::IsPaneVisible(UINT uPaneID)const
+{
+	switch (uPaneID) {
+	case IDC_PANE_FILEPROPS:
+		return m_paneFileProps.IsVisible();
+	case IDC_PANE_DATAINTERP:
+		return m_paneDataInterp.IsVisible();
+	case IDC_PANE_TEMPLMGR:
+		return m_paneTemplMgr.IsVisible();
+	default:
+		return{ };
+	}
+}
+
 void CMainFrame::OnOpenFirstTab()
 {
-	//Show "File Properties" pane according to app's settings.
-	if (theApp.GetAppSettings().GetShowPaneFileProps()) {
-		m_paneFileProps.ShowPane(TRUE, FALSE, TRUE);
-	}
-
-	//Show "Data Interpreter" pane according to app's settings.
-	if (theApp.GetAppSettings().GetShowPaneDataInterp()) {
-		m_paneDataInterp.ShowPane(TRUE, FALSE, TRUE);
-	}
-
-	//Show "Template Manager" pane according to app's settings.
-	if (theApp.GetAppSettings().GetShowPaneDataInterp()) {
-		m_paneTemplMgr.ShowPane(TRUE, FALSE, TRUE);
+	for (auto id : Utility::g_arrPanes) {
+		if (theApp.GetAppSettings().GetShowPane(id)) {
+			ShowPane(id, true, theApp.GetAppSettings().GetPaneActive(id));
+		}
 	}
 }
 
 void CMainFrame::OnCloseLastTab()
 {
+	SavePanesSettings(); //It's called either here or in the OnClose.
 	HidePanes();
 }
 
-void CMainFrame::UpdatePaneFileProps(const Utility::FILEPROPS& stFP)
+void CMainFrame::SetPaneFileProps(const Utility::FILEPROPS& stFP)
 {
 	const auto lmbSetValue = [&](CMFCPropertyGridProperty* pProp) {
 		using enum EPropName;
@@ -90,26 +114,43 @@ void CMainFrame::UpdatePaneFileProps(const Utility::FILEPROPS& stFP)
 	std::ranges::for_each(m_vecPropsFileProps, lmbSetValue);
 }
 
-void CMainFrame::UpdatePaneDataInterp(HWND hWnd)
+void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 {
-	m_paneDataInterp.SetAsNested(hWnd);
-}
+	CPaneMainFrame* pPane { };
+	switch (uPaneID) {
+	case IDC_PANE_FILEPROPS:
+		pPane = &m_paneFileProps;
+		break;
+	case IDC_PANE_DATAINTERP:
+		pPane = &m_paneDataInterp;
+		break;
+	case IDC_PANE_TEMPLMGR:
+		pPane = &m_paneTemplMgr;
+		break;
+	default:
+		return;
+	}
 
-void CMainFrame::UpdatePaneTemplMgr(HWND hWnd)
-{
-	m_paneTemplMgr.SetAsNested(hWnd);
-}
+	if (fShow) {
+		const auto pView = GetHexerView();
+		if (pView == nullptr) {
+			return;
+		}
 
-void CMainFrame::ShowPaneDataInterp()
-{
-	m_paneDataInterp.ShowPane(TRUE, FALSE, TRUE);
-	theApp.GetAppSettings().SetShowPaneDataInterp(true);
-}
+		if (uPaneID == IDC_PANE_FILEPROPS) {
+			SetPaneFileProps(pView->GetFileProps());
+		}
+		else {
+			const auto hWndForPane = pView->GetHWNDForPane(uPaneID);
+			const auto hWndCurr = pPane->GetNestedHWND();
+			if (hWndForPane != nullptr && hWndForPane != hWndCurr) {
+				pPane->SetNestedHWND(hWndForPane);
+			}
+		}
+	}
 
-void CMainFrame::ShowPaneTemplMgr()
-{
-	m_paneTemplMgr.ShowPane(TRUE, FALSE, TRUE);
-	theApp.GetAppSettings().SetShowPaneTemplMgr(true);
+	pPane->ShowPane(fShow, FALSE, fActivate);
+	theApp.GetAppSettings().SetShowPane(uPaneID, fShow);
 }
 
 
@@ -166,6 +207,26 @@ void CMainFrame::CreateGridFileProps()
 	//m_wndProperty.GetHeaderCtrl().SetItem(0, &hdPropGrid);
 }
 
+auto CMainFrame::GetHexCtrl()->HEXCTRL::IHexCtrl*
+{
+	if (const auto pView = GetHexerView(); pView != nullptr) {
+		return pView->GetHexCtrl();
+	}
+
+	return { };
+}
+
+auto CMainFrame::GetHexerView()->CHexerView*
+{
+	//If the MDI frame window has no active document, the implicit "this" pointer will be returned.
+	//https://docs.microsoft.com/en-us/cpp/mfc/reference/cframewnd-class?view=msvc-160#getactiveframe
+	if (const auto pFrame = GetActiveFrame(); pFrame != nullptr && pFrame != this) {
+		return static_cast<CChildFrame*>(pFrame)->GetHexerView();
+	}
+
+	return { };
+}
+
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CMDIFrameWndEx::OnCreate(lpCreateStruct) == -1)
@@ -215,7 +276,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 			WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_RIGHT | CBRS_FLOAT_MULTI);
 	m_paneFileProps.EnableDocking(CBRS_ALIGN_ANY);
 	CreateGridFileProps();
-	m_paneFileProps.SetAsNested(m_wndGridFileProps.m_hWnd);
+	m_paneFileProps.SetNestedHWND(m_wndGridFileProps.m_hWnd);
 	DockPane(&m_paneFileProps);
 
 	//Pane "Data Interpreter".
@@ -266,19 +327,27 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 	return TRUE;
 }
 
+void CMainFrame::OnClose()
+{
+	m_fClosing = true;
+	SavePanesSettings(); //It's called either here or in the OnCloseLastTab.
+
+	CMDIFrameWndEx::OnClose();
+}
+
 BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pWnd)
 {
 	CStringW strPane;
 	pWnd->GetWindowTextW(strPane);
 	CStringW strRes;
 	if (strRes.LoadStringW(IDC_PANE_FILEPROPS); strRes == strPane) {
-		theApp.GetAppSettings().SetShowPaneFileProps(false);
+		theApp.GetAppSettings().SetShowPane(IDC_PANE_FILEPROPS, false);
 	}
 	else if (strRes.LoadStringW(IDC_PANE_DATAINTERP); strRes == strPane) {
-		theApp.GetAppSettings().SetShowPaneDataInterp(false);
+		theApp.GetAppSettings().SetShowPane(IDC_PANE_DATAINTERP, false);
 	}
 	else if (strRes.LoadStringW(IDC_PANE_TEMPLMGR); strRes == strPane) {
-		theApp.GetAppSettings().SetShowPaneTemplMgr(false);
+		theApp.GetAppSettings().SetShowPane(IDC_PANE_TEMPLMGR, false);
 	}
 
 	return CMDIFrameWndEx::OnCloseDockingPane(pWnd);
@@ -287,6 +356,24 @@ BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pWnd)
 BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/)
 {
 	return TRUE;
+}
+
+auto CMainFrame::OnTabActivate(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
+{
+	if (m_fClosing) {
+		return S_OK;
+	}
+
+	//Setting Panes' HWND according to the current active tab.
+	if (GetChildFramesCount() > 0) {
+		for (auto uPaneID : Utility::g_arrPanes) {
+			if (IsPaneVisible(uPaneID)) {
+				ShowPane(uPaneID, true, IsPaneActive(uPaneID));
+			}
+		}
+	}
+
+	return S_OK;
 }
 
 void CMainFrame::OnViewCustomize()
@@ -298,41 +385,35 @@ void CMainFrame::OnViewCustomize()
 
 void CMainFrame::OnViewFileProps()
 {
-	const auto fShow = !m_paneFileProps.IsVisible();
-	m_paneFileProps.ShowPane(fShow, FALSE, TRUE);
-	theApp.GetAppSettings().SetShowPaneFileProps(fShow);
+	ShowPane(IDC_PANE_FILEPROPS, !IsPaneVisible(IDC_PANE_FILEPROPS), !IsPaneVisible(IDC_PANE_FILEPROPS));
 }
 
 void CMainFrame::OnViewDataInterp()
 {
-	const auto fShow = !m_paneDataInterp.IsVisible();
-	m_paneDataInterp.ShowPane(fShow, FALSE, TRUE);
-	theApp.GetAppSettings().SetShowPaneDataInterp(fShow);
+	ShowPane(IDC_PANE_DATAINTERP, !IsPaneVisible(IDC_PANE_DATAINTERP), !IsPaneVisible(IDC_PANE_DATAINTERP));
 }
 
 void CMainFrame::OnViewTemplMgr()
 {
-	const auto fShow = !m_paneTemplMgr.IsVisible();
-	m_paneTemplMgr.ShowPane(fShow, FALSE, TRUE);
-	theApp.GetAppSettings().SetShowPaneTemplMgr(fShow);
+	ShowPane(IDC_PANE_TEMPLMGR, !IsPaneVisible(IDC_PANE_TEMPLMGR), !IsPaneVisible(IDC_PANE_TEMPLMGR));
 }
 
 void CMainFrame::OnUpdateViewFileProps(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(TRUE);
-	pCmdUI->SetCheck(m_paneFileProps.IsVisible());
+	pCmdUI->SetCheck(IsPaneVisible(IDC_PANE_FILEPROPS));
 }
 
 void CMainFrame::OnUpdateViewDataInterp(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(TRUE);
-	pCmdUI->SetCheck(m_paneDataInterp.IsVisible());
+	pCmdUI->SetCheck(IsPaneVisible(IDC_PANE_DATAINTERP));
 }
 
 void CMainFrame::OnUpdateViewTemplMgr(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(TRUE);
-	pCmdUI->SetCheck(m_paneTemplMgr.IsVisible());
+	pCmdUI->SetCheck(IsPaneVisible(IDC_PANE_TEMPLMGR));
 }
 
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
@@ -394,6 +475,20 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	}
 
 	return CMDIFrameWndEx::PreTranslateMessage(pMsg);
+}
+
+void CMainFrame::SavePanesSettings()
+{
+	if (const auto pView = GetHexerView(); pView != nullptr) {
+		for (auto id : Utility::g_arrPanes) {
+			theApp.GetAppSettings().SetShowPane(id, IsPaneVisible(id));
+			theApp.GetAppSettings().SetPaneActive(id, IsPaneActive(id));
+
+			if (const auto optDlg = Utility::PaneIDToEHexWnd(id); optDlg && IsPaneVisible(id)) {
+				theApp.GetAppSettings().SetPaneData(id, GetHexCtrl()->GetDlgData(*optDlg));
+			}
+		}
+	}
 }
 
 auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR /*uID*/, DWORD_PTR dwData)->LRESULT

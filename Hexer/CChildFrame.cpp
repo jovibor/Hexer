@@ -21,6 +21,16 @@ BEGIN_MESSAGE_MAP(CChildFrame, CMDIChildWndEx)
 	ON_WM_MDIACTIVATE()
 END_MESSAGE_MAP()
 
+auto CChildFrame::GetHexerView()const->CHexerView*
+{
+	return m_pHexerView;
+}
+
+void CChildFrame::SetHexerView(CHexerView* pView)
+{
+	m_pHexerView = pView;
+}
+
 void CChildFrame::OnClose()
 {
 	m_fClosing = true;
