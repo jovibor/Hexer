@@ -7,6 +7,7 @@
 #include "stdafx.h"
 #include "CAppSettings.h"
 #include "resource.h"
+#include <bitset>
 #include <format>
 
 void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
@@ -15,42 +16,21 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 	const std::wstring wstrKeySettings = std::wstring { L"SOFTWARE\\" } + std::wstring { wsvKeyName } + L"\\Settings";
 	if (CRegKey regSettings; regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) == ERROR_SUCCESS) {
 
-		//SetShowPane.
-		DWORD dwShowPaneFileProps { };
-		regSettings.QueryDWORDValue(L"ShowPaneFileProps", dwShowPaneFileProps);
-		SetShowPane(IDC_PANE_FILEPROPS, dwShowPaneFileProps > 0);
+		//PaneStatus.
+		DWORD dwPaneStatusFileProps { };
+		regSettings.QueryDWORDValue(L"PaneStatusFileProps", dwPaneStatusFileProps);
+		m_stPSFileProps = DWORD2PaneStatus(dwPaneStatusFileProps);
+		DWORD dwPaneStatusDataInterp { };
+		regSettings.QueryDWORDValue(L"PaneStatusDataInterp", dwPaneStatusDataInterp);
+		m_stPSDataInterp = DWORD2PaneStatus(dwPaneStatusDataInterp);
+		DWORD dwPaneStatusTemplMgr { };
+		regSettings.QueryDWORDValue(L"PaneStatusTemplMgr", dwPaneStatusTemplMgr);
+		m_stPSTemplMgr = DWORD2PaneStatus(dwPaneStatusTemplMgr);
 
-		//SetShowPane.
-		DWORD dwShowPaneDataInterp { };
-		regSettings.QueryDWORDValue(L"ShowPaneDataInterp", dwShowPaneDataInterp);
-		SetShowPane(IDC_PANE_DATAINTERP, dwShowPaneDataInterp > 0);
-
-		//SetShowPane.
-		DWORD dwShowPaneTemplMgr { };
-		regSettings.QueryDWORDValue(L"ShowPaneTemplMgr", dwShowPaneTemplMgr);
-		SetShowPane(IDC_PANE_TEMPLMGR, dwShowPaneTemplMgr > 0);
-
-		//SetPaneActive.
-		DWORD dwIsPaneActiveFileProps { };
-		regSettings.QueryDWORDValue(L"IsPaneActiveFileProps", dwIsPaneActiveFileProps);
-		SetPaneActive(IDC_PANE_FILEPROPS, dwIsPaneActiveFileProps > 0);
-
-		//SetPaneActive.
-		DWORD dwIsPaneActiveDataInterp { };
-		regSettings.QueryDWORDValue(L"IsPaneActiveDataInterp", dwIsPaneActiveDataInterp);
-		SetPaneActive(IDC_PANE_DATAINTERP, dwIsPaneActiveDataInterp > 0);
-
-		//SetPaneActive.
-		DWORD dwIsPaneActiveTemplMgr { };
-		regSettings.QueryDWORDValue(L"IsPaneActiveTemplMgr", dwIsPaneActiveTemplMgr);
-		SetPaneActive(IDC_PANE_TEMPLMGR, dwIsPaneActiveTemplMgr > 0);
-
-		//SetPaneData.
+		//PaneData.
 		QWORD ullPaneDataTemplMgr { };
 		regSettings.QueryQWORDValue(L"PaneDataTemplMgr", ullPaneDataTemplMgr);
 		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr);
-
-		//SetPaneData.
 		QWORD ullPaneDataDataInterp { };
 		regSettings.QueryQWORDValue(L"PaneDataDataInterp", ullPaneDataDataInterp);
 		SetPaneData(IDC_PANE_DATAINTERP, ullPaneDataDataInterp);
@@ -90,15 +70,10 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 		regSettings.Create(HKEY_CURRENT_USER, wstrKeySettings.data());
 	}
 
-	//SetShowPane.
-	regSettings.SetDWORDValue(L"ShowPaneFileProps", GetShowPane(IDC_PANE_FILEPROPS));
-	regSettings.SetDWORDValue(L"ShowPaneDataInterp", GetShowPane(IDC_PANE_DATAINTERP));
-	regSettings.SetDWORDValue(L"ShowPaneTemplMgr", GetShowPane(IDC_PANE_TEMPLMGR));
-
-	//SetPaneActive.
-	regSettings.SetDWORDValue(L"IsPaneActiveFileProps", GetPaneActive(IDC_PANE_FILEPROPS));
-	regSettings.SetDWORDValue(L"IsPaneActiveDataInterp", GetPaneActive(IDC_PANE_DATAINTERP));
-	regSettings.SetDWORDValue(L"IsPaneActiveTemplMgr", GetPaneActive(IDC_PANE_TEMPLMGR));
+	//PaneStatus.
+	regSettings.SetDWORDValue(L"PaneStatusFileProps", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_FILEPROPS)));
+	regSettings.SetDWORDValue(L"PaneStatusDataInterp", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_DATAINTERP)));
+	regSettings.SetDWORDValue(L"PaneStatusTemplMgr", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_TEMPLMGR)));
 
 	//SetPaneData
 	regSettings.SetQWORDValue(L"PaneDataDataInterp", GetPaneData(IDC_PANE_DATAINTERP));
@@ -130,29 +105,15 @@ auto CAppSettings::GetPaneData(UINT uPaneID)const->std::uint64_t
 	}
 }
 
-bool CAppSettings::GetPaneActive(UINT uPaneID)const
+auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 {
 	switch (uPaneID) {
 	case IDC_PANE_FILEPROPS:
-		return m_fPaneActiveFileProps;
+		return m_stPSFileProps;
 	case IDC_PANE_DATAINTERP:
-		return m_fPaneActiveDataInterp;
+		return m_stPSDataInterp;
 	case IDC_PANE_TEMPLMGR:
-		return m_fPaneActiveTemplMgr;
-	default:
-		return { };
-	}
-}
-
-bool CAppSettings::GetShowPane(UINT uPaneID)const
-{
-	switch (uPaneID) {
-	case IDC_PANE_FILEPROPS:
-		return m_fShowPaneFileProps;
-	case IDC_PANE_DATAINTERP:
-		return m_fShowPaneDataInterp;
-	case IDC_PANE_TEMPLMGR:
-		return m_fShowPaneTemplMgr;
+		return m_stPSTemplMgr;
 	default:
 		return { };
 	}
@@ -180,33 +141,32 @@ void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
 	}
 }
 
-void CAppSettings::SetPaneActive(UINT uPaneID, bool fActive)
+void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
 {
 	switch (uPaneID) {
 	case IDC_PANE_FILEPROPS:
-		m_fPaneActiveFileProps = fActive;
+		m_stPSFileProps = { fShow, fActive };
 	case IDC_PANE_DATAINTERP:
-		m_fPaneActiveDataInterp = fActive;
+		m_stPSDataInterp = { fShow, fActive };
 	case IDC_PANE_TEMPLMGR:
-		m_fPaneActiveTemplMgr = fActive;
+		m_stPSTemplMgr = { fShow, fActive };
 	default:
 		return;
 	}
 }
 
-void CAppSettings::SetShowPane(UINT uPaneID, bool fShow)
+constexpr auto CAppSettings::PaneStatus2DWORD(PANESTATUS ps)->DWORD
 {
-	switch (uPaneID) {
-	case IDC_PANE_FILEPROPS:
-		m_fShowPaneFileProps = fShow;
-		break;
-	case IDC_PANE_DATAINTERP:
-		m_fShowPaneDataInterp = fShow;
-		break;
-	case IDC_PANE_TEMPLMGR:
-		m_fShowPaneTemplMgr = fShow;
-		break;
-	default:
-		return;
-	}
+	std::bitset<32> dw;
+	dw[0] = ps.fIsVisible;
+	dw[1] = ps.fIsActive;
+
+	return dw.to_ulong();
+}
+
+constexpr auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
+{
+	std::bitset<32> dwPS(dw);
+
+	return { dwPS[0] == true, dwPS[1] == true };
 }

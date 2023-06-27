@@ -17,21 +17,21 @@ class CMainFrame final : public CMDIFrameWndEx
 {
 public:
 	int& GetChildFramesCount();
-	void HidePanes();
 	[[nodiscard]] bool IsPaneVisible(UINT uPaneID)const; //Is Pane visible even if pane's window itself is tabbed and hidden atm (not active).
 	[[nodiscard]] bool IsPaneActive(UINT uPaneID)const;  //Is Pane itself visible atm.
-	void OnOpenFirstTab(); //When the first tab is opened.
-	void OnCloseLastTab(); //When the last tab is closed.
+	void OnChildFrameActivate();
+	void OnChildFrameCloseLast(); //When the last child frame is closed.
+	void OnChildFrameFirstOpen(); //When the first child frame is opened.
 	void ShowPane(UINT uPaneID, bool fShow, bool fActivate);
 protected:
-	[[nodiscard]] auto GetHexerView() -> CHexerView*;
 	[[nodiscard]] auto GetHexCtrl() -> HEXCTRL::IHexCtrl*;
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	[[nodiscard]] auto GetHexerView() -> CHexerView*;
+	[[nodiscard]] bool HasChildFrame();
+	void HideAllPanes();
+	afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
 	afx_msg void OnClose();
-	BOOL OnCloseDockingPane(CDockablePane* pWnd)override;
 	afx_msg BOOL OnEraseMDIClientBackground(CDC* pDC)override;
-	afx_msg auto OnTabActivate(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg void OnViewCustomize();
 	afx_msg void OnViewFileProps();
 	afx_msg void OnViewDataInterp();
@@ -47,7 +47,6 @@ private:
 	static auto MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uID, DWORD_PTR dwData) -> LRESULT;
 	static void MDIClientSize(HWND hWnd, WPARAM wParam, LPARAM lParam);
 	inline static CFont m_fontMDIClient;
-	inline static const Utility::HIDPIINFO m_HiDPIInfo { Utility::GetHiDPIInfo() };
 	CMFCToolBar m_wndToolBar;
 	CWnd* m_pWndMBtnCurrDown { };
 	CPaneMainFrame m_paneDataInterp;

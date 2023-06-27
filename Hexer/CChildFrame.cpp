@@ -31,6 +31,11 @@ void CChildFrame::SetHexerView(CHexerView* pView)
 	m_pHexerView = pView;
 }
 
+auto CChildFrame::GetMainFrame()const->CMainFrame*
+{
+	return reinterpret_cast<CMainFrame*>(AfxGetMainWnd());
+}
+
 void CChildFrame::OnClose()
 {
 	m_fClosing = true;
@@ -39,32 +44,37 @@ void CChildFrame::OnClose()
 
 BOOL CChildFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 {
-	++reinterpret_cast<CMainFrame*>(AfxGetMainWnd())->GetChildFramesCount();
+	++GetMainFrame()->GetChildFramesCount();
 	return CMDIChildWndEx::OnCreateClient(lpcs, pContext);
 }
 
 void CChildFrame::OnDestroy()
 {
 	CMDIChildWndEx::OnDestroy();
-	--reinterpret_cast<CMainFrame*>(AfxGetMainWnd())->GetChildFramesCount();
+	--GetMainFrame()->GetChildFramesCount();
 }
 
 void CChildFrame::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd)
 {
 	CMDIChildWndEx::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
 
-	const auto pMainFrame = reinterpret_cast<CMainFrame*>(AfxGetMainWnd());
+	const auto pMainFrame = GetMainFrame();
+
+	if (bActivate) {
+		pMainFrame->OnChildFrameActivate();
+	}
+
 	//If the tab is closing we don't need to UpdateAllViews.
 	//At this moment the Document can already be destroyed in the memory, so GetActiveDocument can point to a bad data.
 	if (!m_fClosing) {
 		//	GetActiveDocument()->UpdateAllViews(nullptr, bActivate == FALSE ? MSG_MDITAB_DISACTIVATE : MSG_MDITAB_ACTIVATE);
 		if (pMainFrame->GetChildFramesCount() == 1) { //Indicates that the first tab is opening now.
-			pMainFrame->OnOpenFirstTab();
+			pMainFrame->OnChildFrameFirstOpen();
 		}
 	}
 	else {
 		if (pMainFrame->GetChildFramesCount() == 1) { //Indicates that the last tab is closing now.
-			pMainFrame->OnCloseLastTab();
+			pMainFrame->OnChildFrameCloseLast();
 		}
 	}
 }

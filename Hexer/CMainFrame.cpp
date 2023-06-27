@@ -20,7 +20,6 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWndEx)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
-	ON_REGISTERED_MESSAGE(AFX_WM_CHANGE_ACTIVE_TAB, &CMainFrame::OnTabActivate)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
 	ON_COMMAND(IDM_VIEW_FILEPROPS, &CMainFrame::OnViewFileProps)
 	ON_COMMAND(IDM_VIEW_DATAINTERP, &CMainFrame::OnViewDataInterp)
@@ -33,13 +32,6 @@ END_MESSAGE_MAP()
 int& CMainFrame::GetChildFramesCount()
 {
 	return m_iChildFrames;
-}
-
-void CMainFrame::HidePanes()
-{
-	m_paneFileProps.ShowPane(FALSE, FALSE, FALSE);
-	m_paneDataInterp.ShowPane(FALSE, FALSE, FALSE);
-	m_paneTemplMgr.ShowPane(FALSE, FALSE, FALSE);
 }
 
 bool CMainFrame::IsPaneActive(UINT uPaneID)const
@@ -70,19 +62,36 @@ bool CMainFrame::IsPaneVisible(UINT uPaneID)const
 	}
 }
 
-void CMainFrame::OnOpenFirstTab()
+void CMainFrame::OnChildFrameActivate()
 {
-	for (auto id : Utility::g_arrPanes) {
-		if (theApp.GetAppSettings().GetShowPane(id)) {
-			ShowPane(id, true, theApp.GetAppSettings().GetPaneActive(id));
+	//The ON_REGISTERED_MESSAGE(AFX_WM_CHANGE_ACTIVE_TAB,...) message does in fact work,
+	//but this message is generated for ANY tab that is being activated in ANY tab-control,
+	//not only in the main CMainFrame tab-control. 
+	//Docking Panes that are combined in a tab group also send this message to the CMainFrame window.
+
+	//Setting Panes' HWND according to the current active ChildFrame.
+	if (HasChildFrame()) {
+		for (auto uPaneID : Utility::g_arrPanes) {
+			if (IsPaneVisible(uPaneID)) {
+				ShowPane(uPaneID, true, IsPaneActive(uPaneID));
+			}
 		}
 	}
 }
 
-void CMainFrame::OnCloseLastTab()
+void CMainFrame::OnChildFrameCloseLast()
 {
 	SavePanesSettings(); //It's called either here or in the OnClose.
-	HidePanes();
+	HideAllPanes(); //To disable panes from showing at the next app's start-up.
+}
+
+void CMainFrame::OnChildFrameFirstOpen()
+{
+	for (auto id : Utility::g_arrPanes) {
+		if (const auto ps = theApp.GetAppSettings().GetPaneStatus(id); ps.fIsVisible) {
+			ShowPane(id, true, ps.fIsActive);
+		}
+	}
 }
 
 void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
@@ -116,7 +125,6 @@ void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 	}
 
 	pPane->ShowPane(fShow, FALSE, fActivate);
-	theApp.GetAppSettings().SetShowPane(uPaneID, fShow);
 }
 
 
@@ -142,9 +150,30 @@ auto CMainFrame::GetHexerView()->CHexerView*
 	return { };
 }
 
-int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
+bool CMainFrame::HasChildFrame()
 {
-	if (CMDIFrameWndEx::OnCreate(lpCreateStruct) == -1)
+	return GetChildFramesCount() > 0;
+}
+
+void CMainFrame::HideAllPanes()
+{
+	m_paneFileProps.ShowPane(FALSE, FALSE, FALSE);
+	m_paneDataInterp.ShowPane(FALSE, FALSE, FALSE);
+	m_paneTemplMgr.ShowPane(FALSE, FALSE, FALSE);
+}
+
+void CMainFrame::OnClose()
+{
+	m_fClosing = true;
+	SavePanesSettings(); //It's called either here or in the OnChildFrameCloseLast.
+	HideAllPanes(); //To disable panes from showing at the next app's start-up.
+
+	CMDIFrameWndEx::OnClose();
+}
+
+int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
+{
+	if (CMDIFrameWndEx::OnCreate(lpcs) == -1)
 		return -1;
 
 	CMDITabInfo mdiTabParams { };
@@ -167,7 +196,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	const auto imgTB = CMFCToolBar::GetImages();    //Toolbar image.
 	const auto sizeImgCurr = imgTB->GetImageSize(); //One button's dimensions.
 	const auto flToolbarScaledFactor = sizeImgCurr.cx / 16.0; //How many times our toolbar is bigger than the standard one.
-	const auto flScale = m_HiDPIInfo.flDPIScale; //Scale factor for HighDPI displays.
+	const auto flScale = Utility::GetHiDPIInfo().flDPIScale; //Scale factor for HighDPI displays.
 	const auto flScaleTB = flScale / flToolbarScaledFactor;
 	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * flScaleTB) + 7,
 		static_cast<int>(sizeImgCurr.cy * flScaleTB) + 7 }; //Size of the toolbar's button.
@@ -198,7 +227,6 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_RIGHT | CBRS_FLOAT_MULTI);
 	m_paneDataInterp.EnableDocking(CBRS_ALIGN_ANY);
 	DockPane(&m_paneDataInterp);
-	m_paneFileProps.AttachToTabWnd(&m_paneDataInterp, DM_SHOW, FALSE);
 
 	//Pane "Template Manager".
 	strStr.LoadStringW(IDC_PANE_TEMPLMGR);
@@ -240,53 +268,27 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 	return TRUE;
 }
 
-void CMainFrame::OnClose()
-{
-	m_fClosing = true;
-	SavePanesSettings(); //It's called either here or in the OnCloseLastTab.
-
-	CMDIFrameWndEx::OnClose();
-}
-
-BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pWnd)
-{
-	CStringW strPane;
-	pWnd->GetWindowTextW(strPane);
-	CStringW strRes;
-	if (strRes.LoadStringW(IDC_PANE_FILEPROPS); strRes == strPane) {
-		theApp.GetAppSettings().SetShowPane(IDC_PANE_FILEPROPS, false);
-	}
-	else if (strRes.LoadStringW(IDC_PANE_DATAINTERP); strRes == strPane) {
-		theApp.GetAppSettings().SetShowPane(IDC_PANE_DATAINTERP, false);
-	}
-	else if (strRes.LoadStringW(IDC_PANE_TEMPLMGR); strRes == strPane) {
-		theApp.GetAppSettings().SetShowPane(IDC_PANE_TEMPLMGR, false);
-	}
-
-	return CMDIFrameWndEx::OnCloseDockingPane(pWnd);
-}
-
 BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/)
 {
 	return TRUE;
 }
 
-auto CMainFrame::OnTabActivate(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
+void CMainFrame::OnUpdateViewFileProps(CCmdUI* pCmdUI)
 {
-	if (m_fClosing) {
-		return S_OK;
-	}
+	pCmdUI->Enable(HasChildFrame());
+	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(IDC_PANE_FILEPROPS) : FALSE);
+}
 
-	//Setting Panes' HWND according to the current active tab.
-	if (GetChildFramesCount() > 0) {
-		for (auto uPaneID : Utility::g_arrPanes) {
-			if (IsPaneVisible(uPaneID)) {
-				ShowPane(uPaneID, true, IsPaneActive(uPaneID));
-			}
-		}
-	}
+void CMainFrame::OnUpdateViewDataInterp(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(HasChildFrame());
+	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(IDC_PANE_DATAINTERP) : FALSE);
+}
 
-	return S_OK;
+void CMainFrame::OnUpdateViewTemplMgr(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(HasChildFrame());
+	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(IDC_PANE_TEMPLMGR) : FALSE);
 }
 
 void CMainFrame::OnViewCustomize()
@@ -309,24 +311,6 @@ void CMainFrame::OnViewDataInterp()
 void CMainFrame::OnViewTemplMgr()
 {
 	ShowPane(IDC_PANE_TEMPLMGR, !IsPaneVisible(IDC_PANE_TEMPLMGR), !IsPaneVisible(IDC_PANE_TEMPLMGR));
-}
-
-void CMainFrame::OnUpdateViewFileProps(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(TRUE);
-	pCmdUI->SetCheck(IsPaneVisible(IDC_PANE_FILEPROPS));
-}
-
-void CMainFrame::OnUpdateViewDataInterp(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(TRUE);
-	pCmdUI->SetCheck(IsPaneVisible(IDC_PANE_DATAINTERP));
-}
-
-void CMainFrame::OnUpdateViewTemplMgr(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(TRUE);
-	pCmdUI->SetCheck(IsPaneVisible(IDC_PANE_TEMPLMGR));
 }
 
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
@@ -395,9 +379,7 @@ void CMainFrame::SavePanesSettings()
 	if (const auto pView = GetHexerView(); pView != nullptr) {
 		auto& refSett = theApp.GetAppSettings();
 		for (auto id : Utility::g_arrPanes) {
-			refSett.SetShowPane(id, IsPaneVisible(id));
-			refSett.SetPaneActive(id, IsPaneActive(id));
-
+			refSett.SetPaneStatus(id, IsPaneVisible(id), IsPaneActive(id));
 			if (const auto optDlg = Utility::PaneIDToEHexWnd(id); optDlg && IsPaneVisible(id)) {
 				refSett.SetPaneData(id, GetHexCtrl()->GetDlgData(*optDlg));
 			}
@@ -427,9 +409,9 @@ auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		pDC->SelectObject(m_fontMDIClient);
 		pDC->SetBkMode(TRANSPARENT);
 		pDC->SetTextColor(RGB(220, 220, 220)); //Shadow color.
-		pDC->DrawTextW(Utility::g_wstrAppName, static_cast<int>(std::size(Utility::g_wstrAppName) - 1), rcShadow, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		pDC->DrawTextW(Utility::GetAppName().data(), static_cast<int>(Utility::GetAppName().size()), rcShadow, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
 		pDC->SetTextColor(RGB(203, 203, 203)); //Text color.
-		pDC->DrawTextW(Utility::g_wstrAppName, static_cast<int>(std::size(Utility::g_wstrAppName) - 1), rcText, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		pDC->DrawTextW(Utility::GetAppName().data(), static_cast<int>(Utility::GetAppName().size()), rcText, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
 	}
 	break;
 	case WM_SIZE:
@@ -448,7 +430,7 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	const auto pDC = CDC::FromHandle(::GetDC(hWnd));
 	const auto iWidthNew = LOWORD(lParam);
 	auto iFontSizeMin = 10;
-	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, m_HiDPIInfo.iLOGPIXELSY, 72) }, .lfPitchAndFamily { FIXED_PITCH },
+	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, Utility::GetHiDPIInfo().iLOGPIXELSY, 72) }, .lfPitchAndFamily { FIXED_PITCH },
 		.lfFaceName { L"Consolas" } };
 
 	m_fontMDIClient.DeleteObject();
@@ -457,10 +439,10 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	while (stSizeText.cx < (iWidthNew - 150)) { //Until the text size is not big enough to fill the window's width.
 		m_fontMDIClient.DeleteObject();
 		iFontSizeMin += 4;
-		lf.lfHeight = -MulDiv(iFontSizeMin, m_HiDPIInfo.iLOGPIXELSY, 72);
+		lf.lfHeight = -MulDiv(iFontSizeMin, Utility::GetHiDPIInfo().iLOGPIXELSY, 72);
 		m_fontMDIClient.CreateFontIndirectW(&lf);
 		pDC->SelectObject(m_fontMDIClient);
-		stSizeText = pDC->GetTextExtent(Utility::g_wstrAppName, static_cast<int>(std::size(Utility::g_wstrAppName) - 1));
+		stSizeText = pDC->GetTextExtent(Utility::GetAppName().data(), static_cast<int>(Utility::GetAppName().size()));
 	}
 	::ReleaseDC(hWnd, pDC->m_hDC);
 	::RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);

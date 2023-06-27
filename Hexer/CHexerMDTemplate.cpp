@@ -21,7 +21,7 @@ auto CHexerMDTemplate::OpenDocumentFile(const Utility::FILEOPEN& fos)->CDocument
 	}
 	ASSERT_VALID(pDocument);
 
-	BOOL bAutoDelete = pDocument->m_bAutoDelete;
+	const auto bAutoDelete = pDocument->m_bAutoDelete;
 	pDocument->m_bAutoDelete = FALSE;   // don't destroy if something goes wrong
 	CFrameWnd* pFrame = CreateNewFrame(pDocument, nullptr);
 	pDocument->m_bAutoDelete = bAutoDelete;
@@ -32,7 +32,7 @@ auto CHexerMDTemplate::OpenDocumentFile(const Utility::FILEOPEN& fos)->CDocument
 	}
 	ASSERT_VALID(pFrame);
 
-	CWaitCursor wait;
+	const CWaitCursor wait;
 	if (!pDocument->OnOpenDocument(fos)) {
 		// user has be alerted to what failed in OnOpenDocument
 		TRACE(traceAppMsg, 0, "CDocument::OnOpenDocument returned FALSE.\n");

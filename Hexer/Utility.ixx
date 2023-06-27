@@ -19,7 +19,7 @@ export namespace Utility
 	constexpr auto HEXER_VERSION_MAJOR = 0;
 	constexpr auto HEXER_VERSION_MINOR = 9;
 	constexpr auto HEXER_VERSION_PATCH = 2;
-	constexpr wchar_t g_wstrAppName[] { L"Hexer" };
+
 	constexpr UINT g_arrPanes[] { IDC_PANE_FILEPROPS, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR };
 
 	[[nodiscard]] constexpr auto PaneIDToEHexWnd(UINT uPaneID) -> std::optional<HEXCTRL::EHexWnd> {
@@ -97,5 +97,13 @@ export namespace Utility
 		}() };
 
 		return ret;
+	}
+
+	[[nodiscard]] auto GetAppName() -> const std::wstring& {
+		static const std::wstring wstrAppName { [] {
+			CStringW str;
+			str.LoadStringW(IDR_HEXER_FRAME);
+			return str; }() };
+		return wstrAppName;
 	}
 }

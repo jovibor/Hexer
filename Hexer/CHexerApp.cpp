@@ -27,37 +27,36 @@ using namespace Utility;
 
 CHexerApp theApp;
 
-class CAboutDlg final : public CDialogEx
+class CDlgAbout final : public CDialogEx
 {
 public:
-	explicit CAboutDlg()noexcept : CDialogEx(IDD_ABOUTBOX) {}
+	explicit CDlgAbout()noexcept : CDialogEx(IDD_ABOUTBOX) {}
 private:
 	BOOL OnInitDialog()override;
 	DECLARE_MESSAGE_MAP();
 };
 
-BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(CDlgAbout, CDialogEx)
 END_MESSAGE_MAP()
 
 #define STR2WIDE(x) L##x
 #define STRWIDER(x) STR2WIDE(x)
 
-BOOL CAboutDlg::OnInitDialog()
+BOOL CDlgAbout::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
 	const auto wstrVerHexer = std::format(L"Hexer hexadecimal editor v{}.{}.{}",
 		Utility::HEXER_VERSION_MAJOR, Utility::HEXER_VERSION_MINOR, Utility::HEXER_VERSION_PATCH);
 	GetDlgItem(IDC_LINK_HEXER)->SetWindowTextW(wstrVerHexer.data());
-
 	const auto wstrVerHexCtrl = std::format(L"HexCtrl, v{}.{}.{}",
 		HEXCTRL::HEXCTRL_VERSION_MAJOR, HEXCTRL::HEXCTRL_VERSION_MINOR, HEXCTRL::HEXCTRL_VERSION_PATCH);
 	GetDlgItem(IDC_LINK_HEXCTRL)->SetWindowTextW(wstrVerHexCtrl.data());
-
 	GetDlgItem(IDC_STATIC_BUILDTIME)->SetWindowTextW(L"Built on: " STRWIDER(__DATE__) L" "  STRWIDER(__TIME__));
 
 	return TRUE;
 }
+
 
 //CHexerApp.
 
@@ -118,10 +117,9 @@ BOOL CHexerApp::InitInstance()
 	CWinAppEx::InitInstance();
 
 	EnableTaskbarInteraction(FALSE);
-	SetRegistryKey(g_wstrAppName);
-	LoadStdProfileSettings(0); //Disable default "Recent File List".
+	SetRegistryKey(Utility::GetAppName().data());
 	InitTooltipManager();
-	m_stAppSettings.LoadSettings(g_wstrAppName);
+	m_stAppSettings.LoadSettings(Utility::GetAppName());
 
 	CMFCToolTipInfo ttParams;
 	ttParams.m_bVislManagerTheme = TRUE;
@@ -164,10 +162,6 @@ BOOL CHexerApp::InitInstance()
 		cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
 	}
 
-	//By default MFC shows all Panes at startup if they were visible on app's close.
-	//We hide panes before ProcessShellCommand() call, to work properly when file opens by HDROP.
-	pMainFrame->HidePanes();
-
 	if (!ProcessShellCommand(cmdInfo)) {
 		return FALSE;
 	}
@@ -180,7 +174,7 @@ BOOL CHexerApp::InitInstance()
 
 int CHexerApp::ExitInstance()
 {
-	m_stAppSettings.SaveSettings(g_wstrAppName);
+	m_stAppSettings.SaveSettings(Utility::GetAppName());
 
 	return CWinAppEx::ExitInstance();
 }
@@ -193,7 +187,7 @@ auto CHexerApp::OpenDocumentFile(const Utility::FILEOPEN& fos)->CDocument*
 
 void CHexerApp::OnAppAbout()
 {
-	CAboutDlg aboutDlg;
+	CDlgAbout aboutDlg;
 	aboutDlg.DoModal();
 }
 

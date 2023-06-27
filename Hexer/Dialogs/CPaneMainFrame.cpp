@@ -17,11 +17,116 @@ IMPLEMENT_SERIAL(CPaneTabbedPane, CTabbedPane, 1)
 
 BEGIN_MESSAGE_MAP(CPaneTabCtrl, CMFCTabCtrl)
 	ON_WM_LBUTTONDBLCLK()
+	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
 void CPaneTabCtrl::OnLButtonDblClk(UINT /*nFlags*/, CPoint /*point*/)
 {
 	//Empty handler for tabs' doubleclicks.
+}
+
+void CPaneTabCtrl::OnMouseMove(UINT nFlags, CPoint point)
+{
+	//This method is overriden to resolve the issue with tabs' dragging described here:
+	//https://developercommunity.visualstudio.com/t/problem-dragging-mdi-tabs-in-a-mfc-application-com/478457
+
+	CWnd::OnMouseMove(nFlags, point);
+
+	const auto iPrevHighlighted = m_iHighlighted;
+
+	const auto bTabCloseButtonHighlighted = m_bTabCloseButtonHighlighted;
+	m_bTabCloseButtonHighlighted = m_rectCloseButton.PtInRect(point);
+
+	if (bTabCloseButtonHighlighted != m_bTabCloseButtonHighlighted) {
+		RedrawWindow(m_rectCloseButton);
+	}
+
+	if (m_iHighlighted >= 0 && m_iPressed < 0 && !m_bReadyToDetach) {
+		CPoint pt = point;
+		ClientToScreen(&pt);
+		const auto pWnd = CWnd::WindowFromPoint(pt);
+		if (pWnd != nullptr && pWnd->GetSafeHwnd() != GetSafeHwnd()) {
+			ReleaseCapture();
+			m_iHighlighted = -1;
+			InvalidateTab(iPrevHighlighted);
+			return;
+		}
+	}
+
+	m_iHighlighted = GetTabFromPoint(point);
+
+	if (m_iPressed >= 0 && m_iHighlighted != m_iPressed) {
+		m_iHighlighted = -1;
+	}
+
+	if (m_iHighlighted != iPrevHighlighted && (m_bHighLightTabs || IsActiveTabCloseButton())) {
+		if (iPrevHighlighted < 0) {
+			if (m_iHighlighted >= 0) {
+				SetCapture();
+			}
+		}
+		else {
+			if (m_iHighlighted < 0 && m_iPressed < 0) {
+				m_bTabCloseButtonHighlighted = FALSE;
+				m_bTabCloseButtonPressed = FALSE;
+
+				if (!m_bReadyToDetach) {
+					ReleaseCapture();
+				}
+			}
+		}
+
+		InvalidateTab(m_iHighlighted);
+		InvalidateTab(iPrevHighlighted);
+	}
+
+	if (m_bReadyToDetach) {
+		const auto nNumTabs = m_iTabsNum; // how many tabs before detch
+
+		// try to rearrange tabs if their number > 1
+		if (IsPtInTabArea(point) && nNumTabs > 1 && m_bEnableTabSwap) {
+			const auto nTabNum = GetTabFromPoint(point);
+
+			if (nTabNum != m_iActiveTab && nTabNum != -1) {
+				const auto nSecondTab = m_iActiveTab;
+				SwapTabs(nTabNum, nSecondTab);
+				RecalcLayout();
+				SetActiveTab(nTabNum);
+				/*
+				int nCurrTabNum = GetTabFromPoint(point);
+				if (nCurrTabNum != nTabNum) {
+					CRect rectTab;
+					GetTabRect(nTabNum, rectTab);
+					CPoint ptCursorNewPos = point;
+
+					ptCursorNewPos.x = rectTab.left + m_nOffsetFromTabLeft;
+
+					ClientToScreen(&ptCursorNewPos);
+					SetCursorPos(ptCursorNewPos.x, ptCursorNewPos.y);
+				}
+				*/
+			}
+			return;
+		}
+
+		if (IsPtInTabArea(point)) {
+			return;
+		}
+
+		const auto bDetachSucceeded = DetachTab(DM_MOUSE);
+
+		if (bDetachSucceeded && nNumTabs <= 2) {
+			// last tab was detached successfully - run out, because the control
+			// has been destroyed
+			return;
+		}
+
+		if (bDetachSucceeded) {
+			m_bReadyToDetach = FALSE;
+		}
+
+		return;
+	}
 }
 
 

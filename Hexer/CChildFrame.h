@@ -6,13 +6,14 @@
 *******************************************************************************/
 #pragma once
 
-class CHexerView;
+class CHexerView; class CMainFrame;
 class CChildFrame final : public CMDIChildWndEx
 {
 public:
 	[[nodiscard]] auto GetHexerView()const->CHexerView*;
 	void SetHexerView(CHexerView* pView);
 private:
+	[[nodiscard]] auto GetMainFrame()const->CMainFrame*;
 	afx_msg void OnClose();
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
 	afx_msg void OnDestroy();

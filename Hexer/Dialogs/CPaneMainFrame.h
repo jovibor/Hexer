@@ -11,6 +11,7 @@
 //Needed to override OnLButtonDblClk message.
 class CPaneTabCtrl final : public CMFCTabCtrl {
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	DECLARE_SERIAL(CPaneTabCtrl);
 	DECLARE_MESSAGE_MAP();
 };

@@ -38,6 +38,7 @@ auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
 
 auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 {
+	//If Pane with HexCtrl's dialog inside.
 	if (const auto optDlg = Utility::PaneIDToEHexWnd(uPaneID); optDlg) {
 		if (!IsPaneAlreadyLaunch(uPaneID)) {
 			SetPaneAlreadyLaunch(uPaneID);
@@ -45,17 +46,16 @@ auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 		}
 		return GetHexCtrl()->GetWindowHandle(*optDlg);
 	}
-	else {
-		switch (uPaneID) {
-		case IDC_PANE_FILEPROPS:
-			if (!IsPaneAlreadyLaunch(uPaneID)) {
-				SetPaneAlreadyLaunch(uPaneID);
-				return CreateGridFileProps();
-			}
-			return m_wndGridFileProps.m_hWnd;
-		default:
-			return { };
+
+	switch (uPaneID) {
+	case IDC_PANE_FILEPROPS:
+		if (!IsPaneAlreadyLaunch(uPaneID)) {
+			SetPaneAlreadyLaunch(uPaneID);
+			return CreateGridFileProps();
 		}
+		return m_wndGridFileProps.m_hWnd;
+	default:
+		return { };
 	}
 }
 

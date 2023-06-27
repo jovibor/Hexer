@@ -10,6 +10,10 @@
 
 class CAppSettings final
 {
+	struct PANESTATUS {
+		bool fIsVisible : 1{};
+		bool fIsActive : 1{};
+	};
 public:
 	CAppSettings() = default;
 	CAppSettings(const CAppSettings&) = delete;
@@ -20,21 +24,18 @@ public:
 	void LoadSettings(std::wstring_view wsvKeyName);
 	void SaveSettings(std::wstring_view wsvKeyName);
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const->std::uint64_t;
-	[[nodiscard]] bool GetPaneActive(UINT uPaneID)const;
-	[[nodiscard]] bool GetShowPane(UINT uPaneID)const;
+	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const->PANESTATUS;
 	[[nodiscard]] auto GetRFL() -> std::vector<std::wstring>&;
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
-	void SetPaneActive(UINT uPaneID, bool fActive);
-	void SetShowPane(UINT uPaneID, bool fShow);
+	void SetPaneStatus(UINT uPaneID, bool fShow, bool fActive);
+	[[nodiscard]] static constexpr auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
+	[[nodiscard]] static constexpr auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 private:
-	std::vector<std::wstring> m_vecRFL;
-	std::uint64_t m_ullPaneDataFileProps { };
-	std::uint64_t m_ullPaneDataTemplMgr { };
-	std::uint64_t m_ullPaneDataDataInterp { };
-	bool m_fShowPaneFileProps { };    //Show "File Properties" pane on the first frame opened?
-	bool m_fShowPaneDataInterp { };   //Show "Data Interpreter" pane on the first frame opened?
-	bool m_fShowPaneTemplMgr { };     //Show "Template Manager" pane on the first frame opened?
-	bool m_fPaneActiveFileProps { };  //Is Pane active "File Properties"?
-	bool m_fPaneActiveDataInterp { }; //Is Pane active "Data Interpreter"?
-	bool m_fPaneActiveTemplMgr { };   //Is Pane active "Template Manager"?
+	std::vector<std::wstring> m_vecRFL;        //Recent File List vector.
+	std::uint64_t m_ullPaneDataFileProps { };  //Pane data for the "File Properties".
+	std::uint64_t m_ullPaneDataDataInterp { }; //Pane data for the "Template Manager".
+	std::uint64_t m_ullPaneDataTemplMgr { };   //Pane data for the "Data Interpreter".
+	PANESTATUS m_stPSFileProps { };            //Pane status for the "File Properties".
+	PANESTATUS m_stPSDataInterp { };           //Pane status for the "Data Interpreter".
+	PANESTATUS m_stPSTemplMgr { };             //Pane status for the "Template Manager".
 };
