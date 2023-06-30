@@ -5,8 +5,8 @@ module;
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
-#include "resource.h"
 #include <SDKDDKVer.h>
+#include "resource.h"
 #include "HexCtrl.h"
 #include <afxwin.h>
 #include <optional>

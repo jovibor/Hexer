@@ -1,13 +1,38 @@
+module;
 /*******************************************************************************
 * Copyright © 2023 Jovibor https://github.com/jovibor/                         *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
-#include "stdafx.h"
-#include "CDlgNewFile.h"
+#include <SDKDDKVer.h>
 #include "StrToNum.h"
 #include "resource.h"
+#include <afxdlgs.h>
+#include <afxdialogex.h>
+#include <string>
+export module DlgNewFile;
+
+import Utility;
+
+export class CDlgNewFile final : public CDialogEx
+{
+public:
+	CDlgNewFile(CWnd* pParent = nullptr);
+	[[nodiscard]] auto GetNewFileInfo() -> Utility::FILEOPEN;
+private:
+	void DoDataExchange(CDataExchange* pDX)override;
+	BOOL OnInitDialog()override;
+	afx_msg void OnBtnBrowse();
+	afx_msg void OnChangeEditPath();
+	DECLARE_MESSAGE_MAP();
+private:
+	Utility::FILEOPEN m_stFOS { };
+	CEdit m_stEditSize;
+	CEdit m_stEditPath;
+	CComboBox m_stComboMeasure;
+	virtual void OnOK();
+};
 
 BEGIN_MESSAGE_MAP(CDlgNewFile, CDialogEx)
 	ON_BN_CLICKED(IDC_NEWFILE_BTN_BROWSE, &CDlgNewFile::OnBtnBrowse)
@@ -22,6 +47,9 @@ auto CDlgNewFile::GetNewFileInfo()->Utility::FILEOPEN
 {
 	return m_stFOS;
 }
+
+
+//Private methods.
 
 void CDlgNewFile::DoDataExchange(CDataExchange* pDX)
 {

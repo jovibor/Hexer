@@ -16,6 +16,9 @@
     <Filter Include="HexCtrl">
       <UniqueIdentifier>{f36aad90-1098-4a42-b0b9-c32da156b6fd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Modules">
+      <UniqueIdentifier>{4bf47b7d-10f1-49ad-973f-9bd56d5ba40c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CHexerApp.h">
@@ -37,9 +40,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CAppSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="dep\HexCtrl\HexCtrl\HexCtrl.h">
@@ -90,38 +90,8 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\HexUtility.h">
       <Filter>HexCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="CHexerDocMgr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CHexerRFL.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CFileLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dialogs\CDlgOpenDevice.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dialogs\CDlgOpenDisk.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dialogs\CDlgOpenPath.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dialogs\CDlgOpenVolume.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dialogs\CPaneMainFrame.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dialogs\CDlgNewFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCodepage.h">
       <Filter>HexCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="CHexerMDTemplate.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -142,12 +112,6 @@
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CAppSettings.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utility.ixx">
-      <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\dep\ListEx\CListEx.cpp">
       <Filter>HexCtrl</Filter>
@@ -191,38 +155,29 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\HexUtility.cpp">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="CHexerDocMgr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CHexerRFL.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CFileLoader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Dialogs\CDlgOpenDevice.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Dialogs\CDlgOpenDisk.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Dialogs\CDlgOpenPath.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Dialogs\CDlgOpenVolume.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Dialogs\CPaneMainFrame.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Dialogs\CDlgNewFile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCodepage.cpp">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="CHexerMDTemplate.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Utility.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialogs\DlgOpenDevice.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="AppSettings.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="FileLoader.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialogs\PaneMainFrame.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialogs\DlgNewFile.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialogs\DlgSettings.ixx">
+      <Filter>Modules</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

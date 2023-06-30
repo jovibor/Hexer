@@ -5,9 +5,10 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #pragma once
-#include "CAppSettings.h"
-#include "CHexerRFL.h"
+#include <string>
+#include <vector>
 import Utility;
+import AppSettings;
 
 class CHexerApp final : public CWinAppEx
 {
@@ -22,13 +23,14 @@ private:
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileNew();
 	afx_msg void OnFileOpenDevice();
+	afx_msg void OnToolsSettings();
 	afx_msg void OnFileRFL(UINT uID);
 	afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFileRFL(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateToolsSettings(CCmdUI* pCmdUI);
 	DECLARE_MESSAGE_MAP();
 private:
 	CAppSettings m_stAppSettings;
-	CHexerRFL    m_stRFL;
 };
 
 extern CHexerApp theApp;

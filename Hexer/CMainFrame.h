@@ -6,10 +6,10 @@
 *******************************************************************************/
 #pragma once
 #include <afxcontrolbars.h>
-#include "CPaneMainFrame.h"
 #include <string>
 #include <vector>
 import Utility;
+import PaneMainFrame;
 
 class CHexerView;
 namespace HEXCTRL { class IHexCtrl; }; //Forward declarations.

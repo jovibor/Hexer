@@ -7,17 +7,15 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "CHexerApp.h"
-#include "CHexerDocMgr.h"
-#include "CHexerMDTemplate.h"
 #include "CMainFrame.h"
 #include "CChildFrame.h"
 #include "CHexerDoc.h"
 #include "CHexerView.h"
-#include "CDlgOpenDevice.h"
-#include "CDlgNewFile.h"
 #include <afxdialogex.h>
 #include <format>
-import Utility;
+import DlgOpenDevice;
+import DlgNewFile;
+import DlgSettings;
 
 using namespace Utility;
 
@@ -26,6 +24,9 @@ using namespace Utility;
 #endif
 
 CHexerApp theApp;
+
+
+//CDlgAbout.
 
 class CDlgAbout final : public CDialogEx
 {
@@ -58,21 +59,216 @@ BOOL CDlgAbout::OnInitDialog()
 }
 
 
+//CHexerMDTemplate.
+
+class CHexerMDTemplate final : public CMultiDocTemplate
+{
+public:
+	CHexerMDTemplate(UINT nIDResource, CRuntimeClass* pDocClass, CRuntimeClass* pFrameClass, CRuntimeClass* pViewClass)
+		: CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass) {}
+	[[nodiscard]] auto OpenDocumentFile(const Utility::FILEOPEN& fos) -> CDocument*;
+};
+
+auto CHexerMDTemplate::OpenDocumentFile(const Utility::FILEOPEN& fos)->CDocument*
+{
+	//This code is copy-pasted from the original CMultiDocTemplate::OpenDocumentFile.
+	//And adapted to work with the FILEOPEN struct.
+
+	auto pDocument = static_cast<CHexerDoc*>(CreateNewDocument());
+	if (pDocument == nullptr) {
+		TRACE(traceAppMsg, 0, "CDocTemplate::CreateNewDocument returned NULL.\n");
+		AfxMessageBox(AFX_IDP_FAILED_TO_CREATE_DOC);
+		return nullptr;
+	}
+	ASSERT_VALID(pDocument);
+
+	const auto bAutoDelete = pDocument->m_bAutoDelete;
+	pDocument->m_bAutoDelete = FALSE;   // don't destroy if something goes wrong
+	CFrameWnd* pFrame = CreateNewFrame(pDocument, nullptr);
+	pDocument->m_bAutoDelete = bAutoDelete;
+	if (pFrame == nullptr) {
+		AfxMessageBox(AFX_IDP_FAILED_TO_CREATE_DOC);
+		delete pDocument;       // explicit delete on error
+		return nullptr;
+	}
+	ASSERT_VALID(pFrame);
+
+	const CWaitCursor wait;
+	if (!pDocument->OnOpenDocument(fos)) {
+		// user has be alerted to what failed in OnOpenDocument
+		TRACE(traceAppMsg, 0, "CDocument::OnOpenDocument returned FALSE.\n");
+		pFrame->DestroyWindow();
+		return nullptr;
+	}
+	pDocument->SetPathName(fos.wstrFilePath.data(), FALSE);
+	pDocument->OnDocumentEvent(CDocument::onAfterOpenDocument);
+
+	InitialUpdateFrame(pFrame, pDocument, TRUE);
+	return pDocument;
+}
+
+
+//CHexerDocMgr.
+
+class CHexerDocMgr final : public CDocManager
+{
+public:
+	auto OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU) -> CDocument* override;
+	auto OpenDocumentFile(const Utility::FILEOPEN& fos) -> CDocument*;
+	DECLARE_DYNCREATE(CHexerDocMgr);
+};
+
+IMPLEMENT_DYNCREATE(CHexerDocMgr, CDocument)
+
+auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU)->CDocument*
+{
+	//This code is copy-pasted from the original CDocManager::OpenDocumentFile.
+	//We need to override this method to remove calls to AtlStrLen, AfxFullPath, AfxResolveShortcut
+	//functions from the original method, because these functions can't handle paths like "\\?\PhysicalDisk".
+	//This method also takes a part in HDROP.
+
+	if (lpszFileName == nullptr) {
+		AfxThrowInvalidArgException();
+	}
+	// find the highest confidence
+	POSITION pos = m_templateList.GetHeadPosition();
+	CDocTemplate::Confidence bestMatch = CDocTemplate::noAttempt;
+	CDocTemplate* pBestTemplate = nullptr;
+	CDocument* pOpenDocument = nullptr;
+
+	while (pos != nullptr) {
+		const auto pTemplate = static_cast<CDocTemplate*>(m_templateList.GetNext(pos));
+		ASSERT_KINDOF(CDocTemplate, pTemplate);
+
+		CDocTemplate::Confidence match;
+		ASSERT(pOpenDocument == nullptr);
+		match = pTemplate->MatchDocType(lpszFileName, pOpenDocument);
+		if (match > bestMatch) {
+			bestMatch = match;
+			pBestTemplate = pTemplate;
+		}
+		if (match == CDocTemplate::yesAlreadyOpen)
+			break;      // stop here
+	}
+
+	if (pOpenDocument != nullptr) {
+		auto posOpenDoc = pOpenDocument->GetFirstViewPosition();
+		if (posOpenDoc != nullptr) {
+			const auto pView = pOpenDocument->GetNextView(posOpenDoc); // get first one
+			ASSERT_VALID(pView);
+			const auto pFrame = pView->GetParentFrame();
+
+			if (pFrame == nullptr) {
+				TRACE(traceAppMsg, 0, "Error: Can not find a frame for document to activate.\n");
+			}
+			else {
+				pFrame->ActivateFrame();
+
+				if (pFrame->GetParent() != nullptr) {
+					if (const auto pAppFrame = static_cast<CFrameWnd*>(AfxGetApp()->m_pMainWnd); pFrame != pAppFrame) {
+						ASSERT_KINDOF(CFrameWnd, pAppFrame);
+						pAppFrame->ActivateFrame();
+					}
+				}
+			}
+		}
+		else {
+			TRACE(traceAppMsg, 0, "Error: Can not find a view for document to activate.\n");
+		}
+
+		return pOpenDocument;
+	}
+
+	if (pBestTemplate == nullptr) {
+		AfxMessageBox(AFX_IDP_FAILED_TO_OPEN_DOC);
+		return nullptr;
+	}
+
+	return pBestTemplate->OpenDocumentFile(lpszFileName, bAddToMRU, TRUE);
+}
+
+auto CHexerDocMgr::OpenDocumentFile(const Utility::FILEOPEN& fos)->CDocument*
+{
+	//This code is copy-pasted from the original CDocManager::OpenDocumentFile.
+	//We need to override this method to remove calls to AtlStrLen, AfxFullPath, AfxResolveShortcut
+	//functions from the original method, because these functions can't handle paths like "\\?\PhysicalDisk".
+	//Also this method is adapted to work with the FILEOPEN struct.
+
+	// find the highest confidence
+	POSITION pos = m_templateList.GetHeadPosition();
+	CDocTemplate::Confidence bestMatch = CDocTemplate::noAttempt;
+	CHexerMDTemplate* pBestTemplate = nullptr;
+	CDocument* pOpenDocument = nullptr;
+
+	while (pos != nullptr) {
+		auto pTemplate = static_cast<CHexerMDTemplate*>(m_templateList.GetNext(pos));
+		ASSERT_KINDOF(CDocTemplate, pTemplate);
+
+		CDocTemplate::Confidence match;
+		ASSERT(pOpenDocument == nullptr);
+		match = pTemplate->MatchDocType(fos.wstrFilePath.data(), pOpenDocument);
+		if (match > bestMatch) {
+			bestMatch = match;
+			pBestTemplate = pTemplate;
+		}
+		if (match == CDocTemplate::yesAlreadyOpen)
+			break;      // stop here
+	}
+
+	if (pOpenDocument != nullptr) {
+		auto posOpenDoc = pOpenDocument->GetFirstViewPosition();
+		if (posOpenDoc != nullptr) {
+			const auto pView = pOpenDocument->GetNextView(posOpenDoc); // get first one
+			ASSERT_VALID(pView);
+			const auto pFrame = pView->GetParentFrame();
+
+			if (pFrame == nullptr) {
+				TRACE(traceAppMsg, 0, "Error: Can not find a frame for document to activate.\n");
+			}
+			else {
+				pFrame->ActivateFrame();
+
+				if (pFrame->GetParent() != nullptr) {
+					if (const auto pAppFrame = static_cast<CFrameWnd*>(AfxGetApp()->m_pMainWnd); pFrame != pAppFrame) {
+						ASSERT_KINDOF(CFrameWnd, pAppFrame);
+						pAppFrame->ActivateFrame();
+					}
+				}
+			}
+		}
+		else {
+			TRACE(traceAppMsg, 0, "Error: Can not find a view for document to activate.\n");
+		}
+
+		return pOpenDocument;
+	}
+
+	if (pBestTemplate == nullptr) {
+		AfxMessageBox(AFX_IDP_FAILED_TO_OPEN_DOC);
+		return nullptr;
+	}
+
+	return pBestTemplate->OpenDocumentFile(fos);
+}
+
+
 //CHexerApp.
 
 BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
 	ON_COMMAND(ID_FILE_NEW, &CHexerApp::OnFileNew)
 	ON_COMMAND(ID_FILE_OPEN, &CHexerApp::OnFileOpen)
-	ON_COMMAND(IDM_FILE_OPENDEVICE, &CHexerApp::OnFileOpenDevice)
 	ON_COMMAND(ID_APP_ABOUT, &CHexerApp::OnAppAbout)
+	ON_COMMAND(IDM_FILE_OPENDEVICE, &CHexerApp::OnFileOpenDevice)
+	ON_COMMAND(IDM_TOOLS_SETTINGS, &CHexerApp::OnToolsSettings)
 	ON_COMMAND_RANGE(IDM_FILE_RFL00, IDM_FILE_RFL19, &CHexerApp::OnFileRFL)
 	ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CHexerApp::OnUpdateFileNew)
+	ON_UPDATE_COMMAND_UI(IDM_TOOLS_SETTINGS, &CHexerApp::OnUpdateToolsSettings)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_FILE_RFL00, IDM_FILE_RFL19, &CHexerApp::OnUpdateFileRFL)
 END_MESSAGE_MAP()
 
 void CHexerApp::AddToRFL(std::wstring_view wsvPath)
 {
-	m_stRFL.AddToRFL(wsvPath);
+	GetAppSettings().RFLAddToList(wsvPath);
 }
 
 auto CHexerApp::GetAppSettings()->CAppSettings&
@@ -119,7 +315,6 @@ BOOL CHexerApp::InitInstance()
 	EnableTaskbarInteraction(FALSE);
 	SetRegistryKey(Utility::GetAppName().data());
 	InitTooltipManager();
-	m_stAppSettings.LoadSettings(Utility::GetAppName());
 
 	CMFCToolTipInfo ttParams;
 	ttParams.m_bVislManagerTheme = TRUE;
@@ -146,7 +341,8 @@ BOOL CHexerApp::InitInstance()
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
 	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Setting the icon for the "Open Device..." menu.
 	const auto pRFSubMenu = pFileMenu->GetSubMenu(3); //"Recent Files" sub-menu.
-	m_stRFL.Initialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk, &m_stAppSettings.GetRFL());
+	GetAppSettings().RFLInitialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk);
+	GetAppSettings().LoadSettings(Utility::GetAppName());
 	DrawMenuBar(pMainFrame->m_hWnd);
 
 	//For Drag'n Drop to work, even in elevated mode.
@@ -174,7 +370,7 @@ BOOL CHexerApp::InitInstance()
 
 int CHexerApp::ExitInstance()
 {
-	m_stAppSettings.SaveSettings(Utility::GetAppName());
+	GetAppSettings().SaveSettings(Utility::GetAppName());
 
 	return CWinAppEx::ExitInstance();
 }
@@ -207,9 +403,15 @@ void CHexerApp::OnFileOpenDevice()
 	}
 }
 
+void CHexerApp::OnToolsSettings()
+{
+	CDlgSettings dlg;
+	dlg.DoModal();
+}
+
 void CHexerApp::OnFileRFL(UINT uID)
 {
-	OpenDocumentFile({ .wstrFilePath { m_stRFL.GetPathFromRFL(uID) }, .fNewFile{ false } });
+	OpenDocumentFile({ .wstrFilePath { GetAppSettings().RFLGetPathFromID(uID) }, .fNewFile{ false } });
 }
 
 void CHexerApp::OnUpdateFileNew(CCmdUI* pCmdUI)
@@ -220,4 +422,9 @@ void CHexerApp::OnUpdateFileNew(CCmdUI* pCmdUI)
 void CHexerApp::OnUpdateFileRFL(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(TRUE);
+}
+
+void CHexerApp::OnUpdateToolsSettings(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(FALSE);
 }

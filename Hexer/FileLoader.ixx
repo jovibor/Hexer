@@ -1,13 +1,87 @@
-#include "stdafx.h"
-#include "CFileLoader.h"
+module;
+/*******************************************************************************
+* Copyright © 2023 Jovibor https://github.com/jovibor/                         *
+* Hexer is a Hexadecimal Editor for Windows platform.                          *
+* Official git repository: https://github.com/jovibor/Hexer/                   *
+* This software is available under "The Hexer License", see the LICENSE file.  *
+*******************************************************************************/
+#include <SDKDDKVer.h>
+#include "HexCtrl.h"
 #include "winioctl.h"
 #include <cassert>
 #include <filesystem>
 #include <format>
+#include <memory>
+export module FileLoader;
+
+import Utility;
+
+export class CFileLoader : public HEXCTRL::IHexVirtData
+{
+public:
+	~CFileLoader();
+	void CloseFile();
+	[[nodiscard]] auto GetCacheSize()const->DWORD;
+	[[nodiscard]] auto GetFileSize()const->std::uint64_t;
+	[[nodiscard]] auto GetFileData()const->std::byte*;
+	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
+	[[nodiscard]] bool IsOpenedVirtual()const;
+	[[nodiscard]] bool IsMutable()const;
+	[[nodiscard]] bool OpenFile(const Utility::FILEOPEN& fos);
+private:
+	void FlushData();
+	[[nodiscard]] bool IsModified()const;
+	void OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)override;
+	void OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)override;
+	[[nodiscard]] bool OpenVirtual();
+	void PrintLastError(std::wstring_view wsvSource)const;
+	[[nodiscard]] auto ReadData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
+private:
+	static constexpr auto m_uBuffSize { 1024UL * 512UL }; //512KB cache buffer size.
+	std::unique_ptr < std::byte[], decltype([](std::byte* p) { _aligned_free(p); }) > m_upCache { };
+	std::wstring m_wstrPath; //File path to open.
+	HANDLE m_hFile { };      //Returned by CreateFileW.
+	HANDLE m_hMapObject { }; //Returned by CreateFileMappingW.
+	LPVOID m_lpBase { };     //Returned by MapViewOfFile.
+	LARGE_INTEGER m_stFileSize { };
+	std::uint64_t m_ullOffsetCurr { }; //Offset of the current data that is in the buffer.
+	std::uint64_t m_ullSizeCurr { };   //Size of the current data that is in the buffer.
+	DWORD m_dwAlignment { };    //An alignment, the offset and the size must be aligned on, for the ReadFile.
+	bool m_fWritable { false }; //Is file opened as RW or RO?
+	bool m_fVirtual { false };
+	bool m_fModified { false }; //File was modified.
+};
 
 CFileLoader::~CFileLoader()
 {
 	CloseFile();
+}
+
+void CFileLoader::CloseFile()
+{
+	if (m_hFile != nullptr) {
+		if (IsOpenedVirtual()) {
+			FlushData();
+		}
+
+		FlushViewOfFile(m_lpBase, 0);
+		UnmapViewOfFile(m_lpBase);
+		CloseHandle(m_hMapObject);
+		CloseHandle(m_hFile);
+	}
+
+	m_upCache.reset();
+	m_wstrPath.clear();
+	m_hFile = nullptr;
+	m_hMapObject = nullptr;
+	m_lpBase = nullptr;
+	m_stFileSize = { };
+	m_ullOffsetCurr = 0;
+	m_ullSizeCurr = 0;
+	m_dwAlignment = 0;
+	m_fWritable = false;
+	m_fVirtual = false;
+	m_fModified = false;
 }
 
 auto CFileLoader::GetCacheSize()const->DWORD
@@ -99,35 +173,25 @@ bool CFileLoader::OpenFile(const Utility::FILEOPEN& fos)
 	return true;
 }
 
-void CFileLoader::CloseFile()
-{
-	if (m_hFile != nullptr) {
-		if (IsOpenedVirtual()) {
-			FlushData();
-		}
-
-		FlushViewOfFile(m_lpBase, 0);
-		UnmapViewOfFile(m_lpBase);
-		CloseHandle(m_hMapObject);
-		CloseHandle(m_hFile);
-	}
-
-	m_upCache.reset();
-	m_wstrPath.clear();
-	m_hFile = nullptr;
-	m_hMapObject = nullptr;
-	m_lpBase = nullptr;
-	m_stFileSize = { };
-	m_ullOffsetCurr = 0;
-	m_ullSizeCurr = 0;
-	m_dwAlignment = 0;
-	m_fWritable = false;
-	m_fVirtual = false;
-	m_fModified = false;
-}
-
 
 //Private methods.
+
+void CFileLoader::FlushData()
+{
+	if (!IsModified())
+		return;
+
+	OVERLAPPED ol { };
+	ol.Offset = LODWORD(m_ullOffsetCurr);
+	ol.OffsetHigh = HIDWORD(m_ullOffsetCurr);
+	DWORD dwBytesWritten { };
+
+	if (WriteFile(m_hFile, m_upCache.get(), static_cast<DWORD>(m_ullSizeCurr), &dwBytesWritten, &ol) == FALSE) {
+		PrintLastError(L"WriteFile");
+	}
+
+	m_fModified = false;
+}
 
 bool CFileLoader::IsModified()const
 {
@@ -180,6 +244,16 @@ bool CFileLoader::OpenVirtual()
 	return true;
 }
 
+void CFileLoader::PrintLastError(std::wstring_view wsvSource)const
+{
+	const auto dwError = GetLastError();
+	wchar_t buffErr[MAX_PATH];
+	FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, nullptr);
+	const auto wstrMsg = std::format(L"{} failed: 0x{:08X}\r\n{}", wsvSource, dwError, buffErr);
+	::MessageBoxW(nullptr, wstrMsg.data(), m_wstrPath.data(), MB_ICONERROR);
+}
+
 auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXCTRL::SpanByte
 {
 	assert(ullOffset + ullSize <= static_cast<std::uint64_t>(m_stFileSize.QuadPart));
@@ -212,31 +286,4 @@ auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXC
 	m_ullSizeCurr = ullSizeAligned;
 
 	return { m_upCache.get() + ullOffsetRemainder, ullSizeAligned - ullOffsetRemainder };
-}
-
-void CFileLoader::FlushData()
-{
-	if (!IsModified())
-		return;
-
-	OVERLAPPED ol { };
-	ol.Offset = LODWORD(m_ullOffsetCurr);
-	ol.OffsetHigh = HIDWORD(m_ullOffsetCurr);
-	DWORD dwBytesWritten { };
-
-	if (WriteFile(m_hFile, m_upCache.get(), static_cast<DWORD>(m_ullSizeCurr), &dwBytesWritten, &ol) == FALSE) {
-		PrintLastError(L"WriteFile");
-	}
-
-	m_fModified = false;
-}
-
-void CFileLoader::PrintLastError(std::wstring_view wsvSource)const
-{
-	const auto dwError = GetLastError();
-	wchar_t buffErr[MAX_PATH];
-	FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, nullptr);
-	const auto wstrMsg = std::format(L"{} failed: 0x{:08X}\r\n{}", wsvSource, dwError, buffErr);
-	::MessageBoxW(nullptr, wstrMsg.data(), m_wstrPath.data(), MB_ICONERROR);
 }

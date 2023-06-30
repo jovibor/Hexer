@@ -117,13 +117,18 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="CAppSettings.h" />
+    <ClCompile Include="AppSettings.ixx">
+      <FileType>Document</FileType>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClInclude Include="CChildFrame.h" />
-    <ClInclude Include="CFileLoader.h" />
+    <ClCompile Include="FileLoader.ixx">
+      <FileType>Document</FileType>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClInclude Include="CHexerDoc.h" />
-    <ClInclude Include="CHexerDocMgr.h" />
-    <ClInclude Include="CHexerMDTemplate.h" />
-    <ClInclude Include="CHexerRFL.h" />
     <ClInclude Include="CHexerView.h" />
     <ClInclude Include="CMainFrame.h" />
     <ClInclude Include="CHexerApp.h" />
@@ -144,23 +149,32 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\HexUtility.h" />
-    <ClInclude Include="Dialogs\CDlgNewFile.h" />
-    <ClInclude Include="Dialogs\CDlgOpenDevice.h" />
-    <ClInclude Include="Dialogs\CDlgOpenDisk.h" />
-    <ClInclude Include="Dialogs\CDlgOpenPath.h" />
-    <ClInclude Include="Dialogs\CDlgOpenVolume.h" />
-    <ClInclude Include="Dialogs\CPaneMainFrame.h" />
+    <ClCompile Include="Dialogs\DlgNewFile.ixx">
+      <FileType>Document</FileType>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Dialogs\DlgOpenDevice.ixx">
+      <FileType>Document</FileType>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Dialogs\DlgSettings.ixx">
+      <FileType>Document</FileType>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Dialogs\PaneMainFrame.ixx">
+      <FileType>Document</FileType>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CAppSettings.cpp" />
     <ClCompile Include="CChildFrame.cpp" />
-    <ClCompile Include="CFileLoader.cpp" />
     <ClCompile Include="CHexerDoc.cpp" />
-    <ClCompile Include="CHexerDocMgr.cpp" />
-    <ClCompile Include="CHexerMDTemplate.cpp" />
-    <ClCompile Include="CHexerRFL.cpp" />
     <ClCompile Include="CHexerView.cpp" />
     <ClCompile Include="CMainFrame.cpp" />
     <ClCompile Include="CHexerApp.cpp" />
@@ -179,12 +193,6 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\HexUtility.cpp" />
-    <ClCompile Include="Dialogs\CDlgNewFile.cpp" />
-    <ClCompile Include="Dialogs\CDlgOpenDevice.cpp" />
-    <ClCompile Include="Dialogs\CDlgOpenDisk.cpp" />
-    <ClCompile Include="Dialogs\CDlgOpenPath.cpp" />
-    <ClCompile Include="Dialogs\CDlgOpenVolume.cpp" />
-    <ClCompile Include="Dialogs\CPaneMainFrame.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

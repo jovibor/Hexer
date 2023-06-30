@@ -1,25 +1,32 @@
+module;
 /*******************************************************************************
 * Copyright © 2023 Jovibor https://github.com/jovibor/                         *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
-#pragma once
+#include <SDKDDKVer.h>
+#include "resource.h"
 #include <afxdialogex.h>
-#include <string>
-#include <vector>
+export module DlgSettings;
 
-class CDlgOpenPath final : public CDialogEx
+export class CDlgSettings : public CDialogEx
 {
 public:
-	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
-protected:
-	void DoDataExchange(CDataExchange* pDX)override;
-	void OnOK()override;
-	void OnCancel()override;
-	void OnComboPathEdit();
-	DECLARE_MESSAGE_MAP();
+	CDlgSettings(CWnd* pParent = nullptr);
 private:
-	CComboBox m_stComboPath;
-	std::vector<std::wstring> m_vecPaths; //Paths to open.
+	void DoDataExchange(CDataExchange* pDX)override;
+	DECLARE_MESSAGE_MAP();
 };
+
+BEGIN_MESSAGE_MAP(CDlgSettings, CDialogEx)
+END_MESSAGE_MAP()
+
+CDlgSettings::CDlgSettings(CWnd* pParent) : CDialogEx(IDD_SETTINGS, pParent)
+{
+}
+
+void CDlgSettings::DoDataExchange(CDataExchange* pDX)
+{
+	CDialogEx::DoDataExchange(pDX);
+}

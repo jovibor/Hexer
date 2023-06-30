@@ -1,5 +1,6 @@
 ## Hexer
-Fast, fully-featured, multi-tab hexadecimal editor.
+Fast, fully-featured, multi-tab hexadecimal editor based on the [HexCtrl](https://github.com/jovibor/HexCtrl).
+
 ![](docs/HexerMainWnd.jpg)
 
 ## Features 

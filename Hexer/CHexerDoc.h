@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <string>
 #include "HexCtrl.h"
-#include "CFileLoader.h"
+import FileLoader;
 
 class CHexerDoc final : public CDocument
 {
