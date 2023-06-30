@@ -26,7 +26,7 @@ class CAppSettingsRFL final //Recent File List.
 public:
 	CAppSettingsRFL() = default;
 	void Initialize(HMENU hMenu, int iMenuFirstID, HBITMAP hBMPDisk, int iMaxEntry);
-	void AddToRFL(std::wstring_view wsvPath);
+	void AddToRFL(std::wstring_view wsvPath, bool fBeginning);
 	void ClearRFL();
 	[[nodiscard]] auto GetPathFromRFL(UINT uID)const->std::wstring;
 	[[nodiscard]] auto GetRFL()const->const std::vector<std::wstring>&;
@@ -57,14 +57,21 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk
 	RebuildRFLMenu();
 }
 
-void CAppSettingsRFL::AddToRFL(std::wstring_view wsvPath)
+void CAppSettingsRFL::AddToRFL(std::wstring_view wsvPath, bool fBeginning)
 {
 	assert(m_fInit);
 	if (!m_fInit)
 		return;
 
 	std::erase(m_vecRFL, wsvPath); //Remove any duplicates.
-	m_vecRFL.emplace(m_vecRFL.begin(), wsvPath);
+
+	if (fBeginning) {
+		m_vecRFL.emplace(m_vecRFL.begin(), wsvPath);
+	}
+	else {
+		m_vecRFL.emplace_back(wsvPath);
+	}
+
 	if (m_vecRFL.size() > m_iMaxEntry) {
 		m_vecRFL.resize(m_iMaxEntry);
 	}
@@ -143,7 +150,7 @@ public:
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const->std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const->PANESTATUS;
 	void LoadSettings(std::wstring_view wsvKeyName);
-	void RFLAddToList(std::wstring_view wsvPath);
+	void RFLAddToList(std::wstring_view wsvPath, bool fBeginning = true);
 	void RFLClear();
 	[[nodiscard]] auto RFLGetPathFromID(UINT uID)const->std::wstring;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry = 20);
@@ -227,22 +234,22 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		DWORD dwIndex = 0;
 		RFLClear();
 		while (iCode != ERROR_NO_MORE_ITEMS) {
-			DWORD dwNameSize { 32 };
+			DWORD dwNameSize { sizeof(buffName) / sizeof(wchar_t) };
 			DWORD dwDataType { };
 			DWORD dwDataSize { MAX_PATH * sizeof(wchar_t) };
-			iCode = RegEnumValueW(regRFL.m_hKey, dwIndex, buffName, &dwNameSize, nullptr, &dwDataType,
+			iCode = RegEnumValueW(regRFL, dwIndex, buffName, &dwNameSize, nullptr, &dwDataType,
 				reinterpret_cast<LPBYTE>(&buffData), &dwDataSize);
 			if (iCode == ERROR_SUCCESS && dwDataType == REG_SZ) {
-				RFLAddToList(buffData);
+				RFLAddToList(buffData, false);
 			}
 			++dwIndex;
 		}
 	}
 }
 
-void CAppSettings::RFLAddToList(std::wstring_view wsvPath)
+void CAppSettings::RFLAddToList(std::wstring_view wsvPath, bool fBeginning)
 {
-	m_stRFL.AddToRFL(wsvPath);
+	m_stRFL.AddToRFL(wsvPath, fBeginning);
 }
 
 void CAppSettings::RFLClear()
