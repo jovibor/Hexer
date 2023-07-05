@@ -18,6 +18,11 @@
 #define new DEBUG_NEW
 #endif
 
+//CHexerPropGridCtrl.
+BEGIN_MESSAGE_MAP(CHexerPropGridCtrl, CMFCPropertyGridCtrl)
+	ON_WM_SIZE()
+END_MESSAGE_MAP()
+
 IMPLEMENT_DYNCREATE(CHexerView, CView)
 
 BEGIN_MESSAGE_MAP(CHexerView, CView)
@@ -53,7 +58,7 @@ auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 			SetPaneAlreadyLaunch(uPaneID);
 			return CreateGridFileProps();
 		}
-		return m_wndGridFileProps.m_hWnd;
+		return m_stGridFileProps;
 	default:
 		return { };
 	}
@@ -64,57 +69,56 @@ auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 
 auto CHexerView::CreateGridFileProps()->HWND
 {
-	m_wndGridFileProps.Create(WS_VISIBLE | WS_CHILD, { }, this, 1);
-	m_wndGridFileProps.SetVSDotNetLook();
-	m_wndGridFileProps.EnableHeaderCtrl(TRUE, L"Property", L"Value");
+	m_stGridFileProps.Create(WS_VISIBLE | WS_CHILD, RECT { 0, 0, 100, 100 }, this, IDC_GRID_FILEPROPS);
+	m_stGridFileProps.SetVSDotNetLook();
+	m_stGridFileProps.EnableHeaderCtrl(TRUE, L"Property", L"Value");
+	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 80 };
+	m_stGridFileProps.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
 
 	//Set new bigger font to the property.
-	const auto pFont = m_wndGridFileProps.GetFont();
+	const auto pFont = m_stGridFileProps.GetFont();
 	LOGFONTW lf { };
 	pFont->GetLogFont(&lf);
 	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Utility::GetHiDPIInfo().iLOGPIXELSY) + 2;
 	lf.lfHeight = -MulDiv(lFontSize, Utility::GetHiDPIInfo().iLOGPIXELSY, 72);
 	m_fntFilePropsGrid.CreateFontIndirectW(&lf);
-	m_wndGridFileProps.SetFont(&m_fntFilePropsGrid);
+	m_stGridFileProps.SetFont(&m_fntFilePropsGrid);
 
 	using enum EPropName;
 	const auto pFilePath = new CMFCPropertyGridProperty(L"File path:", L"");
 	pFilePath->SetData(static_cast<DWORD_PTR>(FILE_PATH));
 	pFilePath->AllowEdit(FALSE);
 	m_vecPropsFileProps.emplace_back(pFilePath);
-	m_wndGridFileProps.AddProperty(pFilePath);
+	m_stGridFileProps.AddProperty(pFilePath);
 
 	const auto pFileName = new CMFCPropertyGridProperty(L"File name:", L"");
 	pFileName->SetData(static_cast<DWORD_PTR>(FILE_NAME));
 	pFileName->AllowEdit(FALSE);
 	m_vecPropsFileProps.emplace_back(pFileName);
-	m_wndGridFileProps.AddProperty(pFileName);
+	m_stGridFileProps.AddProperty(pFileName);
 
 	const auto pFileSize = new CMFCPropertyGridProperty(L"File size:", L"");
 	pFileSize->SetData(static_cast<DWORD_PTR>(FILE_SIZE));
 	pFileSize->AllowEdit(FALSE);
 	m_vecPropsFileProps.emplace_back(pFileSize);
-	m_wndGridFileProps.AddProperty(pFileSize);
+	m_stGridFileProps.AddProperty(pFileSize);
 
 	const auto pPageSize = new CMFCPropertyGridProperty(L"Page size:", L"");
 	pPageSize->SetData(static_cast<DWORD_PTR>(PAGE_SIZE));
 	pPageSize->AllowEdit(FALSE);
 	m_vecPropsFileProps.emplace_back(pPageSize);
-	m_wndGridFileProps.AddProperty(pPageSize);
+	m_stGridFileProps.AddProperty(pPageSize);
 	pPageSize->Show(FALSE);
 
 	const auto pIsWritable = new CMFCPropertyGridProperty(L"Writable:", L"");
 	pIsWritable->SetData(static_cast<DWORD_PTR>(IS_MUTABLE));
 	pIsWritable->AllowEdit(FALSE);
 	m_vecPropsFileProps.emplace_back(pIsWritable);
-	m_wndGridFileProps.AddProperty(pIsWritable);
+	m_stGridFileProps.AddProperty(pIsWritable);
 
 	UpdateGridFileProps(); //Set initial values.
 
-	return m_wndGridFileProps.m_hWnd;
-
-	//HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 80 };
-	//m_wndProperty.GetHeaderCtrl().SetItem(0, &hdPropGrid);
+	return m_stGridFileProps;
 }
 
 auto CHexerView::GetMainFrame()const->CMainFrame*

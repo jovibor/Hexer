@@ -397,6 +397,11 @@ BEGIN
     IDC_PANE_TEMPLMGR       "Template Manager"
 END
 
+STRINGTABLE
+BEGIN
+    AFX_IDS_APP_TITLE       "Hexer"
+END
+
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 

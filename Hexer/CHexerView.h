@@ -2,6 +2,16 @@
 #include "HexCtrl.h"
 import Utility;
 
+class CHexerPropGridCtrl final : public CMFCPropertyGridCtrl
+{
+private:
+	void OnSize(UINT /*f*/, int /*cx*/, int /*cy*/) {
+		EndEditItem();
+		AdjustLayout();
+	}
+	DECLARE_MESSAGE_MAP();
+};
+
 class CMainFrame;
 class CChildFrame;
 class CHexerDoc;
@@ -39,7 +49,7 @@ private:
 	enum class EPropName : std::uint8_t {
 		FILE_PATH = 0x1, FILE_NAME, FILE_SIZE, PAGE_SIZE, IS_MUTABLE
 	};
-	CMFCPropertyGridCtrl m_wndGridFileProps;
+	CHexerPropGridCtrl m_stGridFileProps;
 	std::vector<CMFCPropertyGridProperty*> m_vecPropsFileProps;
 	CFont m_fntFilePropsGrid;
 };

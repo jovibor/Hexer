@@ -29,12 +29,15 @@
 #define IDC_PANE_TEMPLMGR               124
 #define IDC_HEXCTRL_MAIN                125
 #define IDC_SETTINGS_TAB                126
+#define IDC_GRID_FILEPROPS              127
 #define IDM_VIEW_FILEPROPS              32771
 #define IDM_VIEW_DATAINTERP             32772
 #define IDM_EDIT_EDITMODE               32773
 #define IDM_TOOLBAR_CUSTOMIZE           32774
 #define IDM_TOOLS_OPTIONS               32775
 #define IDM_FILE_OPENDEVICE             32776
+#define IDM_VIEW_TEMPLMGR               32777
+#define IDM_TOOLS_SETTINGS              32778
 #define IDM_FILE_RFL00                  32780
 #define IDM_FILE_RFL01                  32781
 #define IDM_FILE_RFL02                  32782
@@ -55,16 +58,14 @@
 #define IDM_FILE_RFL17                  32797
 #define IDM_FILE_RFL18                  32798
 #define IDM_FILE_RFL19                  32799
-#define IDM_VIEW_TEMPLMGR               32801
-#define IDM_TOOLS_SETTINGS              32802
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        127
-#define _APS_NEXT_COMMAND_VALUE         32803
-#define _APS_NEXT_CONTROL_VALUE         126
-#define _APS_NEXT_SYMED_VALUE           125
+#define _APS_NEXT_RESOURCE_VALUE        128
+#define _APS_NEXT_COMMAND_VALUE         32800
+#define _APS_NEXT_CONTROL_VALUE         128
+#define _APS_NEXT_SYMED_VALUE           128
 #endif
 #endif
