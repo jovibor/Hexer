@@ -96,7 +96,7 @@ void CMainFrame::OnChildFrameFirstOpen()
 
 void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 {
-	CPaneMainFrame* pPane { };
+	CHexerDockablePane* pPane { };
 	switch (uPaneID) {
 	case IDC_PANE_FILEPROPS:
 		pPane = &m_paneFileProps;
@@ -187,6 +187,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	mdiTabParams.m_nTabBorderSize = 0;
 	EnableMDITabbedGroups(TRUE, mdiTabParams);
 	EnableDocking(CBRS_ALIGN_ANY);
+	CPaneDivider::m_pSliderRTC = RUNTIME_CLASS(CHexerPaneDivider);
 
 	m_wndToolBar.CreateEx(this, TBSTYLE_FLAT,
 		WS_CHILD | WS_VISIBLE | CBRS_TOP | CBRS_GRIPPER | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC);

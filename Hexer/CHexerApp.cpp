@@ -47,10 +47,10 @@ BOOL CDlgAbout::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	const auto wstrVerHexer = std::format(L"Hexer hexadecimal editor v{}.{}.{}",
+	const auto wstrVerHexer = std::format(L"Hexer Hexadecimal Editor v{}.{}.{}",
 		Utility::HEXER_VERSION_MAJOR, Utility::HEXER_VERSION_MINOR, Utility::HEXER_VERSION_PATCH);
 	GetDlgItem(IDC_LINK_HEXER)->SetWindowTextW(wstrVerHexer.data());
-	const auto wstrVerHexCtrl = std::format(L"HexCtrl, v{}.{}.{}",
+	const auto wstrVerHexCtrl = std::format(L"HexCtrl v{}.{}.{}",
 		HEXCTRL::HEXCTRL_VERSION_MAJOR, HEXCTRL::HEXCTRL_VERSION_MINOR, HEXCTRL::HEXCTRL_VERSION_PATCH);
 	GetDlgItem(IDC_LINK_HEXCTRL)->SetWindowTextW(wstrVerHexCtrl.data());
 	GetDlgItem(IDC_STATIC_BUILDTIME)->SetWindowTextW(L"Built on: " STRWIDER(__DATE__) L" "  STRWIDER(__TIME__));

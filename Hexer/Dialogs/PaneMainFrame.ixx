@@ -11,61 +11,54 @@ module;
 export module PaneMainFrame;
 
 
+//CHexerPaneDivider.
+export class CHexerPaneDivider final : public CPaneDivider {
+	afx_msg void OnMouseMove(UINT nFlags, CPoint pt);
+	DECLARE_SERIAL(CHexerPaneDivider);
+	DECLARE_MESSAGE_MAP();
+};
+
+IMPLEMENT_SERIAL(CHexerPaneDivider, CPaneDivider, 1)
+
+BEGIN_MESSAGE_MAP(CHexerPaneDivider, CPaneDivider)
+	ON_WM_MOUSEMOVE()
+END_MESSAGE_MAP()
+
+void CHexerPaneDivider::OnMouseMove(UINT nFlags, CPoint pt)
+{
+	CPaneDivider::OnMouseMove(nFlags, pt);
+
+	//"Dirty" hack to enable dynamic pane resizing while dragging the divider.
+	if (m_bCaptured) {
+		StopTracking(TRUE);
+		OnLButtonDown(nFlags, pt);
+	}
+}
+
+
+//CHexerTabCtrl.
 //Tab Control class used within Panes.
 //Needed to override OnLButtonDblClk message.
-class CPaneTabCtrl final : public CMFCTabCtrl {
+class CHexerTabCtrl final : public CMFCTabCtrl {
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-	DECLARE_SERIAL(CPaneTabCtrl);
+	DECLARE_SERIAL(CHexerTabCtrl);
 	DECLARE_MESSAGE_MAP();
 };
 
-//This class is used in the SetTabbedPaneRTC.
-//Needed to set the m_pTabWndRTC (pointer to a Tab Control)
-//to our own overridden CPaneTabCtrl class.
-class CPaneTabbedPane final : public CTabbedPane {
-	CPaneTabbedPane() { m_pTabWndRTC = RUNTIME_CLASS(CPaneTabCtrl); };
-	DECLARE_SERIAL(CPaneTabbedPane);
-};
+IMPLEMENT_SERIAL(CHexerTabCtrl, CMFCTabCtrl, 1)
 
-export class CPaneMainFrame final : public CDockablePane
-{
-public:
-	void SetNestedHWND(HWND hWnd);
-	[[nodiscard]] auto GetNestedHWND()const->HWND;
-private:
-	void AdjustLayout()override;
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnPaint();
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-	DECLARE_MESSAGE_MAP();
-private:
-	HWND m_hWndNested { };
-	HWND m_hWndOrigParent { };
-};
-
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
-IMPLEMENT_SERIAL(CPaneTabCtrl, CMFCTabCtrl, 1)
-IMPLEMENT_SERIAL(CPaneTabbedPane, CTabbedPane, 1)
-
-
-//CPaneTabCtrl.
-
-BEGIN_MESSAGE_MAP(CPaneTabCtrl, CMFCTabCtrl)
+BEGIN_MESSAGE_MAP(CHexerTabCtrl, CMFCTabCtrl)
 	ON_WM_LBUTTONDBLCLK()
 	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
-void CPaneTabCtrl::OnLButtonDblClk(UINT /*nFlags*/, CPoint /*point*/)
+void CHexerTabCtrl::OnLButtonDblClk(UINT /*nFlags*/, CPoint /*point*/)
 {
 	//Empty handler for tabs' doubleclicks.
 }
 
-void CPaneTabCtrl::OnMouseMove(UINT nFlags, CPoint point)
+void CHexerTabCtrl::OnMouseMove(UINT nFlags, CPoint point)
 {
 	//This method is overriden to resolve the issue with tabs' dragging described here:
 	//https://developercommunity.visualstudio.com/t/problem-dragging-mdi-tabs-in-a-mfc-application-com/478457
@@ -170,15 +163,41 @@ void CPaneTabCtrl::OnMouseMove(UINT nFlags, CPoint point)
 }
 
 
-//CPaneMainFrame.
+//CHexerTabbedPane.
+//This class is used in the SetTabbedPaneRTC.
+//Needed to set the m_pTabWndRTC (pointer to a Tab Control)
+//to our own overridden CHexerTabCtrl class.
+class CHexerTabbedPane final : public CTabbedPane {
+	CHexerTabbedPane() { m_pTabWndRTC = RUNTIME_CLASS(CHexerTabCtrl); };
+	DECLARE_SERIAL(CHexerTabbedPane);
+};
 
-BEGIN_MESSAGE_MAP(CPaneMainFrame, CDockablePane)
+IMPLEMENT_SERIAL(CHexerTabbedPane, CTabbedPane, 1)
+
+
+//CHexerDockablePane.
+export class CHexerDockablePane final : public CDockablePane {
+public:
+	void SetNestedHWND(HWND hWnd);
+	[[nodiscard]] auto GetNestedHWND()const->HWND;
+private:
+	void AdjustLayout()override;
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnPaint();
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	DECLARE_MESSAGE_MAP();
+private:
+	HWND m_hWndNested { };
+	HWND m_hWndOrigParent { };
+};
+
+BEGIN_MESSAGE_MAP(CHexerDockablePane, CDockablePane)
 	ON_WM_CREATE()
 	ON_WM_SIZE()
 	ON_WM_PAINT()
 END_MESSAGE_MAP()
 
-void CPaneMainFrame::SetNestedHWND(HWND hWnd)
+void CHexerDockablePane::SetNestedHWND(HWND hWnd)
 {
 	assert(hWnd != nullptr);
 	if (hWnd == nullptr || hWnd == m_hWndNested)
@@ -199,15 +218,15 @@ void CPaneMainFrame::SetNestedHWND(HWND hWnd)
 	AdjustLayout();
 }
 
-auto CPaneMainFrame::GetNestedHWND()const->HWND
+auto CHexerDockablePane::GetNestedHWND()const->HWND
 {
 	return m_hWndNested;
 }
 
 
-//CPaneMainFrame Private methods.
+//CHexerDockablePane Private methods.
 
-void CPaneMainFrame::AdjustLayout()
+void CHexerDockablePane::AdjustLayout()
 {
 	if (const auto pMainWnd = AfxGetMainWnd(); GetSafeHwnd() == nullptr
 		|| (pMainWnd != nullptr && pMainWnd->IsIconic()) || m_hWndNested == nullptr) {
@@ -220,17 +239,17 @@ void CPaneMainFrame::AdjustLayout()
 		rcClient.Height(), SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 
-int CPaneMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
+int CHexerDockablePane::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CDockablePane::OnCreate(lpCreateStruct) == -1)
 		return -1;
 
-	SetTabbedPaneRTC(RUNTIME_CLASS(CPaneTabbedPane));
+	SetTabbedPaneRTC(RUNTIME_CLASS(CHexerTabbedPane));
 
 	return 0;
 }
 
-void CPaneMainFrame::OnPaint()
+void CHexerDockablePane::OnPaint()
 {
 	CPaintDC dc(this);
 
@@ -239,7 +258,7 @@ void CPaneMainFrame::OnPaint()
 	dc.FillSolidRect(rcClient, RGB(255, 255, 255)); //Default white bk.
 }
 
-void CPaneMainFrame::OnSize(UINT nType, int cx, int cy)
+void CHexerDockablePane::OnSize(UINT nType, int cx, int cy)
 {
 	CDockablePane::OnSize(nType, cx, cy);
 

@@ -49,9 +49,9 @@ private:
 	inline static CFont m_fontMDIClient;
 	CMFCToolBar m_wndToolBar;
 	CWnd* m_pWndMBtnCurrDown { };
-	CPaneMainFrame m_paneDataInterp;
-	CPaneMainFrame m_paneFileProps;
-	CPaneMainFrame m_paneTemplMgr;
+	CHexerDockablePane m_paneDataInterp;
+	CHexerDockablePane m_paneFileProps;
+	CHexerDockablePane m_paneTemplMgr;
 	int m_iChildFrames { };    //Amount of active child frames.
 	bool m_fClosing { false }; //Indicates that the app is closing now.
 };
