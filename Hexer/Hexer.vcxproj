@@ -64,7 +64,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);Dialogs\;dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);Dialogs\;dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <BuildStlModules>false</BuildStlModules>
     </ClCompile>
@@ -94,7 +94,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);Dialogs\;dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);Dialogs\;dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <BuildStlModules>false</BuildStlModules>
     </ClCompile>
@@ -123,6 +123,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClInclude Include="CChildFrame.h" />
+    <ClCompile Include="Dialogs\DlgLogInfo.ixx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="FileLoader.ixx">
       <FileType>Document</FileType>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -164,7 +168,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Dialogs\PaneMainFrame.ixx">
+    <ClCompile Include="Dialogs\HexerDockablePane.ixx">
       <FileType>Document</FileType>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

@@ -19,7 +19,7 @@ public:
 private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;
-	auto OpenDocumentFile(const Utility::FILEOPEN& fos) -> CDocument*;
+	auto OpenDocumentFile(const Ut::FILEOPEN& fos) -> CDocument*;
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileNew();
 	afx_msg void OnFileOpenDevice();

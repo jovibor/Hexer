@@ -14,18 +14,48 @@ module;
 #include <format>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #pragma comment(lib, "wbemuuid.lib") //For Wbemidl.h
 export module DlgOpenDevice;
 
 import Utility;
-using namespace Utility;
-
 
 //CDlgOpenDisk.
 
 class CDlgOpenDisk final : public CDialogEx
 {
+	enum class EBusType :std::uint16_t {
+		TYPE_Unknown = 0, TYPE_SCSI = 1, TYPE_ATAPI = 2, TYPE_ATA = 3, TYPE_1394 = 4, TYPE_SSA = 5, TYPE_Fibre_Channel = 6,
+		TYPE_USB = 7, RAID = 8, TYPE_iSCSI = 9, TYPE_SAS = 10, TYPE_SATA = 11, TYPE_SD = 12, TYPE_MMC = 13,
+		TYPE_Virtual = 14, TYPE_File_Backed_Virtual = 15, TYPE_Storage_Spaces = 16, TYPE_NVMe = 17, TYPE_Reserved = 18
+	};
+	const std::unordered_map<EBusType, std::wstring_view> m_mapBusType{
+		{ EBusType::TYPE_Unknown, L"Unknown"}, { EBusType::TYPE_SCSI, L"SCSI" },
+		{ EBusType::TYPE_ATAPI, L"ATAPI" }, { EBusType::TYPE_ATA, L"ATA" },
+		{ EBusType::TYPE_1394, L"1394" }, { EBusType::TYPE_SSA, L"SSA" },
+		{ EBusType::TYPE_Fibre_Channel, L"Fibre Channel" }, { EBusType::TYPE_USB, L"USB" },
+		{ EBusType::RAID, L"RAID" }, { EBusType::TYPE_iSCSI, L"iSCSI" },
+		{ EBusType::TYPE_SAS, L"SAS" }, { EBusType::TYPE_SATA, L"SATA" },
+		{ EBusType::TYPE_SD, L"SD" }, { EBusType::TYPE_MMC, L"MMC" },
+		{ EBusType::TYPE_Virtual, L"Virtual" }, { EBusType::TYPE_File_Backed_Virtual, L"File Backed Virtual" },
+		{ EBusType::TYPE_Storage_Spaces, L"Storage Spaces" }, { EBusType::TYPE_NVMe, L"NVMe" },
+		{ EBusType::TYPE_Reserved, L"Reserved" }
+	};
+	enum class EMediaType :std::uint16_t {
+		TYPE_Unspecified = 0, TYPE_HDD = 3, TYPE_SSD = 4, TYPE_SCM = 5
+	};
+	const std::unordered_map<EMediaType, std::wstring_view> m_mapMediaType {
+		{ EMediaType::TYPE_Unspecified, L"Unspecified"}, { EMediaType::TYPE_HDD, L"HDD" },
+		{ EMediaType::TYPE_SSD, L"SSD" }, { EMediaType::TYPE_SCM, L"SCM" }
+	};
+	struct PHYSICALDISK {
+		std::wstring  wstrFriendlyName;
+		std::wstring  wstrPath;
+		std::uint64_t ullSize { };
+		EBusType      eBusType { };
+		EMediaType    eMediaType { };
+	};
 public:
 	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
 	void SetIWbemServices(IWbemServices* pWbemServices);
@@ -37,11 +67,11 @@ private:
 	afx_msg void OnListDblClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP();
-	[[nodiscard]] static auto GetPhysicalDisks(IWbemServices* pWbemServices) -> std::vector<Utility::PHYSICALDISK>;
+	[[nodiscard]] static auto GetPhysicalDisks(IWbemServices* pWbemServices) -> std::vector<PHYSICALDISK>;
 private:
 	CListCtrl m_list;
 	IWbemServices* m_pWbemServices { };
-	std::vector<Utility::PHYSICALDISK> m_vecPhysicalDisks;
+	std::vector<PHYSICALDISK> m_vecPhysicalDisks;
 	std::vector<std::wstring> m_vecPaths; //Paths to open.
 };
 
@@ -86,12 +116,12 @@ BOOL CDlgOpenDisk::OnInitDialog()
 		m_list.InsertItem(index, it.wstrFriendlyName.data());
 		m_list.SetItemText(index, 1, std::format(L"{:.1f} GB", static_cast<double>(it.ullSize) / 1024 / 1024 / 1024).data());
 		m_list.SetItemText(index, 2, it.wstrPath.data());
-		if (g_mapMediaType.contains(it.eMediaType)) {
-			m_list.SetItemText(index, 3, g_mapMediaType.at(it.eMediaType).data());
+		if (m_mapMediaType.contains(it.eMediaType)) {
+			m_list.SetItemText(index, 3, m_mapMediaType.at(it.eMediaType).data());
 		}
 
-		if (g_mapBusType.contains(it.eBusType)) {
-			m_list.SetItemText(index, 4, g_mapBusType.at(it.eBusType).data());
+		if (m_mapBusType.contains(it.eBusType)) {
+			m_list.SetItemText(index, 4, m_mapBusType.at(it.eBusType).data());
 		}
 
 		++index;
@@ -142,7 +172,7 @@ auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<P
 	pWbemServices->ExecQuery(_bstr_t(L"WQL"), _bstr_t(L"SELECT * FROM MSFT_PhysicalDisk"),
 		WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, nullptr, &pMSFT_PhysicalDisk);
 
-	std::vector<Utility::PHYSICALDISK> vecRet;
+	std::vector<PHYSICALDISK> vecRet;
 	while (pMSFT_PhysicalDisk) {
 		IWbemClassObject* pStorage { };
 		ULONG uRet { 0 };
@@ -167,11 +197,11 @@ auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<P
 
 		VARIANT varBusType;
 		pStorage->Get(L"BusType", 0, &varBusType, nullptr, nullptr);
-		stDisk.eBusType = static_cast<Utility::EBusType>(varBusType.uiVal);
+		stDisk.eBusType = static_cast<EBusType>(varBusType.uiVal);
 
 		VARIANT varMediaType;
 		pStorage->Get(L"MediaType", 0, &varMediaType, nullptr, nullptr);
-		stDisk.eMediaType = static_cast<Utility::EMediaType>(varMediaType.uiVal);
+		stDisk.eMediaType = static_cast<EMediaType>(varMediaType.uiVal);
 
 		vecRet.emplace_back(stDisk);
 		pStorage->Release();
@@ -185,6 +215,14 @@ auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<P
 
 class CDlgOpenVolume final : public CDialogEx
 {
+	struct VOLUME {
+		std::wstring  wstrDriveLetter;
+		std::wstring  wstrPath;
+		std::wstring  wstrFileSystem;
+		std::wstring  wstrFileSystemLabel;
+		std::wstring  wstrDriveType;
+		std::uint64_t ullSize { };
+	};
 public:
 	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
 	void SetIWbemServices(IWbemServices* pWbemServices);
@@ -196,11 +234,11 @@ private:
 	afx_msg void OnListDblClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP();
-	[[nodiscard]] static auto GetVolumes(IWbemServices* pWbemServices) -> std::vector<Utility::VOLUME>;
+	[[nodiscard]] static auto GetVolumes(IWbemServices* pWbemServices) -> std::vector<VOLUME>;
 private:
 	CListCtrl m_list;
 	IWbemServices* m_pWbemServices { };
-	std::vector<Utility::VOLUME> m_vecVolumes;
+	std::vector<VOLUME> m_vecVolumes;
 	std::vector<std::wstring> m_vecPaths; //Paths to open.
 };
 
@@ -293,7 +331,7 @@ void CDlgOpenVolume::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 	GetDlgItem(IDOK)->EnableWindow(m_list.GetSelectedCount() > 0);
 }
 
-auto CDlgOpenVolume::GetVolumes(IWbemServices *pWbemServices)->std::vector<Utility::VOLUME>
+auto CDlgOpenVolume::GetVolumes(IWbemServices *pWbemServices)->std::vector<VOLUME>
 {
 	if (pWbemServices == nullptr) {
 		return { };
@@ -431,7 +469,7 @@ void CDlgOpenPath::OnComboPathEdit()
 export class CDlgOpenDevice final : public CDialogEx
 {
 public:
-	CDlgOpenDevice(CWnd* pParent = nullptr);
+	CDlgOpenDevice(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENDEVICE, pParent) { }
 	~CDlgOpenDevice() = default;
 	INT_PTR DoModal(int iTab = 0);
 	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
@@ -458,10 +496,6 @@ BEGIN_MESSAGE_MAP(CDlgOpenDevice, CDialogEx)
 	ON_WM_GETMINMAXINFO()
 	ON_WM_DESTROY()
 END_MESSAGE_MAP()
-
-CDlgOpenDevice::CDlgOpenDevice(CWnd* pParent) : CDialogEx(IDD_OPENDEVICE, pParent)
-{
-}
 
 INT_PTR CDlgOpenDevice::DoModal(int iTab)
 {

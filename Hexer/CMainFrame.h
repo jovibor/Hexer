@@ -6,19 +6,23 @@
 *******************************************************************************/
 #pragma once
 #include <afxcontrolbars.h>
+#include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 import Utility;
-import PaneMainFrame;
+import HexerDockablePane;
+import DlgLogInfo;
 
 class CHexerView;
 namespace HEXCTRL { class IHexCtrl; }; //Forward declarations.
 class CMainFrame final : public CMDIFrameWndEx
 {
 public:
+	void AddLogEntry(const Ut::LOGDATA& stData);
 	int& GetChildFramesCount();
-	[[nodiscard]] bool IsPaneVisible(UINT uPaneID)const; //Is Pane visible even if pane's window itself is tabbed and hidden atm (not active).
-	[[nodiscard]] bool IsPaneActive(UINT uPaneID)const;  //Is Pane itself visible atm.
+	[[nodiscard]] bool IsPaneVisible(UINT uPaneID); //Is Pane visible even if pane's window itself is tabbed and hidden atm (not active).
+	[[nodiscard]] bool IsPaneActive(UINT uPaneID);  //Is Pane itself visible atm.
 	void OnChildFrameActivate();
 	void OnChildFrameCloseLast(); //When the last child frame is closed.
 	void OnChildFrameFirstOpen(); //When the first child frame is opened.
@@ -26,19 +30,18 @@ public:
 protected:
 	[[nodiscard]] auto GetHexCtrl() -> HEXCTRL::IHexCtrl*;
 	[[nodiscard]] auto GetHexerView() -> CHexerView*;
+	[[nodiscard]] auto GetHWNDForPane(UINT uPaneID) -> HWND;
 	[[nodiscard]] bool HasChildFrame();
 	void HideAllPanes();
+	afx_msg auto OnAddLogEntry(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
 	afx_msg void OnClose();
 	afx_msg BOOL OnEraseMDIClientBackground(CDC* pDC)override;
 	afx_msg void OnViewCustomize();
-	afx_msg void OnViewFileProps();
-	afx_msg void OnViewDataInterp();
-	afx_msg void OnViewTemplMgr();
-	afx_msg void OnUpdateViewFileProps(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateViewDataInterp(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateViewTemplMgr(CCmdUI* pCmdUI);
+	afx_msg void OnViewRangePanes(UINT uMenuID);
+	afx_msg void OnUpdateRangePanes(CCmdUI* pCmdUI);
+	[[nodiscard]] auto PaneIDToPtr(UINT uPaneID) -> CHexerDockablePane*;
 	BOOL PreTranslateMessage(MSG* pMsg)override;
 	void SavePanesSettings();
 	DECLARE_DYNAMIC(CMainFrame);
@@ -49,9 +52,11 @@ private:
 	inline static CFont m_fontMDIClient;
 	CMFCToolBar m_wndToolBar;
 	CWnd* m_pWndMBtnCurrDown { };
-	CHexerDockablePane m_paneDataInterp;
 	CHexerDockablePane m_paneFileProps;
+	CHexerDockablePane m_paneDataInterp;
 	CHexerDockablePane m_paneTemplMgr;
+	CHexerDockablePane m_paneLogInfo;
+	CDlgLogInfo m_dlgLogInfo;
 	int m_iChildFrames { };    //Amount of active child frames.
 	bool m_fClosing { false }; //Indicates that the app is closing now.
 };

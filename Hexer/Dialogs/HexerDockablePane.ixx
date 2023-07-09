@@ -8,7 +8,7 @@ module;
 #include <SDKDDKVer.h>
 #include <afxcontrolbars.h>
 #include <cassert>
-export module PaneMainFrame;
+export module HexerDockablePane;
 
 
 //CHexerPaneDivider.

@@ -14,14 +14,13 @@ class CHexerDoc final : public CDocument
 {
 public:
 	[[nodiscard]] auto GetCacheSize()const->DWORD;
+	[[nodiscard]] auto GetFileData()const->std::byte*;
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetFilePath()const->const std::wstring&;
 	[[nodiscard]] auto GetFileSize()const->std::uint64_t;
-	[[nodiscard]] auto GetFileData()const->std::byte*;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsFileMutable()const;
-	[[nodiscard]] bool IsOpenedVirtual()const;
-	[[nodiscard]] bool OnOpenDocument(const Utility::FILEOPEN& fos);
+	[[nodiscard]] bool OnOpenDocument(const Ut::FILEOPEN& fos);
 	void SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU = TRUE)override;
 private:
 	BOOL OnOpenDocument(LPCTSTR lpszPathName)override;

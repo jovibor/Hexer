@@ -17,7 +17,7 @@ import DlgOpenDevice;
 import DlgNewFile;
 import DlgSettings;
 
-using namespace Utility;
+using namespace Ut;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -48,7 +48,7 @@ BOOL CDlgAbout::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	const auto wstrVerHexer = std::format(L"Hexer Hexadecimal Editor v{}.{}.{}",
-		Utility::HEXER_VERSION_MAJOR, Utility::HEXER_VERSION_MINOR, Utility::HEXER_VERSION_PATCH);
+		Ut::HEXER_VERSION_MAJOR, Ut::HEXER_VERSION_MINOR, Ut::HEXER_VERSION_PATCH);
 	GetDlgItem(IDC_LINK_HEXER)->SetWindowTextW(wstrVerHexer.data());
 	const auto wstrVerHexCtrl = std::format(L"HexCtrl v{}.{}.{}",
 		HEXCTRL::HEXCTRL_VERSION_MAJOR, HEXCTRL::HEXCTRL_VERSION_MINOR, HEXCTRL::HEXCTRL_VERSION_PATCH);
@@ -66,10 +66,10 @@ class CHexerMDTemplate final : public CMultiDocTemplate
 public:
 	CHexerMDTemplate(UINT nIDResource, CRuntimeClass* pDocClass, CRuntimeClass* pFrameClass, CRuntimeClass* pViewClass)
 		: CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass) {}
-	[[nodiscard]] auto OpenDocumentFile(const Utility::FILEOPEN& fos) -> CDocument*;
+	[[nodiscard]] auto OpenDocumentFile(const Ut::FILEOPEN& fos) -> CDocument*;
 };
 
-auto CHexerMDTemplate::OpenDocumentFile(const Utility::FILEOPEN& fos)->CDocument*
+auto CHexerMDTemplate::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
 {
 	//This code is copy-pasted from the original CMultiDocTemplate::OpenDocumentFile.
 	//And adapted to work with the FILEOPEN struct.
@@ -114,7 +114,7 @@ class CHexerDocMgr final : public CDocManager
 {
 public:
 	auto OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU) -> CDocument* override;
-	auto OpenDocumentFile(const Utility::FILEOPEN& fos) -> CDocument*;
+	auto OpenDocumentFile(const Ut::FILEOPEN& fos) -> CDocument*;
 	DECLARE_DYNCREATE(CHexerDocMgr);
 };
 
@@ -187,7 +187,7 @@ auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU)->CDocu
 	return pBestTemplate->OpenDocumentFile(lpszFileName, bAddToMRU, TRUE);
 }
 
-auto CHexerDocMgr::OpenDocumentFile(const Utility::FILEOPEN& fos)->CDocument*
+auto CHexerDocMgr::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
 {
 	//This code is copy-pasted from the original CDocManager::OpenDocumentFile.
 	//We need to override this method to remove calls to AtlStrLen, AfxFullPath, AfxResolveShortcut
@@ -294,7 +294,7 @@ void CHexerApp::OnFileOpen()
 				pResults->GetItemAt(i, &pItem);
 				CComHeapPtr<wchar_t> pwstrPath;
 				pItem->GetDisplayName(SIGDN_FILESYSPATH, &pwstrPath);
-				const auto pDoc = OpenDocumentFile(Utility::FILEOPEN {.wstrFilePath{ pwstrPath }, .fNewFile{ false } });
+				const auto pDoc = OpenDocumentFile(Ut::FILEOPEN {.wstrFilePath{ pwstrPath }, .fNewFile{ false } });
 				fOpened = !fOpened ? pDoc != nullptr : true;
 			}
 			return fOpened;
@@ -313,7 +313,7 @@ BOOL CHexerApp::InitInstance()
 	CWinAppEx::InitInstance();
 
 	EnableTaskbarInteraction(FALSE);
-	SetRegistryKey(Utility::GetAppName().data());
+	SetRegistryKey(Ut::GetAppName().data());
 	InitTooltipManager();
 
 	CMFCToolTipInfo ttParams;
@@ -333,7 +333,7 @@ BOOL CHexerApp::InitInstance()
 	pMainFrame->LoadFrame(IDR_HEXER_FRAME);
 	m_pMainWnd = pMainFrame;
 
-	const auto iSizeIcon = static_cast<int>(16 * Utility::GetHiDPIInfo().flDPIScale);
+	const auto iSizeIcon = static_cast<int>(16 * Ut::GetHiDPIInfo().flDPIScale);
 	const auto hBMPDisk = static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDB_OPENDEVICE), IMAGE_BITMAP,
 		iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
 
@@ -342,7 +342,7 @@ BOOL CHexerApp::InitInstance()
 	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Setting the icon for the "Open Device..." menu.
 	const auto pRFSubMenu = pFileMenu->GetSubMenu(3); //"Recent Files" sub-menu.
 	GetAppSettings().RFLInitialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk);
-	GetAppSettings().LoadSettings(Utility::GetAppName());
+	GetAppSettings().LoadSettings(Ut::GetAppName());
 	DrawMenuBar(pMainFrame->m_hWnd);
 
 	//For Drag'n Drop to work, even in elevated mode.
@@ -370,12 +370,12 @@ BOOL CHexerApp::InitInstance()
 
 int CHexerApp::ExitInstance()
 {
-	GetAppSettings().SaveSettings(Utility::GetAppName());
+	GetAppSettings().SaveSettings(Ut::GetAppName());
 
 	return CWinAppEx::ExitInstance();
 }
 
-auto CHexerApp::OpenDocumentFile(const Utility::FILEOPEN& fos)->CDocument*
+auto CHexerApp::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
 {
 	ENSURE_VALID(m_pDocManager);
 	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentFile(fos);

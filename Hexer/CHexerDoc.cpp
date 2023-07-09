@@ -25,6 +25,11 @@ auto CHexerDoc::GetCacheSize()const->DWORD
 	return m_stFileLoader.GetCacheSize();
 }
 
+auto CHexerDoc::GetFileData()const->std::byte*
+{
+	return m_stFileLoader.GetFileData();
+}
+
 auto CHexerDoc::GetFileName()const->const std::wstring&
 {
 	return m_wstrFileName;
@@ -40,11 +45,6 @@ auto CHexerDoc::GetFileSize()const->std::uint64_t
 	return m_stFileLoader.GetFileSize();
 }
 
-auto CHexerDoc::GetFileData()const->std::byte*
-{
-	return m_stFileLoader.GetFileData();
-}
-
 auto CHexerDoc::GetVirtualInterface()->HEXCTRL::IHexVirtData*
 {
 	return m_stFileLoader.GetVirtualInterface();
@@ -55,14 +55,9 @@ bool CHexerDoc::IsFileMutable()const
 	return m_stFileLoader.IsMutable();
 }
 
-bool CHexerDoc::IsOpenedVirtual()const
+bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 {
-	return m_stFileLoader.IsOpenedVirtual();
-}
-
-bool CHexerDoc::OnOpenDocument(const Utility::FILEOPEN& fos)
-{
-	Utility::FILEOPEN foLocal = fos;
+	Ut::FILEOPEN foLocal = fos;
 	if (!fos.fNewFile) {
 		foLocal.wstrFilePath = ResolveLNK(fos.wstrFilePath.data());
 	}
@@ -83,7 +78,7 @@ bool CHexerDoc::OnOpenDocument(const Utility::FILEOPEN& fos)
 
 BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 {
-	return OnOpenDocument(Utility::FILEOPEN{.wstrFilePath{ lpszPathName }, .fNewFile{ false }});
+	return OnOpenDocument(Ut::FILEOPEN{.wstrFilePath{ lpszPathName }, .fNewFile{ false }});
 }
 
 void CHexerDoc::OnCloseDocument()

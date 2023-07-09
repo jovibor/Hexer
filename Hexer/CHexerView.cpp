@@ -44,7 +44,7 @@ auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
 auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 {
 	//If Pane with HexCtrl's dialog inside.
-	if (const auto optDlg = Utility::PaneIDToEHexWnd(uPaneID); optDlg) {
+	if (const auto optDlg = Ut::PaneIDToEHexWnd(uPaneID); optDlg) {
 		if (!IsPaneAlreadyLaunch(uPaneID)) {
 			SetPaneAlreadyLaunch(uPaneID);
 			return GetHexCtrl()->SetDlgData(*optDlg, theApp.GetAppSettings().GetPaneData(uPaneID));
@@ -79,8 +79,8 @@ auto CHexerView::CreateGridFileProps()->HWND
 	const auto pFont = m_stGridFileProps.GetFont();
 	LOGFONTW lf { };
 	pFont->GetLogFont(&lf);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Utility::GetHiDPIInfo().iLOGPIXELSY) + 2;
-	lf.lfHeight = -MulDiv(lFontSize, Utility::GetHiDPIInfo().iLOGPIXELSY, 72);
+	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Ut::GetHiDPIInfo().iLOGPIXELSY) + 2;
+	lf.lfHeight = -MulDiv(lFontSize, Ut::GetHiDPIInfo().iLOGPIXELSY, 72);
 	m_fntFilePropsGrid.CreateFontIndirectW(&lf);
 	m_stGridFileProps.SetFont(&m_fntFilePropsGrid);
 

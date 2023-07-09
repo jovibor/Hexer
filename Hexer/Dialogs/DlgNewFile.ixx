@@ -18,8 +18,8 @@ import Utility;
 export class CDlgNewFile final : public CDialogEx
 {
 public:
-	CDlgNewFile(CWnd* pParent = nullptr);
-	[[nodiscard]] auto GetNewFileInfo() -> Utility::FILEOPEN;
+	CDlgNewFile(CWnd* pParent = nullptr) : CDialogEx(IDD_NEWFILE, pParent) { }
+	[[nodiscard]] auto GetNewFileInfo() -> Ut::FILEOPEN;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	BOOL OnInitDialog()override;
@@ -27,7 +27,7 @@ private:
 	afx_msg void OnChangeEditPath();
 	DECLARE_MESSAGE_MAP();
 private:
-	Utility::FILEOPEN m_stFOS { };
+	Ut::FILEOPEN m_stFOS { };
 	CEdit m_stEditSize;
 	CEdit m_stEditPath;
 	CComboBox m_stComboMeasure;
@@ -39,11 +39,7 @@ BEGIN_MESSAGE_MAP(CDlgNewFile, CDialogEx)
 	ON_EN_CHANGE(IDC_NEWFILE_EDIT_PATH, &CDlgNewFile::OnChangeEditPath)
 END_MESSAGE_MAP()
 
-CDlgNewFile::CDlgNewFile(CWnd* pParent) : CDialogEx(IDD_NEWFILE, pParent)
-{
-}
-
-auto CDlgNewFile::GetNewFileInfo()->Utility::FILEOPEN
+auto CDlgNewFile::GetNewFileInfo()->Ut::FILEOPEN
 {
 	return m_stFOS;
 }

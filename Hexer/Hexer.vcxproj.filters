@@ -170,13 +170,16 @@
     <ClCompile Include="FileLoader.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="Dialogs\PaneMainFrame.ixx">
+    <ClCompile Include="Dialogs\HexerDockablePane.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="Dialogs\DlgNewFile.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="Dialogs\DlgSettings.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialogs\DlgLogInfo.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
   </ItemGroup>

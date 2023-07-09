@@ -9,18 +9,33 @@ module;
 #include "resource.h"
 #include "HexCtrl.h"
 #include <afxwin.h>
+#include <chrono>
 #include <optional>
 #include <string>
-#include <unordered_map>
 export module Utility;
 
-export namespace Utility
+export namespace Ut
 {
 	constexpr auto HEXER_VERSION_MAJOR = 0;
 	constexpr auto HEXER_VERSION_MINOR = 9;
 	constexpr auto HEXER_VERSION_PATCH = 2;
 
-	constexpr UINT g_arrPanes[] { IDC_PANE_FILEPROPS, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR };
+	constexpr UINT g_arrPanes[] { IDC_PANE_FILEPROPS, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGINFO };
+
+	[[nodiscard]] constexpr auto GetPaneIDFromMenuID(UINT uMenuID) -> UINT {
+		switch (uMenuID) {
+		case IDM_VIEW_FILEPROPS:
+			return IDC_PANE_FILEPROPS;
+		case IDM_VIEW_DATAINTERP:
+			return IDC_PANE_DATAINTERP;
+		case IDM_VIEW_TEMPLMGR:
+			return IDC_PANE_TEMPLMGR;
+		case IDM_VIEW_LOGINFO:
+			return IDC_PANE_LOGINFO;
+		default:
+			return { };
+		};
+	}
 
 	[[nodiscard]] constexpr auto PaneIDToEHexWnd(UINT uPaneID) -> std::optional<HEXCTRL::EHexWnd> {
 		switch (uPaneID) {
@@ -32,49 +47,6 @@ export namespace Utility
 			return std::nullopt;
 		}
 	}
-
-	enum class EBusType :std::uint16_t {
-		TYPE_Unknown = 0, TYPE_SCSI = 1, TYPE_ATAPI = 2, TYPE_ATA = 3, TYPE_1394 = 4, TYPE_SSA = 5, TYPE_Fibre_Channel = 6,
-		TYPE_USB = 7, RAID = 8, TYPE_iSCSI = 9, TYPE_SAS = 10, TYPE_SATA = 11, TYPE_SD = 12, TYPE_MMC = 13,
-		TYPE_Virtual = 14, TYPE_File_Backed_Virtual = 15, TYPE_Storage_Spaces = 16, TYPE_NVMe = 17, TYPE_Reserved = 18
-	};
-	const std::unordered_map<EBusType, std::wstring_view> g_mapBusType{
-		{ EBusType::TYPE_Unknown, L"Unknown"}, { EBusType::TYPE_SCSI, L"SCSI" },
-		{ EBusType::TYPE_ATAPI, L"ATAPI" }, { EBusType::TYPE_ATA, L"ATA" },
-		{ EBusType::TYPE_1394, L"1394" }, { EBusType::TYPE_SSA, L"SSA" },
-		{ EBusType::TYPE_Fibre_Channel, L"Fibre Channel" }, { EBusType::TYPE_USB, L"USB" },
-		{ EBusType::RAID, L"RAID" }, { EBusType::TYPE_iSCSI, L"iSCSI" },
-		{ EBusType::TYPE_SAS, L"SAS" }, { EBusType::TYPE_SATA, L"SATA" },
-		{ EBusType::TYPE_SD, L"SD" }, { EBusType::TYPE_MMC, L"MMC" },
-		{ EBusType::TYPE_Virtual, L"Virtual" }, { EBusType::TYPE_File_Backed_Virtual, L"File Backed Virtual" },
-		{ EBusType::TYPE_Storage_Spaces, L"Storage Spaces" }, { EBusType::TYPE_NVMe, L"NVMe" },
-		{ EBusType::TYPE_Reserved, L"Reserved" }
-	};
-
-	enum class EMediaType :std::uint16_t {
-		TYPE_Unspecified = 0, TYPE_HDD = 3, TYPE_SSD = 4, TYPE_SCM = 5
-	};
-	const std::unordered_map<EMediaType, std::wstring_view> g_mapMediaType {
-		{ EMediaType::TYPE_Unspecified, L"Unspecified"}, { EMediaType::TYPE_HDD, L"HDD" },
-		{ EMediaType::TYPE_SSD, L"SSD" }, { EMediaType::TYPE_SCM, L"SCM" }
-	};
-
-	struct PHYSICALDISK {
-		std::wstring  wstrFriendlyName;
-		std::wstring  wstrPath;
-		std::uint64_t ullSize { };
-		EBusType      eBusType { };
-		EMediaType    eMediaType { };
-	};
-
-	struct VOLUME {
-		std::wstring  wstrDriveLetter;
-		std::wstring  wstrPath;
-		std::wstring  wstrFileSystem;
-		std::wstring  wstrFileSystemLabel;
-		std::wstring  wstrDriveType;
-		std::uint64_t ullSize { };
-	};
 
 	struct HIDPIINFO {
 		int   iLOGPIXELSY { };
@@ -93,7 +65,7 @@ export namespace Utility
 			const auto iLOGPIXELSY = GetDeviceCaps(hDC, LOGPIXELSY);
 			const auto flScale = iLOGPIXELSY / 96.0F;
 			::ReleaseDC(nullptr, hDC);
-			return { .iLOGPIXELSY { iLOGPIXELSY }, .flDPIScale{ flScale } };
+			return { .iLOGPIXELSY { iLOGPIXELSY }, .flDPIScale { flScale } };
 		}() };
 
 		return ret;
@@ -105,5 +77,21 @@ export namespace Utility
 			str.LoadStringW(IDR_HEXER_FRAME);
 			return str; }() };
 		return wstrAppName;
+	}
+
+	enum class EMsgType :std::int8_t { //Enum id-number is the icon's index in the image list.
+		Unknown = -1, msg_error = 0, msg_warning = 1, msg_info = 2
+	};
+
+	using local_time = std::chrono::local_time<std::chrono::system_clock::duration>;
+	struct LOGDATA {
+		local_time   tmloc { std::chrono::current_zone()->to_local(std::chrono::system_clock::now()) };
+		std::wstring wstrMsg;
+		EMsgType     eType { };
+	};
+
+	constexpr auto WM_ADDLOGENTRY { WM_APP + 1 }; //Custom message.
+	void AddLogEntry(const LOGDATA& stData) {
+		AfxGetMainWnd()->SendMessageW(WM_ADDLOGENTRY, 0, reinterpret_cast<WPARAM>(&stData));
 	}
 }

@@ -169,6 +169,7 @@ private:
 	PANESTATUS m_stPSFileProps { };            //Pane status for the "File Properties".
 	PANESTATUS m_stPSDataInterp { };           //Pane status for the "Data Interpreter".
 	PANESTATUS m_stPSTemplMgr { };             //Pane status for the "Template Manager".
+	PANESTATUS m_stPSLogInfo { };              //Pane status for the "Log Information".
 };
 
 auto CAppSettings::GetPaneData(UINT uPaneID)const->std::uint64_t
@@ -194,6 +195,8 @@ auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 		return m_stPSDataInterp;
 	case IDC_PANE_TEMPLMGR:
 		return m_stPSTemplMgr;
+	case IDC_PANE_LOGINFO:
+		return m_stPSLogInfo;
 	default:
 		return { };
 	}
@@ -215,6 +218,9 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		DWORD dwPaneStatusTemplMgr { };
 		regSettings.QueryDWORDValue(L"PaneStatusTemplMgr", dwPaneStatusTemplMgr);
 		m_stPSTemplMgr = DWORD2PaneStatus(dwPaneStatusTemplMgr);
+		DWORD dwPaneStatusLogInfo { };
+		regSettings.QueryDWORDValue(L"PaneStatusLogInfo", dwPaneStatusLogInfo);
+		m_stPSLogInfo = DWORD2PaneStatus(dwPaneStatusLogInfo);
 
 		//PaneData.
 		QWORD ullPaneDataTemplMgr { };
@@ -282,6 +288,7 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 	regSettings.SetDWORDValue(L"PaneStatusFileProps", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_FILEPROPS)));
 	regSettings.SetDWORDValue(L"PaneStatusDataInterp", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_DATAINTERP)));
 	regSettings.SetDWORDValue(L"PaneStatusTemplMgr", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_TEMPLMGR)));
+	regSettings.SetDWORDValue(L"PaneStatusLogInfo", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_LOGINFO)));
 
 	//SetPaneData
 	regSettings.SetQWORDValue(L"PaneDataDataInterp", GetPaneData(IDC_PANE_DATAINTERP));
@@ -325,6 +332,8 @@ void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
 		m_stPSDataInterp = { fShow, fActive };
 	case IDC_PANE_TEMPLMGR:
 		m_stPSTemplMgr = { fShow, fActive };
+	case IDC_PANE_LOGINFO:
+		m_stPSLogInfo = { fShow, fActive };
 	default:
 		return;
 	}

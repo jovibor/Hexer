@@ -10,6 +10,7 @@
 #include "CMainFrame.h"
 #include "CChildFrame.h"
 #include "CHexerView.h"
+#include <unordered_map>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -21,45 +22,29 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
-	ON_COMMAND(IDM_VIEW_FILEPROPS, &CMainFrame::OnViewFileProps)
-	ON_COMMAND(IDM_VIEW_DATAINTERP, &CMainFrame::OnViewDataInterp)
-	ON_COMMAND(IDM_VIEW_TEMPLMGR, &CMainFrame::OnViewTemplMgr)
-	ON_UPDATE_COMMAND_UI(IDM_VIEW_FILEPROPS, &CMainFrame::OnUpdateViewFileProps)
-	ON_UPDATE_COMMAND_UI(IDM_VIEW_DATAINTERP, &CMainFrame::OnUpdateViewDataInterp)
-	ON_UPDATE_COMMAND_UI(IDM_VIEW_TEMPLMGR, &CMainFrame::OnUpdateViewTemplMgr)
+	ON_COMMAND_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnViewRangePanes)
+	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnUpdateRangePanes)
+	ON_MESSAGE(Ut::WM_ADDLOGENTRY, OnAddLogEntry)
 END_MESSAGE_MAP()
+
+void CMainFrame::AddLogEntry(const Ut::LOGDATA& stData)
+{
+	m_dlgLogInfo.AddLogEntry(stData);
+}
 
 int& CMainFrame::GetChildFramesCount()
 {
 	return m_iChildFrames;
 }
 
-bool CMainFrame::IsPaneActive(UINT uPaneID)const
+bool CMainFrame::IsPaneActive(UINT uPaneID)
 {
-	switch (uPaneID) {
-	case IDC_PANE_FILEPROPS:
-		return m_paneFileProps.IsPaneVisible();
-	case IDC_PANE_DATAINTERP:
-		return m_paneDataInterp.IsPaneVisible();
-	case IDC_PANE_TEMPLMGR:
-		return m_paneTemplMgr.IsPaneVisible();
-	default:
-		return{ };
-	}
+	return PaneIDToPtr(uPaneID)->IsPaneVisible();
 }
 
-bool CMainFrame::IsPaneVisible(UINT uPaneID)const
+bool CMainFrame::IsPaneVisible(UINT uPaneID)
 {
-	switch (uPaneID) {
-	case IDC_PANE_FILEPROPS:
-		return m_paneFileProps.IsVisible();
-	case IDC_PANE_DATAINTERP:
-		return m_paneDataInterp.IsVisible();
-	case IDC_PANE_TEMPLMGR:
-		return m_paneTemplMgr.IsVisible();
-	default:
-		return{ };
-	}
+	return PaneIDToPtr(uPaneID)->IsVisible();
 }
 
 void CMainFrame::OnChildFrameActivate()
@@ -71,7 +56,7 @@ void CMainFrame::OnChildFrameActivate()
 
 	//Setting Panes' HWND according to the current active ChildFrame.
 	if (HasChildFrame()) {
-		for (auto uPaneID : Utility::g_arrPanes) {
+		for (auto uPaneID : Ut::g_arrPanes) {
 			if (IsPaneVisible(uPaneID)) {
 				ShowPane(uPaneID, true, IsPaneActive(uPaneID));
 			}
@@ -87,7 +72,7 @@ void CMainFrame::OnChildFrameCloseLast()
 
 void CMainFrame::OnChildFrameFirstOpen()
 {
-	for (auto id : Utility::g_arrPanes) {
+	for (auto id : Ut::g_arrPanes) {
 		if (const auto ps = theApp.GetAppSettings().GetPaneStatus(id); ps.fIsVisible) {
 			ShowPane(id, true, ps.fIsActive);
 		}
@@ -96,31 +81,15 @@ void CMainFrame::OnChildFrameFirstOpen()
 
 void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 {
-	CHexerDockablePane* pPane { };
-	switch (uPaneID) {
-	case IDC_PANE_FILEPROPS:
-		pPane = &m_paneFileProps;
-		break;
-	case IDC_PANE_DATAINTERP:
-		pPane = &m_paneDataInterp;
-		break;
-	case IDC_PANE_TEMPLMGR:
-		pPane = &m_paneTemplMgr;
-		break;
-	default:
+	const auto pPane = PaneIDToPtr(uPaneID);
+	if (pPane == nullptr)
 		return;
-	}
 
 	if (fShow) {
-		const auto pView = GetHexerView();
-		if (pView == nullptr) {
-			return;
-		}
-
-		const auto hWndForPane = pView->GetHWNDForPane(uPaneID);
-		const auto hWndCurr = pPane->GetNestedHWND();
-		if (hWndForPane != nullptr && hWndForPane != hWndCurr) {
-			pPane->SetNestedHWND(hWndForPane);
+		if (const auto hWndForPane = GetHWNDForPane(uPaneID); hWndForPane != nullptr) {
+			if (const auto hWndCurr = pPane->GetNestedHWND(); hWndForPane != hWndCurr) {
+				pPane->SetNestedHWND(hWndForPane);
+			}
 		}
 	}
 
@@ -150,6 +119,25 @@ auto CMainFrame::GetHexerView()->CHexerView*
 	return { };
 }
 
+auto CMainFrame::GetHWNDForPane(UINT uPaneID)->HWND
+{
+	//HWND for the IDC_PANE_LOGINFO.
+	if (uPaneID == IDC_PANE_LOGINFO) {
+		if (!IsWindow(m_dlgLogInfo)) {
+			m_dlgLogInfo.Create(IDD_LOGINFO, this);
+		}
+
+		return m_dlgLogInfo;
+	}
+
+	//HWND for other Panes.
+	if (const auto pView = GetHexerView(); pView != nullptr) {
+		return pView->GetHWNDForPane(uPaneID);
+	}
+
+	return { };
+}
+
 bool CMainFrame::HasChildFrame()
 {
 	return GetChildFramesCount() > 0;
@@ -160,6 +148,14 @@ void CMainFrame::HideAllPanes()
 	m_paneFileProps.ShowPane(FALSE, FALSE, FALSE);
 	m_paneDataInterp.ShowPane(FALSE, FALSE, FALSE);
 	m_paneTemplMgr.ShowPane(FALSE, FALSE, FALSE);
+	m_paneLogInfo.ShowPane(FALSE, FALSE, FALSE);
+}
+
+auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
+{
+	AddLogEntry(*reinterpret_cast<Ut::LOGDATA*>(lParam));
+
+	return S_OK;
 }
 
 void CMainFrame::OnClose()
@@ -197,7 +193,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	const auto imgTB = CMFCToolBar::GetImages();    //Toolbar image.
 	const auto sizeImgCurr = imgTB->GetImageSize(); //One button's dimensions.
 	const auto flToolbarScaledFactor = sizeImgCurr.cx / 16.0; //How many times our toolbar is bigger than the standard one.
-	const auto flScale = Utility::GetHiDPIInfo().flDPIScale; //Scale factor for HighDPI displays.
+	const auto flScale = Ut::GetHiDPIInfo().flDPIScale; //Scale factor for HighDPI displays.
 	const auto flScaleTB = flScale / flToolbarScaledFactor;
 	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * flScaleTB) + 7,
 		static_cast<int>(sizeImgCurr.cy * flScaleTB) + 7 }; //Size of the toolbar's button.
@@ -233,8 +229,15 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	strStr.LoadStringW(IDC_PANE_TEMPLMGR);
 	m_paneTemplMgr.Create(strStr, this, CRect(0, 0, 400, 200), TRUE, IDC_PANE_TEMPLMGR,
 		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_BOTTOM | CBRS_FLOAT_MULTI);
-	m_paneTemplMgr.EnableDocking(CBRS_ALIGN_TOP | CBRS_ALIGN_BOTTOM);
+	m_paneTemplMgr.EnableDocking(CBRS_ALIGN_ANY);
 	DockPane(&m_paneTemplMgr);
+
+	//Pane "Log Information".
+	strStr.LoadStringW(IDC_PANE_LOGINFO);
+	m_paneLogInfo.Create(strStr, this, CRect(0, 0, 400, 200), TRUE, IDC_PANE_LOGINFO,
+		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_BOTTOM | CBRS_FLOAT_MULTI);
+	m_paneLogInfo.EnableDocking(CBRS_ALIGN_ANY);
+	DockPane(&m_paneLogInfo);
 
 	UpdateMDITabbedBarsIcons();
 
@@ -274,24 +277,6 @@ BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/)
 	return TRUE;
 }
 
-void CMainFrame::OnUpdateViewFileProps(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(HasChildFrame());
-	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(IDC_PANE_FILEPROPS) : FALSE);
-}
-
-void CMainFrame::OnUpdateViewDataInterp(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(HasChildFrame());
-	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(IDC_PANE_DATAINTERP) : FALSE);
-}
-
-void CMainFrame::OnUpdateViewTemplMgr(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(HasChildFrame());
-	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(IDC_PANE_TEMPLMGR) : FALSE);
-}
-
 void CMainFrame::OnViewCustomize()
 {
 	const auto pDlgCust = new CMFCToolBarsCustomizeDialog(this, TRUE /* scan menus */);
@@ -299,19 +284,31 @@ void CMainFrame::OnViewCustomize()
 	pDlgCust->Create();
 }
 
-void CMainFrame::OnViewFileProps()
+void CMainFrame::OnViewRangePanes(UINT uMenuID)
 {
-	ShowPane(IDC_PANE_FILEPROPS, !IsPaneVisible(IDC_PANE_FILEPROPS), !IsPaneVisible(IDC_PANE_FILEPROPS));
+	const auto uPaneID = Ut::GetPaneIDFromMenuID(uMenuID);
+	const auto fVisible = !IsPaneVisible(uPaneID);
+	ShowPane(uPaneID, fVisible, fVisible);
 }
 
-void CMainFrame::OnViewDataInterp()
+void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)
 {
-	ShowPane(IDC_PANE_DATAINTERP, !IsPaneVisible(IDC_PANE_DATAINTERP), !IsPaneVisible(IDC_PANE_DATAINTERP));
+	pCmdUI->Enable(HasChildFrame());
+	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(Ut::GetPaneIDFromMenuID(pCmdUI->m_nID)) : FALSE);
 }
 
-void CMainFrame::OnViewTemplMgr()
+auto CMainFrame::PaneIDToPtr(UINT uPaneID)->CHexerDockablePane*
 {
-	ShowPane(IDC_PANE_TEMPLMGR, !IsPaneVisible(IDC_PANE_TEMPLMGR), !IsPaneVisible(IDC_PANE_TEMPLMGR));
+	static const std::unordered_map<UINT, CHexerDockablePane* const> umapPanes {
+		{ IDC_PANE_FILEPROPS, &m_paneFileProps }, { IDC_PANE_DATAINTERP, &m_paneDataInterp },
+		{ IDC_PANE_TEMPLMGR, &m_paneTemplMgr }, { IDC_PANE_LOGINFO, &m_paneLogInfo }
+	};
+
+	if (umapPanes.contains(uPaneID)) {
+		return umapPanes.at(uPaneID);
+	}
+
+	return { };
 }
 
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
@@ -379,9 +376,9 @@ void CMainFrame::SavePanesSettings()
 {
 	if (const auto pView = GetHexerView(); pView != nullptr) {
 		auto& refSett = theApp.GetAppSettings();
-		for (auto id : Utility::g_arrPanes) {
+		for (auto id : Ut::g_arrPanes) {
 			refSett.SetPaneStatus(id, IsPaneVisible(id), IsPaneActive(id));
-			if (const auto optDlg = Utility::PaneIDToEHexWnd(id); optDlg && IsPaneVisible(id)) {
+			if (const auto optDlg = Ut::PaneIDToEHexWnd(id); optDlg && IsPaneVisible(id)) {
 				refSett.SetPaneData(id, GetHexCtrl()->GetDlgData(*optDlg));
 			}
 		}
@@ -410,9 +407,9 @@ auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		pDC->SelectObject(m_fontMDIClient);
 		pDC->SetBkMode(TRANSPARENT);
 		pDC->SetTextColor(RGB(220, 220, 220)); //Shadow color.
-		pDC->DrawTextW(Utility::GetAppName().data(), static_cast<int>(Utility::GetAppName().size()), rcShadow, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		pDC->DrawTextW(Ut::GetAppName().data(), static_cast<int>(Ut::GetAppName().size()), rcShadow, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
 		pDC->SetTextColor(RGB(203, 203, 203)); //Text color.
-		pDC->DrawTextW(Utility::GetAppName().data(), static_cast<int>(Utility::GetAppName().size()), rcText, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		pDC->DrawTextW(Ut::GetAppName().data(), static_cast<int>(Ut::GetAppName().size()), rcText, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
 	}
 	break;
 	case WM_SIZE:
@@ -431,7 +428,7 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	const auto pDC = CDC::FromHandle(::GetDC(hWnd));
 	const auto iWidthNew = LOWORD(lParam);
 	auto iFontSizeMin = 10;
-	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, Utility::GetHiDPIInfo().iLOGPIXELSY, 72) }, .lfPitchAndFamily { FIXED_PITCH },
+	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, Ut::GetHiDPIInfo().iLOGPIXELSY, 72) }, .lfPitchAndFamily { FIXED_PITCH },
 		.lfFaceName { L"Consolas" } };
 
 	m_fontMDIClient.DeleteObject();
@@ -440,10 +437,10 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	while (stSizeText.cx < (iWidthNew - 150)) { //Until the text size is not big enough to fill the window's width.
 		m_fontMDIClient.DeleteObject();
 		iFontSizeMin += 4;
-		lf.lfHeight = -MulDiv(iFontSizeMin, Utility::GetHiDPIInfo().iLOGPIXELSY, 72);
+		lf.lfHeight = -MulDiv(iFontSizeMin, Ut::GetHiDPIInfo().iLOGPIXELSY, 72);
 		m_fontMDIClient.CreateFontIndirectW(&lf);
 		pDC->SelectObject(m_fontMDIClient);
-		stSizeText = pDC->GetTextExtent(Utility::GetAppName().data(), static_cast<int>(Utility::GetAppName().size()));
+		stSizeText = pDC->GetTextExtent(Ut::GetAppName().data(), static_cast<int>(Ut::GetAppName().size()));
 	}
 	::ReleaseDC(hWnd, pDC->m_hDC);
 	::RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);

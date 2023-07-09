@@ -25,12 +25,12 @@ public:
 	[[nodiscard]] auto GetFileSize()const->std::uint64_t;
 	[[nodiscard]] auto GetFileData()const->std::byte*;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
-	[[nodiscard]] bool IsOpenedVirtual()const;
 	[[nodiscard]] bool IsMutable()const;
-	[[nodiscard]] bool OpenFile(const Utility::FILEOPEN& fos);
+	[[nodiscard]] bool OpenFile(const Ut::FILEOPEN& fos);
 private:
 	void FlushData();
 	[[nodiscard]] bool IsModified()const;
+	[[nodiscard]] bool IsVirtual()const;
 	void OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)override;
 	void OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)override;
 	[[nodiscard]] bool OpenVirtual();
@@ -38,7 +38,7 @@ private:
 	[[nodiscard]] auto ReadData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
 private:
 	static constexpr auto m_uBuffSize { 1024UL * 512UL }; //512KB cache buffer size.
-	std::unique_ptr < std::byte[], decltype([](std::byte* p) { _aligned_free(p); }) > m_upCache { };
+	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
 	std::wstring m_wstrPath; //File path to open.
 	HANDLE m_hFile { };      //Returned by CreateFileW.
 	HANDLE m_hMapObject { }; //Returned by CreateFileMappingW.
@@ -46,9 +46,9 @@ private:
 	LARGE_INTEGER m_stFileSize { };
 	std::uint64_t m_ullOffsetCurr { }; //Offset of the current data that is in the buffer.
 	std::uint64_t m_ullSizeCurr { };   //Size of the current data that is in the buffer.
-	DWORD m_dwAlignment { };    //An alignment, the offset and the size must be aligned on, for the ReadFile.
-	bool m_fWritable { false }; //Is file opened as RW or RO?
-	bool m_fVirtual { false };
+	DWORD m_dwAlignment { };    //An alignment that the offset and the size must be aligned on, for the ReadFile.
+	bool m_fMutable { false };  //Is file opened as RW or RO?
+	bool m_fVirtual { false };  //Is file opened in HexCtrl Virtual mode.
 	bool m_fModified { false }; //File was modified.
 };
 
@@ -60,7 +60,7 @@ CFileLoader::~CFileLoader()
 void CFileLoader::CloseFile()
 {
 	if (m_hFile != nullptr) {
-		if (IsOpenedVirtual()) {
+		if (IsVirtual()) {
 			FlushData();
 		}
 
@@ -70,7 +70,7 @@ void CFileLoader::CloseFile()
 		CloseHandle(m_hFile);
 	}
 
-	m_upCache.reset();
+	m_pCache.reset();
 	m_wstrPath.clear();
 	m_hFile = nullptr;
 	m_hMapObject = nullptr;
@@ -79,7 +79,7 @@ void CFileLoader::CloseFile()
 	m_ullOffsetCurr = 0;
 	m_ullSizeCurr = 0;
 	m_dwAlignment = 0;
-	m_fWritable = false;
+	m_fMutable = false;
 	m_fVirtual = false;
 	m_fModified = false;
 }
@@ -96,25 +96,20 @@ auto CFileLoader::GetFileSize()const->std::uint64_t
 
 auto CFileLoader::GetFileData()const->std::byte*
 {
-	return IsOpenedVirtual() ? nullptr : static_cast<std::byte*>(m_lpBase);
+	return IsVirtual() ? nullptr : static_cast<std::byte*>(m_lpBase);
 }
 
 auto CFileLoader::GetVirtualInterface()->HEXCTRL::IHexVirtData*
 {
-	return IsOpenedVirtual() ? this : nullptr;
-}
-
-bool CFileLoader::IsOpenedVirtual()const
-{
-	return m_fVirtual;
+	return IsVirtual() ? this : nullptr;
 }
 
 bool CFileLoader::IsMutable()const
 {
-	return m_fWritable;
+	return m_fMutable;
 }
 
-bool CFileLoader::OpenFile(const Utility::FILEOPEN& fos)
+bool CFileLoader::OpenFile(const Ut::FILEOPEN& fos)
 {
 	assert(m_hFile == nullptr);
 	if (m_hFile != nullptr) { //Already opened.
@@ -149,10 +144,10 @@ bool CFileLoader::OpenFile(const Utility::FILEOPEN& fos)
 		}
 	}
 	else {
-		m_fWritable = true;
+		m_fMutable = true;
 	}
 
-	if (IsOpenedVirtual()) {
+	if (IsVirtual()) {
 		return OpenVirtual();
 	}
 
@@ -161,14 +156,14 @@ bool CFileLoader::OpenFile(const Utility::FILEOPEN& fos)
 		return false;
 	}
 
-	if (m_hMapObject = CreateFileMappingW(m_hFile, nullptr, m_fWritable ? PAGE_READWRITE : PAGE_READONLY, 0, 0, nullptr);
+	if (m_hMapObject = CreateFileMappingW(m_hFile, nullptr, m_fMutable ? PAGE_READWRITE : PAGE_READONLY, 0, 0, nullptr);
 		m_hMapObject == nullptr) {
 		PrintLastError(L"CreateFileMappingW");
 		CloseHandle(m_hFile);
 		return false;
 	}
 
-	m_lpBase = MapViewOfFile(m_hMapObject, m_fWritable ? FILE_MAP_WRITE : FILE_MAP_READ, 0, 0, 0);
+	m_lpBase = MapViewOfFile(m_hMapObject, m_fMutable ? FILE_MAP_WRITE : FILE_MAP_READ, 0, 0, 0);
 
 	return true;
 }
@@ -186,7 +181,7 @@ void CFileLoader::FlushData()
 	ol.OffsetHigh = HIDWORD(m_ullOffsetCurr);
 	DWORD dwBytesWritten { };
 
-	if (WriteFile(m_hFile, m_upCache.get(), static_cast<DWORD>(m_ullSizeCurr), &dwBytesWritten, &ol) == FALSE) {
+	if (WriteFile(m_hFile, m_pCache.get(), static_cast<DWORD>(m_ullSizeCurr), &dwBytesWritten, &ol) == FALSE) {
 		PrintLastError(L"WriteFile");
 	}
 
@@ -196,6 +191,11 @@ void CFileLoader::FlushData()
 bool CFileLoader::IsModified()const
 {
 	return m_fModified;
+}
+
+bool CFileLoader::IsVirtual()const
+{
+	return m_fVirtual;
 }
 
 void CFileLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
@@ -239,7 +239,7 @@ bool CFileLoader::OpenVirtual()
 	}
 
 	m_stFileSize.QuadPart = stLengthInfo.Length.QuadPart;
-	m_upCache.reset(static_cast<std::byte*>(_aligned_malloc(m_uBuffSize, m_dwAlignment))); //Initialize the data cache.
+	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(m_uBuffSize, m_dwAlignment))); //Initialize the data cache.
 
 	return true;
 }
@@ -250,8 +250,8 @@ void CFileLoader::PrintLastError(std::wstring_view wsvSource)const
 	wchar_t buffErr[MAX_PATH];
 	FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, nullptr);
-	const auto wstrMsg = std::format(L"{} failed: 0x{:08X}\r\n{}", wsvSource, dwError, buffErr);
-	::MessageBoxW(nullptr, wstrMsg.data(), m_wstrPath.data(), MB_ICONERROR);
+	Ut::AddLogEntry({ .wstrMsg = std::format(L"{} failed: 0x{:08X}\r\n{}", wsvSource, dwError, buffErr),
+		.eType = Ut::EMsgType::msg_error });
 }
 
 auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXCTRL::SpanByte
@@ -262,7 +262,7 @@ auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXC
 	}
 
 	if (ullOffset >= m_ullOffsetCurr && (ullOffset + ullSize) <= (m_ullOffsetCurr + m_ullSizeCurr)) { //Data is already in the cache.
-		return HEXCTRL::SpanByte { m_upCache.get() + (ullOffset - m_ullOffsetCurr), ullSize};
+		return HEXCTRL::SpanByte { m_pCache.get() + (ullOffset - m_ullOffsetCurr), ullSize};
 	}
 
 	FlushData(); //Flush current cache data if it was modified, before the ReadFile.
@@ -277,7 +277,7 @@ auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXC
 	ol.Offset = LODWORD(ullOffsetAligned);
 	ol.OffsetHigh = HIDWORD(ullOffsetAligned);
 	DWORD dwBytesRead { };
-	if (ReadFile(m_hFile, m_upCache.get(), static_cast<DWORD>(ullSizeAligned), &dwBytesRead, &ol) == FALSE) {
+	if (ReadFile(m_hFile, m_pCache.get(), static_cast<DWORD>(ullSizeAligned), &dwBytesRead, &ol) == FALSE) {
 		PrintLastError(L"ReadFile");
 		return { };
 	}
@@ -285,5 +285,5 @@ auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXC
 	m_ullOffsetCurr = ullOffsetAligned;
 	m_ullSizeCurr = ullSizeAligned;
 
-	return { m_upCache.get() + ullOffsetRemainder, ullSizeAligned - ullOffsetRemainder };
+	return { m_pCache.get() + ullOffsetRemainder, ullSizeAligned - ullOffsetRemainder };
 }
