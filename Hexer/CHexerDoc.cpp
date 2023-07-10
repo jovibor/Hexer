@@ -57,18 +57,19 @@ bool CHexerDoc::IsFileMutable()const
 
 bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 {
-	Ut::FILEOPEN foLocal = fos;
+	Ut::FILEOPEN fosLocal = fos;
 	if (!fos.fNewFile) {
-		foLocal.wstrFilePath = ResolveLNK(fos.wstrFilePath.data());
+		fosLocal.wstrFilePath = ResolveLNK(fos.wstrFilePath.data());
 	}
 
-	if (!m_stFileLoader.OpenFile(foLocal)) {
+	if (!m_stFileLoader.OpenFile(fosLocal)) {
 		return false;
 	}
 
-	m_wstrFilePath = foLocal.wstrFilePath;
+	m_wstrFilePath = fosLocal.wstrFilePath;
 	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 	theApp.AddToRFL(m_wstrFilePath);
+	Ut::Log::AddLogEntryInfo(L"File opened: " + m_wstrFileName);
 
 	return true;
 }
@@ -78,11 +79,13 @@ bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 
 BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 {
-	return OnOpenDocument(Ut::FILEOPEN{.wstrFilePath{ lpszPathName }, .fNewFile{ false }});
+	return OnOpenDocument(Ut::FILEOPEN {.wstrFilePath{ lpszPathName }, .fNewFile{ false } });
 }
 
 void CHexerDoc::OnCloseDocument()
 {
+	Ut::Log::AddLogEntryInfo(L"File closed: " + m_wstrFileName);
+
 	CDocument::OnCloseDocument();
 }
 

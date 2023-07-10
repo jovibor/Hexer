@@ -27,7 +27,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_MESSAGE(Ut::WM_ADDLOGENTRY, OnAddLogEntry)
 END_MESSAGE_MAP()
 
-void CMainFrame::AddLogEntry(const Ut::LOGDATA& stData)
+void CMainFrame::AddLogEntry(const Ut::Log::LOGDATA& stData)
 {
 	m_dlgLogInfo.AddLogEntry(stData);
 }
@@ -153,7 +153,7 @@ void CMainFrame::HideAllPanes()
 
 auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 {
-	AddLogEntry(*reinterpret_cast<Ut::LOGDATA*>(lParam));
+	AddLogEntry(*reinterpret_cast<Ut::Log::LOGDATA*>(lParam));
 
 	return S_OK;
 }

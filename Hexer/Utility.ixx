@@ -79,19 +79,35 @@ export namespace Ut
 		return wstrAppName;
 	}
 
-	enum class EMsgType :std::int8_t { //Enum id-number is the icon's index in the image list.
-		Unknown = -1, msg_error = 0, msg_warning = 1, msg_info = 2
-	};
-
-	using local_time = std::chrono::local_time<std::chrono::system_clock::duration>;
-	struct LOGDATA {
-		local_time   tmloc { std::chrono::current_zone()->to_local(std::chrono::system_clock::now()) };
-		std::wstring wstrMsg;
-		EMsgType     eType { };
-	};
-
 	constexpr auto WM_ADDLOGENTRY { WM_APP + 1 }; //Custom message.
-	void AddLogEntry(const LOGDATA& stData) {
-		AfxGetMainWnd()->SendMessageW(WM_ADDLOGENTRY, 0, reinterpret_cast<WPARAM>(&stData));
+
+	namespace Log
+	{
+		enum class EMsgType :std::int8_t { //Enum id-number is the icon's index in the image list.
+			Unknown = -1, msg_error = 0, msg_warning = 1, msg_info = 2
+		};
+
+		using local_time = std::chrono::local_time<std::chrono::system_clock::duration>;
+		struct LOGDATA {
+			local_time   tmloc { std::chrono::current_zone()->to_local(std::chrono::system_clock::now()) };
+			std::wstring wstrMsg;
+			EMsgType     eType { };
+		};
+
+		void AddLogEntry(const LOGDATA& stData) {
+			AfxGetMainWnd()->SendMessageW(WM_ADDLOGENTRY, 0, reinterpret_cast<WPARAM>(&stData));
+		}
+
+		void AddLogEntryError(std::wstring_view wsvMsg) {
+			AddLogEntry({ .wstrMsg = std::wstring { wsvMsg }, .eType = EMsgType::msg_error });
+		}
+
+		void AddLogEntryWarning(std::wstring_view wsvMsg) {
+			AddLogEntry({ .wstrMsg = std::wstring { wsvMsg }, .eType = EMsgType::msg_warning });
+		}
+
+		void AddLogEntryInfo(std::wstring_view wsvMsg) {
+			AddLogEntry({ .wstrMsg = std::wstring { wsvMsg }, .eType = EMsgType::msg_info });
+		}
 	}
 }

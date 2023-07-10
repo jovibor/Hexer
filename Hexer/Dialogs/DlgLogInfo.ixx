@@ -22,36 +22,66 @@ namespace lex = HEXCTRL::LISTEX;
 export class CDlgLogInfo final : public CDialogEx
 {
 public:
-	void AddLogEntry(const Ut::LOGDATA& stData);
+	void AddLogEntry(const Ut::Log::LOGDATA& stData);
 private:
+	void ClearAll();
 	void DoDataExchange(CDataExchange* pDX)override;
+	BOOL OnCommand(WPARAM wParam, LPARAM lParam)override;
 	BOOL OnInitDialog()override;
 	afx_msg void OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListRClick(NMHDR* pNMHDR, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP();
 private:
+	enum class EMenuID : std::uint16_t {
+		IDM_LIST_CLEARALL = 0x8001
+	};
 	lex::IListExPtr m_pList { lex::CreateListEx() };
-	std::vector<Ut::LOGDATA> m_vecData { };
+	std::vector<Ut::Log::LOGDATA> m_vecData { };
 	CImageList m_stImgList;
+	CMenu m_menuList;
 };
 
 BEGIN_MESSAGE_MAP(CDlgLogInfo, CDialogEx)
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListGetDispInfo)
 	ON_NOTIFY(lex::LISTEX_MSG_GETICON, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListGetIcon)
+	ON_NOTIFY(NM_RCLICK, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListRClick)
 END_MESSAGE_MAP()
 
-void CDlgLogInfo::AddLogEntry(const Ut::LOGDATA & stData)
+void CDlgLogInfo::AddLogEntry(const Ut::Log::LOGDATA& stData)
 {
 	m_vecData.emplace_back(stData);
-	m_pList->SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOSCROLL);
+
+	if (IsWindow(m_hWnd)) {
+		m_pList->SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOSCROLL);
+	}
 }
 
 
 //Private methods.
 
+void CDlgLogInfo::ClearAll()
+{
+	m_vecData.clear();
+	m_pList->SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOSCROLL);
+}
+
 void CDlgLogInfo::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+}
+
+BOOL CDlgLogInfo::OnCommand(WPARAM wParam, LPARAM lParam)
+{
+	switch (static_cast<EMenuID>(LOWORD(wParam))) {
+	case EMenuID::IDM_LIST_CLEARALL:
+		ClearAll();
+		return TRUE;
+	default:
+		break;
+	}
+
+	return CDialogEx::OnCommand(wParam, lParam);
 }
 
 BOOL CDlgLogInfo::OnInitDialog()
@@ -64,6 +94,9 @@ BOOL CDlgLogInfo::OnInitDialog()
 	m_pList->InsertColumn(1, L"Time", 0, 70);
 	m_pList->InsertColumn(2, L"Event", 0, 450);
 
+	m_menuList.CreatePopupMenu();
+	m_menuList.AppendMenuW(MF_STRING, static_cast<UINT_PTR>(EMenuID::IDM_LIST_CLEARALL), L"Clear All");
+
 	const auto iIconSize = static_cast<int>(16 * Ut::GetHiDPIInfo().flDPIScale);
 	m_stImgList.Create(iIconSize, iIconSize, ILC_COLOR | ILC_MASK, 2, 2);
 
@@ -72,12 +105,7 @@ BOOL CDlgLogInfo::OnInitDialog()
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(nullptr, IDI_WARNING, IMAGE_ICON, 0, 0, LR_SHARED)));
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(nullptr, IDI_INFORMATION, IMAGE_ICON, 0, 0, LR_SHARED)));
 	m_pList->SetImageList(&m_stImgList, LVSIL_NORMAL);
-
-/*	AddLogEntry({ .wstrMsg = L"Test", .eType = Ut::EMsgType::msg_error });
-	AddLogEntry({ .wstrMsg = L"Test", .eType = Ut::EMsgType::msg_warning });
-	AddLogEntry({ .wstrMsg = L"Test", .eType = Ut::EMsgType::msg_info });
-	AddLogEntry({ .wstrMsg = L"Test", .eType = Ut::EMsgType::Unknown });
-	*/
+	m_pList->SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOSCROLL); //m_vecData can already have data.
 
 	EnableDynamicLayout(TRUE);
 	const auto pLayout = GetDynamicLayout();
@@ -122,4 +150,11 @@ void CDlgLogInfo::OnListGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 		return;
 
 	pNMI->lParam = static_cast<int>(m_vecData[pNMI->iItem].eType); //Icon index in list's image list.
+}
+
+void CDlgLogInfo::OnListRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+{
+	POINT pt;
+	GetCursorPos(&pt);
+	m_menuList.TrackPopupMenuEx(TPM_LEFTALIGN, pt.x, pt.y, this, nullptr);
 }
