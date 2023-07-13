@@ -10,8 +10,7 @@
 #include "HexCtrl.h"
 import FileLoader;
 
-class CHexerDoc final : public CDocument
-{
+class CHexerDoc final : public CDocument {
 public:
 	[[nodiscard]] auto GetCacheSize()const->DWORD;
 	[[nodiscard]] auto GetFileData()const->std::byte*;

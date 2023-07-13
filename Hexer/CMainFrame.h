@@ -9,15 +9,16 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 import Utility;
 import HexerDockablePane;
 import DlgLogInfo;
+import DlgFileInfo;
 
 class CHexerView;
 namespace HEXCTRL { class IHexCtrl; }; //Forward declarations.
-class CMainFrame final : public CMDIFrameWndEx
-{
+class CMainFrame final : public CMDIFrameWndEx {
 public:
 	void AddLogEntry(const Ut::Log::LOGDATA& stData);
 	int& GetChildFramesCount();
@@ -27,10 +28,13 @@ public:
 	void OnChildFrameCloseLast(); //When the last child frame is closed.
 	void OnChildFrameFirstOpen(); //When the first child frame is opened.
 	void ShowPane(UINT uPaneID, bool fShow, bool fActivate);
+	void UpdatePaneFileInfo();
 protected:
 	[[nodiscard]] auto GetHexCtrl() -> HEXCTRL::IHexCtrl*;
 	[[nodiscard]] auto GetHexerView() -> CHexerView*;
 	[[nodiscard]] auto GetHWNDForPane(UINT uPaneID) -> HWND;
+	[[nodiscard]] auto GetPanesMap() -> const std::unordered_map<UINT, CHexerDockablePane*>&;
+	[[nodiscard]] auto GetPtrFromPaneID(UINT uPaneID) -> CHexerDockablePane*;
 	[[nodiscard]] bool HasChildFrame();
 	void HideAllPanes();
 	afx_msg auto OnAddLogEntry(WPARAM wParam, LPARAM lParam) -> LRESULT;
@@ -41,7 +45,6 @@ protected:
 	afx_msg void OnViewCustomize();
 	afx_msg void OnViewRangePanes(UINT uMenuID);
 	afx_msg void OnUpdateRangePanes(CCmdUI* pCmdUI);
-	[[nodiscard]] auto PaneIDToPtr(UINT uPaneID) -> CHexerDockablePane*;
 	BOOL PreTranslateMessage(MSG* pMsg)override;
 	void SavePanesSettings();
 	DECLARE_DYNAMIC(CMainFrame);
@@ -52,10 +55,12 @@ private:
 	inline static CFont m_fontMDIClient;
 	CMFCToolBar m_wndToolBar;
 	CWnd* m_pWndMBtnCurrDown { };
-	CHexerDockablePane m_paneFileProps;
+	CHexerDockablePane m_paneFileInfo;
+	CHexerDockablePane m_paneBkmMgr;
 	CHexerDockablePane m_paneDataInterp;
 	CHexerDockablePane m_paneTemplMgr;
 	CHexerDockablePane m_paneLogInfo;
+	CDlgFileInfo m_dlgFileInfo;
 	CDlgLogInfo m_dlgLogInfo;
 	int m_iChildFrames { };    //Amount of active child frames.
 	bool m_fClosing { false }; //Indicates that the app is closing now.

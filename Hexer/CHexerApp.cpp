@@ -28,8 +28,7 @@ CHexerApp theApp;
 
 //CDlgAbout.
 
-class CDlgAbout final : public CDialogEx
-{
+class CDlgAbout final : public CDialogEx {
 public:
 	explicit CDlgAbout()noexcept : CDialogEx(IDD_ABOUTBOX) {}
 private:
@@ -61,8 +60,7 @@ BOOL CDlgAbout::OnInitDialog()
 
 //CHexerMDTemplate.
 
-class CHexerMDTemplate final : public CMultiDocTemplate
-{
+class CHexerMDTemplate final : public CMultiDocTemplate {
 public:
 	CHexerMDTemplate(UINT nIDResource, CRuntimeClass* pDocClass, CRuntimeClass* pFrameClass, CRuntimeClass* pViewClass)
 		: CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass) {}
@@ -110,8 +108,7 @@ auto CHexerMDTemplate::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
 
 //CHexerDocMgr.
 
-class CHexerDocMgr final : public CDocManager
-{
+class CHexerDocMgr final : public CDocManager {
 public:
 	auto OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU) -> CDocument* override;
 	auto OpenDocumentFile(const Ut::FILEOPEN& fos) -> CDocument*;

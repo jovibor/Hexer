@@ -134,8 +134,7 @@ void CAppSettingsRFL::RebuildRFLMenu()
 
 //CAppSettings.
 
-export class CAppSettings final
-{
+export class CAppSettings final {
 	struct PANESTATUS {
 		bool fIsVisible : 1{};
 		bool fIsActive : 1{};
@@ -163,10 +162,12 @@ private:
 	[[nodiscard]] auto RFLGetData()const->const std::vector<std::wstring>&;
 private:
 	CAppSettingsRFL m_stRFL;
-	std::uint64_t m_ullPaneDataFileProps { };  //Pane data for the "File Properties".
+	std::uint64_t m_ullPaneDataFileInfo { };   //Pane data for the "File Info".
+	std::uint64_t m_ullPaneDataBkmMgr { };     //Pane data for the "Bokmark Manager".
 	std::uint64_t m_ullPaneDataDataInterp { }; //Pane data for the "Template Manager".
 	std::uint64_t m_ullPaneDataTemplMgr { };   //Pane data for the "Data Interpreter".
-	PANESTATUS m_stPSFileProps { };            //Pane status for the "File Properties".
+	PANESTATUS m_stPSFileInfo { };             //Pane status for the "File Properties".
+	PANESTATUS m_stPSBkmMgr { };               //Pane status for the "Bokmark Manager".
 	PANESTATUS m_stPSDataInterp { };           //Pane status for the "Data Interpreter".
 	PANESTATUS m_stPSTemplMgr { };             //Pane status for the "Template Manager".
 	PANESTATUS m_stPSLogInfo { };              //Pane status for the "Log Information".
@@ -175,8 +176,10 @@ private:
 auto CAppSettings::GetPaneData(UINT uPaneID)const->std::uint64_t
 {
 	switch (uPaneID) {
-	case IDC_PANE_FILEPROPS:
-		return m_ullPaneDataFileProps;
+	case IDC_PANE_FILEINFO:
+		return m_ullPaneDataFileInfo;
+	case IDC_PANE_BKMMGR:
+		return m_ullPaneDataBkmMgr;
 	case IDC_PANE_DATAINTERP:
 		return m_ullPaneDataDataInterp;
 	case IDC_PANE_TEMPLMGR:
@@ -189,8 +192,10 @@ auto CAppSettings::GetPaneData(UINT uPaneID)const->std::uint64_t
 auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 {
 	switch (uPaneID) {
-	case IDC_PANE_FILEPROPS:
-		return m_stPSFileProps;
+	case IDC_PANE_FILEINFO:
+		return m_stPSFileInfo;
+	case IDC_PANE_BKMMGR:
+		return m_stPSBkmMgr;
 	case IDC_PANE_DATAINTERP:
 		return m_stPSDataInterp;
 	case IDC_PANE_TEMPLMGR:
@@ -209,9 +214,12 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 	if (CRegKey regSettings; regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) == ERROR_SUCCESS) {
 
 		//PaneStatus.
-		DWORD dwPaneStatusFileProps { };
-		regSettings.QueryDWORDValue(L"PaneStatusFileProps", dwPaneStatusFileProps);
-		m_stPSFileProps = DWORD2PaneStatus(dwPaneStatusFileProps);
+		DWORD dwPaneStatusFileInfo { };
+		regSettings.QueryDWORDValue(L"PaneStatusFileInfo", dwPaneStatusFileInfo);
+		m_stPSFileInfo = DWORD2PaneStatus(dwPaneStatusFileInfo);
+		DWORD dwPaneStatusBkmMgr { };
+		regSettings.QueryDWORDValue(L"PaneStatusBkmMgr", dwPaneStatusBkmMgr);
+		m_stPSBkmMgr = DWORD2PaneStatus(dwPaneStatusBkmMgr);
 		DWORD dwPaneStatusDataInterp { };
 		regSettings.QueryDWORDValue(L"PaneStatusDataInterp", dwPaneStatusDataInterp);
 		m_stPSDataInterp = DWORD2PaneStatus(dwPaneStatusDataInterp);
@@ -223,12 +231,15 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		m_stPSLogInfo = DWORD2PaneStatus(dwPaneStatusLogInfo);
 
 		//PaneData.
-		QWORD ullPaneDataTemplMgr { };
-		regSettings.QueryQWORDValue(L"PaneDataTemplMgr", ullPaneDataTemplMgr);
-		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr);
+		QWORD ullPaneDataBkmMgr { };
+		regSettings.QueryQWORDValue(L"PaneDataBkmMgr", ullPaneDataBkmMgr);
+		SetPaneData(IDC_PANE_BKMMGR, ullPaneDataBkmMgr);
 		QWORD ullPaneDataDataInterp { };
 		regSettings.QueryQWORDValue(L"PaneDataDataInterp", ullPaneDataDataInterp);
 		SetPaneData(IDC_PANE_DATAINTERP, ullPaneDataDataInterp);
+		QWORD ullPaneDataTemplMgr { };
+		regSettings.QueryQWORDValue(L"PaneDataTemplMgr", ullPaneDataTemplMgr);
+		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr);
 	}
 
 	//Recent File List.
@@ -285,12 +296,14 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 	}
 
 	//PaneStatus.
-	regSettings.SetDWORDValue(L"PaneStatusFileProps", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_FILEPROPS)));
+	regSettings.SetDWORDValue(L"PaneStatusFileInfo", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_FILEINFO)));
+	regSettings.SetDWORDValue(L"PaneStatusBkmMgr", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_BKMMGR)));
 	regSettings.SetDWORDValue(L"PaneStatusDataInterp", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_DATAINTERP)));
 	regSettings.SetDWORDValue(L"PaneStatusTemplMgr", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_TEMPLMGR)));
 	regSettings.SetDWORDValue(L"PaneStatusLogInfo", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_LOGINFO)));
 
 	//SetPaneData
+	regSettings.SetQWORDValue(L"PaneDataBkmMgr", GetPaneData(IDC_PANE_BKMMGR));
 	regSettings.SetQWORDValue(L"PaneDataDataInterp", GetPaneData(IDC_PANE_DATAINTERP));
 	regSettings.SetQWORDValue(L"PaneDataTemplMgr", GetPaneData(IDC_PANE_TEMPLMGR));
 
@@ -309,8 +322,11 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
 {
 	switch (uPaneID) {
-	case IDC_PANE_FILEPROPS:
-		m_ullPaneDataFileProps = ullData;
+	case IDC_PANE_FILEINFO:
+		m_ullPaneDataFileInfo = ullData;
+		break;
+	case IDC_PANE_BKMMGR:
+		m_ullPaneDataBkmMgr = ullData;
 		break;
 	case IDC_PANE_DATAINTERP:
 		m_ullPaneDataDataInterp = ullData;
@@ -326,8 +342,10 @@ void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
 void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
 {
 	switch (uPaneID) {
-	case IDC_PANE_FILEPROPS:
-		m_stPSFileProps = { fShow, fActive };
+	case IDC_PANE_FILEINFO:
+		m_stPSFileInfo = { fShow, fActive };
+	case IDC_PANE_BKMMGR:
+		m_stPSBkmMgr = { fShow, fActive };
 	case IDC_PANE_DATAINTERP:
 		m_stPSDataInterp = { fShow, fActive };
 	case IDC_PANE_TEMPLMGR:

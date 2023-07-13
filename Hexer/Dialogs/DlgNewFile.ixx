@@ -15,8 +15,7 @@ export module DlgNewFile;
 
 import Utility;
 
-export class CDlgNewFile final : public CDialogEx
-{
+export class CDlgNewFile final : public CDialogEx {
 public:
 	CDlgNewFile(CWnd* pParent = nullptr) : CDialogEx(IDD_NEWFILE, pParent) { }
 	[[nodiscard]] auto GetNewFileInfo() -> Ut::FILEOPEN;

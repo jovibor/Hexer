@@ -23,8 +23,7 @@ import Utility;
 
 //CDlgOpenDisk.
 
-class CDlgOpenDisk final : public CDialogEx
-{
+class CDlgOpenDisk final : public CDialogEx {
 	enum class EBusType :std::uint16_t {
 		TYPE_Unknown = 0, TYPE_SCSI = 1, TYPE_ATAPI = 2, TYPE_ATA = 3, TYPE_1394 = 4, TYPE_SSA = 5, TYPE_Fibre_Channel = 6,
 		TYPE_USB = 7, RAID = 8, TYPE_iSCSI = 9, TYPE_SAS = 10, TYPE_SATA = 11, TYPE_SD = 12, TYPE_MMC = 13,
@@ -213,8 +212,7 @@ auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<P
 
 //CDlgOpenVolume.
 
-class CDlgOpenVolume final : public CDialogEx
-{
+class CDlgOpenVolume final : public CDialogEx {
 	struct VOLUME {
 		std::wstring  wstrDriveLetter;
 		std::wstring  wstrPath;
@@ -411,8 +409,7 @@ auto CDlgOpenVolume::GetVolumes(IWbemServices *pWbemServices)->std::vector<VOLUM
 
 //CDlgOpenPath.
 
-class CDlgOpenPath final : public CDialogEx
-{
+class CDlgOpenPath final : public CDialogEx {
 public:
 	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
 private:
@@ -466,8 +463,7 @@ void CDlgOpenPath::OnComboPathEdit()
 
 //CDlgOpenDevice.
 
-export class CDlgOpenDevice final : public CDialogEx
-{
+export class CDlgOpenDevice final : public CDialogEx {
 public:
 	CDlgOpenDevice(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENDEVICE, pParent) { }
 	~CDlgOpenDevice() = default;

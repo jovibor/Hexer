@@ -16,8 +16,7 @@ export module FileLoader;
 
 import Utility;
 
-export class CFileLoader : public HEXCTRL::IHexVirtData
-{
+export class CFileLoader : public HEXCTRL::IHexVirtData {
 public:
 	~CFileLoader();
 	void CloseFile();

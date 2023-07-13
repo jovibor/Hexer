@@ -10,7 +10,6 @@
 #include "CMainFrame.h"
 #include "CChildFrame.h"
 #include "CHexerView.h"
-#include <unordered_map>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -19,12 +18,12 @@
 IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWndEx)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
-	ON_WM_CREATE()
-	ON_WM_CLOSE()
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
 	ON_COMMAND_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnViewRangePanes)
-	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnUpdateRangePanes)
 	ON_MESSAGE(Ut::WM_ADDLOGENTRY, OnAddLogEntry)
+	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnUpdateRangePanes)
+	ON_WM_CREATE()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 void CMainFrame::AddLogEntry(const Ut::Log::LOGDATA& stData)
@@ -39,16 +38,20 @@ int& CMainFrame::GetChildFramesCount()
 
 bool CMainFrame::IsPaneActive(UINT uPaneID)
 {
-	return PaneIDToPtr(uPaneID)->IsPaneVisible();
+	return GetPtrFromPaneID(uPaneID)->IsPaneVisible();
 }
 
 bool CMainFrame::IsPaneVisible(UINT uPaneID)
 {
-	return PaneIDToPtr(uPaneID)->IsVisible();
+	return GetPtrFromPaneID(uPaneID)->IsVisible();
 }
 
 void CMainFrame::OnChildFrameActivate()
 {
+	if (m_fClosing) {
+		return;
+	}
+
 	//The ON_REGISTERED_MESSAGE(AFX_WM_CHANGE_ACTIVE_TAB,...) message does in fact work,
 	//but this message is generated for ANY tab that is being activated in ANY tab-control,
 	//not only in the main CMainFrame tab-control. 
@@ -66,12 +69,20 @@ void CMainFrame::OnChildFrameActivate()
 
 void CMainFrame::OnChildFrameCloseLast()
 {
+	if (m_fClosing) {
+		return;
+	}
+
 	SavePanesSettings(); //It's called either here or in the OnClose.
-	HideAllPanes(); //To disable panes from showing at the next app's start-up.
+	HideAllPanes();      //To disable panes from showing at the next app's start-up.
 }
 
 void CMainFrame::OnChildFrameFirstOpen()
 {
+	if (m_fClosing) {
+		return;
+	}
+
 	for (auto id : Ut::g_arrPanes) {
 		if (const auto ps = theApp.GetAppSettings().GetPaneStatus(id); ps.fIsVisible) {
 			ShowPane(id, true, ps.fIsActive);
@@ -81,7 +92,7 @@ void CMainFrame::OnChildFrameFirstOpen()
 
 void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 {
-	const auto pPane = PaneIDToPtr(uPaneID);
+	const auto pPane = GetPtrFromPaneID(uPaneID);
 	if (pPane == nullptr)
 		return;
 
@@ -91,9 +102,18 @@ void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 				pPane->SetNestedHWND(hWndForPane);
 			}
 		}
+
+		if (uPaneID == IDC_PANE_FILEINFO) {
+			UpdatePaneFileInfo();
+		}
 	}
 
 	pPane->ShowPane(fShow, FALSE, fActivate);
+}
+
+void CMainFrame::UpdatePaneFileInfo()
+{
+	m_dlgFileInfo.SetGridData(GetHexerView()->GetFileInfo());
 }
 
 
@@ -121,18 +141,41 @@ auto CMainFrame::GetHexerView()->CHexerView*
 
 auto CMainFrame::GetHWNDForPane(UINT uPaneID)->HWND
 {
-	//HWND for the IDC_PANE_LOGINFO.
-	if (uPaneID == IDC_PANE_LOGINFO) {
+	switch (uPaneID) {
+	case IDC_PANE_FILEINFO:
+		if (!IsWindow(m_dlgFileInfo)) {
+			m_dlgFileInfo.Create(IDD_FILEINFO, this);
+		}
+		return m_dlgFileInfo;
+	case IDC_PANE_LOGINFO:
 		if (!IsWindow(m_dlgLogInfo)) {
 			m_dlgLogInfo.Create(IDD_LOGINFO, this);
 		}
-
 		return m_dlgLogInfo;
+	default: //HWND for HexCtrl's Panes.
+		if (const auto pView = GetHexerView(); pView != nullptr) {
+			return pView->GetHWNDForPane(uPaneID);
+		}
+		return { };
 	}
+}
 
-	//HWND for other Panes.
-	if (const auto pView = GetHexerView(); pView != nullptr) {
-		return pView->GetHWNDForPane(uPaneID);
+auto CMainFrame::GetPanesMap()->const std::unordered_map<UINT, CHexerDockablePane*>&
+{
+	//PaneID <-> CHexerDockablePane* correspondence.
+	static const std::unordered_map<UINT, CHexerDockablePane*> umapPanes {
+		{ IDC_PANE_FILEINFO, &m_paneFileInfo }, { IDC_PANE_BKMMGR, &m_paneBkmMgr },
+		{ IDC_PANE_DATAINTERP, &m_paneDataInterp }, { IDC_PANE_TEMPLMGR, &m_paneTemplMgr },
+		{ IDC_PANE_LOGINFO, &m_paneLogInfo }
+	};
+
+	return umapPanes;
+}
+
+auto CMainFrame::GetPtrFromPaneID(UINT uPaneID)->CHexerDockablePane*
+{
+	if (GetPanesMap().contains(uPaneID)) {
+		return GetPanesMap().at(uPaneID);
 	}
 
 	return { };
@@ -145,10 +188,9 @@ bool CMainFrame::HasChildFrame()
 
 void CMainFrame::HideAllPanes()
 {
-	m_paneFileProps.ShowPane(FALSE, FALSE, FALSE);
-	m_paneDataInterp.ShowPane(FALSE, FALSE, FALSE);
-	m_paneTemplMgr.ShowPane(FALSE, FALSE, FALSE);
-	m_paneLogInfo.ShowPane(FALSE, FALSE, FALSE);
+	for (const auto [uKey, pPane] : GetPanesMap()) {
+		pPane->ShowPane(FALSE, FALSE, FALSE);
+	}
 }
 
 auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
@@ -162,7 +204,7 @@ void CMainFrame::OnClose()
 {
 	m_fClosing = true;
 	SavePanesSettings(); //It's called either here or in the OnChildFrameCloseLast.
-	HideAllPanes(); //To disable panes from showing at the next app's start-up.
+	HideAllPanes();      //To disable panes from showing at the next app's start-up.
 
 	CMDIFrameWndEx::OnClose();
 }
@@ -212,11 +254,18 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 
 	//Pane "File Properties".
 	CStringW strStr;
-	strStr.LoadStringW(IDC_PANE_FILEPROPS);
-	m_paneFileProps.Create(strStr, this, CRect(0, 0, 200, 400), TRUE, IDC_PANE_FILEPROPS,
-			WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_RIGHT | CBRS_FLOAT_MULTI);
-	m_paneFileProps.EnableDocking(CBRS_ALIGN_ANY);
-	DockPane(&m_paneFileProps);
+	strStr.LoadStringW(IDC_PANE_FILEINFO);
+	m_paneFileInfo.Create(strStr, this, CRect(0, 0, 200, 400), TRUE, IDC_PANE_FILEINFO,
+		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_RIGHT | CBRS_FLOAT_MULTI);
+	m_paneFileInfo.EnableDocking(CBRS_ALIGN_ANY);
+	DockPane(&m_paneFileInfo);
+
+	//Pane "Bookmark Manager".
+	strStr.LoadStringW(IDC_PANE_BKMMGR);
+	m_paneBkmMgr.Create(strStr, this, CRect(0, 0, 200, 400), TRUE, IDC_PANE_BKMMGR,
+		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_RIGHT | CBRS_FLOAT_MULTI);
+	m_paneBkmMgr.EnableDocking(CBRS_ALIGN_ANY);
+	DockPane(&m_paneBkmMgr);
 
 	//Pane "Data Interpreter".
 	strStr.LoadStringW(IDC_PANE_DATAINTERP);
@@ -297,20 +346,6 @@ void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)
 	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(Ut::GetPaneIDFromMenuID(pCmdUI->m_nID)) : FALSE);
 }
 
-auto CMainFrame::PaneIDToPtr(UINT uPaneID)->CHexerDockablePane*
-{
-	static const std::unordered_map<UINT, CHexerDockablePane* const> umapPanes {
-		{ IDC_PANE_FILEPROPS, &m_paneFileProps }, { IDC_PANE_DATAINTERP, &m_paneDataInterp },
-		{ IDC_PANE_TEMPLMGR, &m_paneTemplMgr }, { IDC_PANE_LOGINFO, &m_paneLogInfo }
-	};
-
-	if (umapPanes.contains(uPaneID)) {
-		return umapPanes.at(uPaneID);
-	}
-
-	return { };
-}
-
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 {
 	switch (pMsg->message) {
@@ -378,7 +413,7 @@ void CMainFrame::SavePanesSettings()
 		auto& refSett = theApp.GetAppSettings();
 		for (auto id : Ut::g_arrPanes) {
 			refSett.SetPaneStatus(id, IsPaneVisible(id), IsPaneActive(id));
-			if (const auto optDlg = Ut::PaneIDToEHexWnd(id); optDlg && IsPaneVisible(id)) {
+			if (const auto optDlg = Ut::GetEHexWndFromPaneID(id); optDlg && IsPaneVisible(id)) {
 				refSett.SetPaneData(id, GetHexCtrl()->GetDlgData(*optDlg));
 			}
 		}

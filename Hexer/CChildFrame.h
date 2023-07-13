@@ -7,8 +7,7 @@
 #pragma once
 
 class CHexerView; class CMainFrame;
-class CChildFrame final : public CMDIChildWndEx
-{
+class CChildFrame final : public CMDIChildWndEx {
 public:
 	[[nodiscard]] auto GetHexerView()const->CHexerView*;
 	void SetHexerView(CHexerView* pView);
@@ -22,5 +21,7 @@ private:
 	DECLARE_MESSAGE_MAP();
 private:
 	CHexerView* m_pHexerView { };
-	bool m_fClosing { false }; //Indicates that the tab is closing now.
+	bool m_fClosing { false };  //Indicates that a child-frame is closing.
+	bool m_fCreating { false }; //Indicates that a child-frame is creating.
+	int m_iMDIActivateCreation { 2 };
 };

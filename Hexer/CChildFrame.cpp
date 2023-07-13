@@ -16,8 +16,8 @@
 IMPLEMENT_DYNCREATE(CChildFrame, CMDIChildWndEx)
 
 BEGIN_MESSAGE_MAP(CChildFrame, CMDIChildWndEx)
-	ON_WM_DESTROY()
 	ON_WM_CLOSE()
+	ON_WM_DESTROY()
 	ON_WM_MDIACTIVATE()
 END_MESSAGE_MAP()
 
@@ -30,6 +30,9 @@ void CChildFrame::SetHexerView(CHexerView* pView)
 {
 	m_pHexerView = pView;
 }
+
+
+//Private methods.
 
 auto CChildFrame::GetMainFrame()const->CMainFrame*
 {
@@ -44,14 +47,15 @@ void CChildFrame::OnClose()
 
 BOOL CChildFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 {
+	m_fCreating = true;
 	++GetMainFrame()->GetChildFramesCount();
 	return CMDIChildWndEx::OnCreateClient(lpcs, pContext);
 }
 
 void CChildFrame::OnDestroy()
 {
-	CMDIChildWndEx::OnDestroy();
 	--GetMainFrame()->GetChildFramesCount();
+	CMDIChildWndEx::OnDestroy();
 }
 
 void CChildFrame::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd)
@@ -60,19 +64,27 @@ void CChildFrame::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeact
 
 	const auto pMainFrame = GetMainFrame();
 
+	if (m_fCreating) {
+		if (pMainFrame->GetChildFramesCount() == 1) { //Indicates that the first tab is opening now.
+			pMainFrame->OnChildFrameFirstOpen();
+			m_fCreating = false;
+			return;
+		}
+
+		//Buggy MFC sends two WM_MDIACTIVATE messages to the child-frame when a second and onward tab is created.
+		//This count is to prevent unnecessary OnChildFrameActivate calls.
+		if (--m_iMDIActivateCreation == 0) {
+			pMainFrame->OnChildFrameActivate();
+			m_fCreating = false;
+		}
+		return;
+	}
+
 	if (bActivate) {
 		pMainFrame->OnChildFrameActivate();
 	}
 
-	//If the tab is closing we don't need to UpdateAllViews.
-	//At this moment the Document can already be destroyed in the memory, so GetActiveDocument can point to a bad data.
-	if (!m_fClosing) {
-		//	GetActiveDocument()->UpdateAllViews(nullptr, bActivate == FALSE ? MSG_MDITAB_DISACTIVATE : MSG_MDITAB_ACTIVATE);
-		if (pMainFrame->GetChildFramesCount() == 1) { //Indicates that the first tab is opening now.
-			pMainFrame->OnChildFrameFirstOpen();
-		}
-	}
-	else {
+	if (m_fClosing) {
 		if (pMainFrame->GetChildFramesCount() == 1) { //Indicates that the last tab is closing now.
 			pMainFrame->OnChildFrameCloseLast();
 		}

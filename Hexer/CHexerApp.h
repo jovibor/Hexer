@@ -10,8 +10,7 @@
 import Utility;
 import AppSettings;
 
-class CHexerApp final : public CWinAppEx
-{
+class CHexerApp final : public CWinAppEx {
 public:
 	afx_msg void OnFileOpen();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;

@@ -19,8 +19,7 @@ import Utility;
 using namespace Ut;
 namespace lex = HEXCTRL::LISTEX;
 
-export class CDlgLogInfo final : public CDialogEx
-{
+export class CDlgLogInfo final : public CDialogEx {
 public:
 	void AddLogEntry(const Ut::Log::LOGDATA& stData);
 private:
@@ -107,10 +106,9 @@ BOOL CDlgLogInfo::OnInitDialog()
 	m_pList->SetImageList(&m_stImgList, LVSIL_NORMAL);
 	m_pList->SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOSCROLL); //m_vecData can already have data.
 
-	EnableDynamicLayout(TRUE);
-	const auto pLayout = GetDynamicLayout();
-	pLayout->Create(this);
-	pLayout->AddItem(m_pList->m_hWnd, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
+	if (const auto pLayout = GetDynamicLayout()) {
+		pLayout->SetMinSize({ 0, 0 });
+	}
 
 	return TRUE;
 }

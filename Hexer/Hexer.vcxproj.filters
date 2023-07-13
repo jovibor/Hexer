@@ -182,6 +182,9 @@
     <ClCompile Include="Dialogs\DlgLogInfo.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="Dialogs\DlgFileInfo.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Hexer.rc">

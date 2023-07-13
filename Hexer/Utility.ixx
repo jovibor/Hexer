@@ -20,12 +20,14 @@ export namespace Ut
 	constexpr auto HEXER_VERSION_MINOR = 9;
 	constexpr auto HEXER_VERSION_PATCH = 2;
 
-	constexpr UINT g_arrPanes[] { IDC_PANE_FILEPROPS, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGINFO };
+	constexpr UINT g_arrPanes[] { IDC_PANE_FILEINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGINFO };
 
 	[[nodiscard]] constexpr auto GetPaneIDFromMenuID(UINT uMenuID) -> UINT {
 		switch (uMenuID) {
 		case IDM_VIEW_FILEPROPS:
-			return IDC_PANE_FILEPROPS;
+			return IDC_PANE_FILEINFO;
+		case IDM_VIEW_BKMMGR:
+			return IDC_PANE_BKMMGR;
 		case IDM_VIEW_DATAINTERP:
 			return IDC_PANE_DATAINTERP;
 		case IDM_VIEW_TEMPLMGR:
@@ -37,8 +39,10 @@ export namespace Ut
 		};
 	}
 
-	[[nodiscard]] constexpr auto PaneIDToEHexWnd(UINT uPaneID) -> std::optional<HEXCTRL::EHexWnd> {
+	[[nodiscard]] constexpr auto GetEHexWndFromPaneID(UINT uPaneID) -> std::optional<HEXCTRL::EHexWnd> {
 		switch (uPaneID) {
+		case IDC_PANE_BKMMGR:
+			return HEXCTRL::EHexWnd::DLG_BKMMGR;
 		case IDC_PANE_DATAINTERP:
 			return HEXCTRL::EHexWnd::DLG_DATAINTERP;
 		case IDC_PANE_TEMPLMGR:
@@ -57,6 +61,14 @@ export namespace Ut
 		std::wstring  wstrFilePath;
 		std::uint64_t ullFileSize { };
 		bool          fNewFile { };
+	};
+
+	struct FILEINFO {
+		std::wstring_view wsvFilePath { };
+		std::wstring_view wsvFileName { };
+		std::uint64_t     ullFileSize { };
+		std::uint32_t     dwPageSize { };
+		bool              fMutable { };
 	};
 
 	[[nodiscard]] auto GetHiDPIInfo() -> HIDPIINFO {

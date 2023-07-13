@@ -10,8 +10,7 @@ module;
 #include <afxdialogex.h>
 export module DlgSettings;
 
-export class CDlgSettings : public CDialogEx
-{
+export class CDlgSettings : public CDialogEx {
 public:
 	CDlgSettings(CWnd* pParent = nullptr);
 private:
