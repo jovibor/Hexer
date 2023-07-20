@@ -152,7 +152,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About Hexer...",             ID_APP_ABOUT
+        MENUITEM "&About...",                   ID_APP_ABOUT
     END
 END
 

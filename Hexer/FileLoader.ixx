@@ -38,10 +38,11 @@ private:
 private:
 	static constexpr auto m_uBuffSize { 1024UL * 512UL }; //512KB cache buffer size.
 	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
-	std::wstring m_wstrPath; //File path to open.
-	HANDLE m_hFile { };      //Returned by CreateFileW.
-	HANDLE m_hMapObject { }; //Returned by CreateFileMappingW.
-	LPVOID m_lpBase { };     //Returned by MapViewOfFile.
+	std::wstring m_wstrFileName; //File name.
+	std::wstring m_wstrFilePath; //File path to open.
+	HANDLE m_hFile { };          //Returned by CreateFileW.
+	HANDLE m_hMapObject { };     //Returned by CreateFileMappingW.
+	LPVOID m_lpBase { };         //Returned by MapViewOfFile.
 	LARGE_INTEGER m_stFileSize { };
 	std::uint64_t m_ullOffsetCurr { }; //Offset of the current data that is in the buffer.
 	std::uint64_t m_ullSizeCurr { };   //Size of the current data that is in the buffer.
@@ -70,7 +71,7 @@ void CFileLoader::CloseFile()
 	}
 
 	m_pCache.reset();
-	m_wstrPath.clear();
+	m_wstrFilePath.clear();
 	m_hFile = nullptr;
 	m_hMapObject = nullptr;
 	m_lpBase = nullptr;
@@ -115,12 +116,14 @@ bool CFileLoader::OpenFile(const Ut::FILEOPEN& fos)
 		return false;
 	}
 
-	if (fos.wstrFilePath.starts_with(L"\\\\")) { //Special path.
+	m_wstrFilePath = fos.wstrFilePath;
+	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1);
+
+	if (m_wstrFilePath.starts_with(L"\\\\")) { //Special path.
 		m_fVirtual = true;
 	}
 
-	m_wstrPath = fos.wstrFilePath;
-	m_hFile = CreateFileW(m_wstrPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+	m_hFile = CreateFileW(m_wstrFilePath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
 		fos.fNewFile ? CREATE_ALWAYS : OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (fos.fNewFile) { //Setting the size of the new file.
@@ -133,7 +136,7 @@ bool CFileLoader::OpenFile(const Ut::FILEOPEN& fos)
 
 	if (m_hFile == INVALID_HANDLE_VALUE) {
 		if (!fos.fNewFile) { //Trying to open in ReadOnly mode.
-			m_hFile = CreateFileW(m_wstrPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+			m_hFile = CreateFileW(m_wstrFilePath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
 				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 		}
 
@@ -151,7 +154,7 @@ bool CFileLoader::OpenFile(const Ut::FILEOPEN& fos)
 	}
 
 	if (GetFileSizeEx(m_hFile, &m_stFileSize); m_stFileSize.QuadPart == 0) { //Zero size.
-		MessageBoxW(nullptr, L"File is zero size.", m_wstrPath.data(), MB_ICONERROR);
+		MessageBoxW(nullptr, L"File is zero size.", m_wstrFilePath.data(), MB_ICONERROR);
 		return false;
 	}
 
@@ -249,7 +252,7 @@ void CFileLoader::PrintLastError(std::wstring_view wsvSource)const
 	wchar_t buffErr[MAX_PATH];
 	FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, nullptr);
-	Ut::Log::AddLogEntryError(std::format(L"{} failed: 0x{:08X}\r\n{}", wsvSource, dwError, buffErr));
+	Ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X}\r\n{}", m_wstrFileName, wsvSource, dwError, buffErr));
 }
 
 auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXCTRL::SpanByte

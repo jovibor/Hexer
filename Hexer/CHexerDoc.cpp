@@ -62,12 +62,13 @@ bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 		fosLocal.wstrFilePath = ResolveLNK(fos.wstrFilePath.data());
 	}
 
+	m_wstrFilePath = fosLocal.wstrFilePath;
+	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
+
 	if (!m_stFileLoader.OpenFile(fosLocal)) {
 		return false;
 	}
 
-	m_wstrFilePath = fosLocal.wstrFilePath;
-	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 	theApp.AddToRFL(m_wstrFilePath);
 	Ut::Log::AddLogEntryInfo(L"File opened: " + m_wstrFileName);
 

@@ -193,8 +193,8 @@ private:
 
 BEGIN_MESSAGE_MAP(CHexerDockablePane, CDockablePane)
 	ON_WM_CREATE()
-	ON_WM_SIZE()
 	ON_WM_PAINT()
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 void CHexerDockablePane::SetNestedHWND(HWND hWnd)
@@ -228,15 +228,14 @@ auto CHexerDockablePane::GetNestedHWND()const->HWND
 
 void CHexerDockablePane::AdjustLayout()
 {
-	if (const auto pMainWnd = AfxGetMainWnd(); GetSafeHwnd() == nullptr
-		|| (pMainWnd != nullptr && pMainWnd->IsIconic()) || m_hWndNested == nullptr) {
+	if (m_hWndNested == nullptr) {
 		return;
 	}
 
 	CRect rcClient;
 	GetClientRect(rcClient);
-	::SetWindowPos(m_hWndNested, nullptr, rcClient.left, rcClient.top, rcClient.Width(),
-		rcClient.Height(), SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
+	::SetWindowPos(m_hWndNested, nullptr, 0, 0, rcClient.Width(), rcClient.Height(),
+		SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 
 int CHexerDockablePane::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -252,7 +251,6 @@ int CHexerDockablePane::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CHexerDockablePane::OnPaint()
 {
 	CPaintDC dc(this);
-
 	CRect rcClient;
 	GetClientRect(rcClient);
 	dc.FillSolidRect(rcClient, RGB(255, 255, 255)); //Default white bk.
@@ -261,6 +259,5 @@ void CHexerDockablePane::OnPaint()
 void CHexerDockablePane::OnSize(UINT nType, int cx, int cy)
 {
 	CDockablePane::OnSize(nType, cx, cy);
-
 	AdjustLayout();
 }

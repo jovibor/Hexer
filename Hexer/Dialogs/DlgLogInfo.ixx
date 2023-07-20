@@ -43,8 +43,8 @@ private:
 
 BEGIN_MESSAGE_MAP(CDlgLogInfo, CDialogEx)
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListGetDispInfo)
-	ON_NOTIFY(lex::LISTEX_MSG_GETICON, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListGetIcon)
 	ON_NOTIFY(NM_RCLICK, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListRClick)
+	ON_NOTIFY(lex::LISTEX_MSG_GETICON, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListGetIcon)
 END_MESSAGE_MAP()
 
 void CDlgLogInfo::AddLogEntry(const Ut::Log::LOGDATA& stData)
@@ -52,7 +52,8 @@ void CDlgLogInfo::AddLogEntry(const Ut::Log::LOGDATA& stData)
 	m_vecData.emplace_back(stData);
 
 	if (IsWindow(m_hWnd)) {
-		m_pList->SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOSCROLL);
+		m_pList->SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOINVALIDATEALL);
+		m_pList->EnsureVisible(m_pList->GetItemCount() - 1, FALSE);
 	}
 }
 
@@ -141,13 +142,14 @@ void CDlgLogInfo::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CDlgLogInfo::OnListGetIcon(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+void CDlgLogInfo::OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult)
 {
-	const auto pNMI = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
-	if (pNMI->iItem < 0 || pNMI->iSubItem != 2) //Event field.
+	const auto pLII = reinterpret_cast<lex::PLISTEXICONINFO>(pNMHDR);
+	if (pLII->iItem < 0 || pLII->iSubItem != 2) //Event field.
 		return;
 
-	pNMI->lParam = static_cast<int>(m_vecData[pNMI->iItem].eType); //Icon index in list's image list.
+	pLII->iIconIndex = static_cast<int>(m_vecData[pLII->iItem].eType); //Icon index in list's image list.
+	*pResult = TRUE;
 }
 
 void CDlgLogInfo::OnListRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
