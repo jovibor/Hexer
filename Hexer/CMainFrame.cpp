@@ -26,7 +26,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
-void CMainFrame::AddLogEntry(const Ut::Log::LOGDATA& stData)
+void CMainFrame::AddLogEntry(const Ut::Log::LOGINFO& stData)
 {
 	m_dlgLogInfo.AddLogEntry(stData);
 }
@@ -195,7 +195,7 @@ void CMainFrame::HideAllPanes()
 
 auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 {
-	AddLogEntry(*reinterpret_cast<Ut::Log::LOGDATA*>(lParam));
+	AddLogEntry(*reinterpret_cast<Ut::Log::LOGINFO*>(lParam));
 
 	return S_OK;
 }

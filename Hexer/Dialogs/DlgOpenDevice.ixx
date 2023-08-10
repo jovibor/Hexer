@@ -13,6 +13,7 @@ module;
 #include <comutil.h>
 #include <format>
 #include <memory>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -29,8 +30,8 @@ class CDlgOpenDisk final : public CDialogEx {
 		TYPE_USB = 7, RAID = 8, TYPE_iSCSI = 9, TYPE_SAS = 10, TYPE_SATA = 11, TYPE_SD = 12, TYPE_MMC = 13,
 		TYPE_Virtual = 14, TYPE_File_Backed_Virtual = 15, TYPE_Storage_Spaces = 16, TYPE_NVMe = 17, TYPE_Reserved = 18
 	};
-	const std::unordered_map<EBusType, std::wstring_view> m_mapBusType{
-		{ EBusType::TYPE_Unknown, L"Unknown"}, { EBusType::TYPE_SCSI, L"SCSI" },
+	const std::unordered_map<EBusType, std::wstring_view> m_mapBusType {
+		{ EBusType::TYPE_Unknown, L"Unknown" }, { EBusType::TYPE_SCSI, L"SCSI" },
 		{ EBusType::TYPE_ATAPI, L"ATAPI" }, { EBusType::TYPE_ATA, L"ATA" },
 		{ EBusType::TYPE_1394, L"1394" }, { EBusType::TYPE_SSA, L"SSA" },
 		{ EBusType::TYPE_Fibre_Channel, L"Fibre Channel" }, { EBusType::TYPE_USB, L"USB" },
@@ -45,7 +46,7 @@ class CDlgOpenDisk final : public CDialogEx {
 		TYPE_Unspecified = 0, TYPE_HDD = 3, TYPE_SSD = 4, TYPE_SCM = 5
 	};
 	const std::unordered_map<EMediaType, std::wstring_view> m_mapMediaType {
-		{ EMediaType::TYPE_Unspecified, L"Unspecified"}, { EMediaType::TYPE_HDD, L"HDD" },
+		{ EMediaType::TYPE_Unspecified, L"Unspecified" }, { EMediaType::TYPE_HDD, L"HDD" },
 		{ EMediaType::TYPE_SSD, L"SSD" }, { EMediaType::TYPE_SCM, L"SCM" }
 	};
 	struct PHYSICALDISK {
@@ -110,20 +111,19 @@ BOOL CDlgOpenDisk::OnInitDialog()
 	m_list.InsertColumn(4, L"Bus Type", 0, 100);
 
 	m_vecPhysicalDisks = GetPhysicalDisks(m_pWbemServices);
-	int index = 0;
-	for (const auto& it : m_vecPhysicalDisks) {
-		m_list.InsertItem(index, it.wstrFriendlyName.data());
-		m_list.SetItemText(index, 1, std::format(L"{:.1f} GB", static_cast<double>(it.ullSize) / 1024 / 1024 / 1024).data());
-		m_list.SetItemText(index, 2, it.wstrPath.data());
-		if (m_mapMediaType.contains(it.eMediaType)) {
-			m_list.SetItemText(index, 3, m_mapMediaType.at(it.eMediaType).data());
+
+	for (const auto [idx, disk] : m_vecPhysicalDisks | std::views::enumerate) {
+		const auto iidx = static_cast<int>(idx);
+		m_list.InsertItem(iidx, disk.wstrFriendlyName.data());
+		m_list.SetItemText(iidx, 1, std::format(L"{:.1f} GB", static_cast<double>(disk.ullSize) / 1024 / 1024 / 1024).data());
+		m_list.SetItemText(iidx, 2, disk.wstrPath.data());
+		if (m_mapMediaType.contains(disk.eMediaType)) {
+			m_list.SetItemText(iidx, 3, m_mapMediaType.at(disk.eMediaType).data());
 		}
 
-		if (m_mapBusType.contains(it.eBusType)) {
-			m_list.SetItemText(index, 4, m_mapBusType.at(it.eBusType).data());
+		if (m_mapBusType.contains(disk.eBusType)) {
+			m_list.SetItemText(iidx, 4, m_mapBusType.at(disk.eBusType).data());
 		}
-
-		++index;
 	}
 
 	return TRUE;
@@ -277,16 +277,15 @@ BOOL CDlgOpenVolume::OnInitDialog()
 	m_list.InsertColumn(5, L"Path", 0, 300);
 
 	m_vecVolumes = GetVolumes(m_pWbemServices);
-	int index = 0;
-	for (const auto& it : m_vecVolumes) {
-		m_list.InsertItem(index, it.wstrDriveLetter.data());
-		m_list.SetItemText(index, 1, it.wstrFileSystemLabel.data());
-		m_list.SetItemText(index, 2, std::format(L"{:.1f} GB", static_cast<double>(it.ullSize) / 1024 / 1024 / 1024).data());
-		m_list.SetItemText(index, 3, it.wstrDriveType.data());
-		m_list.SetItemText(index, 4, it.wstrFileSystem.data());
-		m_list.SetItemText(index, 5, it.wstrPath.data());
 
-		++index;
+	for (const auto [idx, vol] : m_vecVolumes | std::views::enumerate) {
+		const auto iidx = static_cast<int>(idx);
+		m_list.InsertItem(iidx, vol.wstrDriveLetter.data());
+		m_list.SetItemText(iidx, 1, vol.wstrFileSystemLabel.data());
+		m_list.SetItemText(iidx, 2, std::format(L"{:.1f} GB", static_cast<double>(vol.ullSize) / 1024 / 1024 / 1024).data());
+		m_list.SetItemText(iidx, 3, vol.wstrDriveType.data());
+		m_list.SetItemText(iidx, 4, vol.wstrFileSystem.data());
+		m_list.SetItemText(iidx, 5, vol.wstrPath.data());
 	}
 
 	return TRUE;
@@ -466,7 +465,6 @@ void CDlgOpenPath::OnComboPathEdit()
 export class CDlgOpenDevice final : public CDialogEx {
 public:
 	CDlgOpenDevice(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENDEVICE, pParent) { }
-	~CDlgOpenDevice() = default;
 	INT_PTR DoModal(int iTab = 0);
 	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
 private:

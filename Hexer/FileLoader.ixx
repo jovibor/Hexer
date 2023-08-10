@@ -252,7 +252,7 @@ void CFileLoader::PrintLastError(std::wstring_view wsvSource)const
 	wchar_t buffErr[MAX_PATH];
 	FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, nullptr);
-	Ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X}\r\n{}", m_wstrFileName, wsvSource, dwError, buffErr));
+	Ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X} {}", m_wstrFileName, wsvSource, dwError, buffErr));
 }
 
 auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXCTRL::SpanByte

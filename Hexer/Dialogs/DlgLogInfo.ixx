@@ -21,7 +21,7 @@ namespace lex = HEXCTRL::LISTEX;
 
 export class CDlgLogInfo final : public CDialogEx {
 public:
-	void AddLogEntry(const Ut::Log::LOGDATA& stData);
+	void AddLogEntry(const Ut::Log::LOGINFO& stData);
 private:
 	void ClearAll();
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -35,8 +35,13 @@ private:
 	enum class EMenuID : std::uint16_t {
 		IDM_LIST_CLEARALL = 0x8001
 	};
+	struct LOGDATA { //Struct for storing log data.
+		Ut::Log::local_time tmloc;
+		std::wstring        wstrMsg;
+		Ut::Log::EMsgType   eType { };
+	};
 	lex::IListExPtr m_pList { lex::CreateListEx() };
-	std::vector<Ut::Log::LOGDATA> m_vecData { };
+	std::vector<LOGDATA> m_vecData;
 	CImageList m_stImgList;
 	CMenu m_menuList;
 };
@@ -47,9 +52,9 @@ BEGIN_MESSAGE_MAP(CDlgLogInfo, CDialogEx)
 	ON_NOTIFY(lex::LISTEX_MSG_GETICON, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListGetIcon)
 END_MESSAGE_MAP()
 
-void CDlgLogInfo::AddLogEntry(const Ut::Log::LOGDATA& stData)
+void CDlgLogInfo::AddLogEntry(const Ut::Log::LOGINFO& li)
 {
-	m_vecData.emplace_back(stData);
+	m_vecData.emplace_back(li.tmloc, std::wstring { li.wsvMsg }, li.eType);
 
 	if (IsWindow(m_hWnd)) {
 		m_pList->SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOINVALIDATEALL);

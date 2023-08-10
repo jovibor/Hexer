@@ -18,7 +18,7 @@ export namespace Ut
 {
 	constexpr auto HEXER_VERSION_MAJOR = 0;
 	constexpr auto HEXER_VERSION_MINOR = 9;
-	constexpr auto HEXER_VERSION_PATCH = 2;
+	constexpr auto HEXER_VERSION_PATCH = 3;
 
 	constexpr UINT g_arrPanes[] { IDC_PANE_FILEINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGINFO };
 
@@ -78,7 +78,7 @@ export namespace Ut
 			const auto flScale = iLOGPIXELSY / 96.0F;
 			::ReleaseDC(nullptr, hDC);
 			return { .iLOGPIXELSY { iLOGPIXELSY }, .flDPIScale { flScale } };
-		}() };
+			}() };
 
 		return ret;
 	}
@@ -100,26 +100,26 @@ export namespace Ut
 		};
 
 		using local_time = std::chrono::local_time<std::chrono::system_clock::duration>;
-		struct LOGDATA {
-			local_time   tmloc { std::chrono::current_zone()->to_local(std::chrono::system_clock::now()) };
-			std::wstring wstrMsg;
-			EMsgType     eType { };
+		struct LOGINFO { //Struct for providing and transferring log data.
+			local_time        tmloc { std::chrono::current_zone()->to_local(std::chrono::system_clock::now()) };
+			std::wstring_view wsvMsg;
+			EMsgType          eType { };
 		};
 
-		void AddLogEntry(const LOGDATA& stData) {
-			AfxGetMainWnd()->SendMessageW(WM_ADDLOGENTRY, 0, reinterpret_cast<WPARAM>(&stData));
+		void AddLogEntry(const LOGINFO& li) {
+			AfxGetMainWnd()->SendMessageW(WM_ADDLOGENTRY, 0, reinterpret_cast<WPARAM>(&li));
 		}
 
 		void AddLogEntryError(std::wstring_view wsvMsg) {
-			AddLogEntry({ .wstrMsg = std::wstring { wsvMsg }, .eType = EMsgType::msg_error });
+			AddLogEntry({ .wsvMsg = wsvMsg, .eType = EMsgType::msg_error });
 		}
 
 		void AddLogEntryWarning(std::wstring_view wsvMsg) {
-			AddLogEntry({ .wstrMsg = std::wstring { wsvMsg }, .eType = EMsgType::msg_warning });
+			AddLogEntry({ .wsvMsg = wsvMsg, .eType = EMsgType::msg_warning });
 		}
 
 		void AddLogEntryInfo(std::wstring_view wsvMsg) {
-			AddLogEntry({ .wstrMsg = std::wstring { wsvMsg }, .eType = EMsgType::msg_info });
+			AddLogEntry({ .wsvMsg = wsvMsg, .eType = EMsgType::msg_info });
 		}
 	}
 }

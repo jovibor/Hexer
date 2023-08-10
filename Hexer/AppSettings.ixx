@@ -12,6 +12,7 @@ module;
 #include <cassert>
 #include <bitset>
 #include <format>
+#include <ranges>
 #include <string>
 #include <vector>
 export module AppSettings;
@@ -313,9 +314,9 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 	regRFL.RecurseDeleteKey(L"Recent File List"); //Remove all data to set it below.
 	const std::wstring wstrKeyRFL = wstrAppKey + L"\\Recent File List";
 	regRFL.Create(HKEY_CURRENT_USER, wstrKeyRFL.data());
-	int iIndex { 1 };
-	for (const auto& wstr : RFLGetData()) {
-		regRFL.SetStringValue(std::format(L"File{:02d}", iIndex++).data(), wstr.data());
+
+	for (const auto [idx, wstr] : RFLGetData() | std::views::enumerate) {
+		regRFL.SetStringValue(std::format(L"File{:02d}", idx).data(), wstr.data());
 	}
 }
 
