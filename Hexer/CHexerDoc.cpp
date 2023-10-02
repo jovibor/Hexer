@@ -70,7 +70,7 @@ bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 	}
 
 	theApp.AddToRFL(m_wstrFilePath);
-	Ut::Log::AddLogEntryInfo(L"File opened: " + m_wstrFileName);
+	Ut::Log::AddLogEntryInfo(L"File opened: " + m_wstrFileName + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" });
 
 	return true;
 }
@@ -80,7 +80,7 @@ bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 
 BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 {
-	return OnOpenDocument(Ut::FILEOPEN {.wstrFilePath{ lpszPathName }, .fNewFile{ false } });
+	return OnOpenDocument(Ut::FILEOPEN { .wstrFilePath { lpszPathName }, .fNewFile { false } });
 }
 
 void CHexerDoc::OnCloseDocument()

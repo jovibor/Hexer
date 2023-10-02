@@ -100,8 +100,12 @@ void CHexerView::OnDraw(CDC* /*pDC*/)
 
 void CHexerView::OnEditEditMode()
 {
-	GetHexCtrl()->SetMutable(!GetHexCtrl()->IsMutable());
+	const auto fNewAccess = !GetHexCtrl()->IsMutable();
+	GetHexCtrl()->SetMutable(fNewAccess);
 	GetMainFrame()->UpdatePaneFileInfo();
+
+	const auto pDoc = GetDocument();
+	Ut::Log::AddLogEntryInfo(L"File access changed: " + pDoc->GetFileName() + std::wstring { fNewAccess ? L" (RW)" : L" (RO)" });
 }
 
 void CHexerView::OnFilePrintPreview()
@@ -138,7 +142,7 @@ void CHexerView::OnInitialUpdate()
 	GetChildFrame()->SetHexerView(this);
 	const auto pDoc = GetDocument();
 	GetHexCtrl()->Create({ .hWndParent { m_hWnd }, .uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD } });
-	GetHexCtrl()->SetData({ .spnData{ std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },
+	GetHexCtrl()->SetData({ .spnData { std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },
 		 .pHexVirtData { pDoc->GetVirtualInterface() }, .dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }
 
