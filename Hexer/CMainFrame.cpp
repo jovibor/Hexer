@@ -156,8 +156,9 @@ auto CMainFrame::GetHWNDForPane(UINT uPaneID)->HWND
 		if (const auto pView = GetHexerView(); pView != nullptr) {
 			return pView->GetHWNDForPane(uPaneID);
 		}
-		return { };
 	}
+
+	return { };
 }
 
 auto CMainFrame::GetPanesMap()->const std::unordered_map<UINT, CHexerDockablePane*>&
@@ -198,6 +199,24 @@ auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 	AddLogEntry(*reinterpret_cast<Ut::Log::LOGINFO*>(lParam));
 
 	return S_OK;
+}
+
+BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pPane)
+{
+	//When pane is closing by mouse click we save pane's data to the settings.
+
+	CStringW wstrPane;
+	pPane->GetWindowTextW(wstrPane);
+
+	CStringW wstrRes;
+	for (auto uPaneID : Ut::g_arrPanes) {
+		if (wstrRes.LoadStringW(uPaneID); wstrRes == wstrPane) { //Cycling through all pane's names.
+			SavePaneData(uPaneID);
+			break;
+		}
+	}
+
+	return CMDIFrameWndEx::OnCloseDockingPane(pPane);
 }
 
 void CMainFrame::OnClose()
@@ -336,8 +355,12 @@ void CMainFrame::OnViewCustomize()
 void CMainFrame::OnViewRangePanes(UINT uMenuID)
 {
 	const auto uPaneID = Ut::GetPaneIDFromMenuID(uMenuID);
-	const auto fVisible = !IsPaneVisible(uPaneID);
-	ShowPane(uPaneID, fVisible, fVisible);
+	const auto fVisible = IsPaneVisible(uPaneID);
+	ShowPane(uPaneID, !fVisible, !fVisible);
+
+	if (fVisible) { //If pane is closing then we save its data.
+		SavePaneData(uPaneID);
+	}
 }
 
 void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)
@@ -407,15 +430,22 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	return CMDIFrameWndEx::PreTranslateMessage(pMsg);
 }
 
+void CMainFrame::SavePaneData(UINT uPaneID)
+{
+	if (const auto optDlg = Ut::GetEHexWndFromPaneID(uPaneID); optDlg) {
+		theApp.GetAppSettings().SetPaneData(uPaneID, GetHexCtrl()->GetDlgData(*optDlg));
+	}
+}
+
 void CMainFrame::SavePanesSettings()
 {
-	if (const auto pView = GetHexerView(); pView != nullptr) {
-		auto& refSett = theApp.GetAppSettings();
-		for (auto id : Ut::g_arrPanes) {
-			refSett.SetPaneStatus(id, IsPaneVisible(id), IsPaneActive(id));
-			if (const auto optDlg = Ut::GetEHexWndFromPaneID(id); optDlg && IsPaneVisible(id)) {
-				refSett.SetPaneData(id, GetHexCtrl()->GetDlgData(*optDlg));
-			}
+	if (GetHexerView() == nullptr)
+		return;
+
+	for (auto uPaneID : Ut::g_arrPanes) {
+		theApp.GetAppSettings().SetPaneStatus(uPaneID, IsPaneVisible(uPaneID), IsPaneActive(uPaneID));
+		if (IsPaneVisible(uPaneID)) {
+			SavePaneData(uPaneID);
 		}
 	}
 }
@@ -452,6 +482,8 @@ auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		break;
 	case WM_LBUTTONDBLCLK:
 		theApp.OnFileOpen();
+		break;
+	default:
 		break;
 	}
 

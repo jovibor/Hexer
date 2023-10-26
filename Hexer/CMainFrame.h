@@ -38,6 +38,7 @@ protected:
 	[[nodiscard]] bool HasChildFrame();
 	void HideAllPanes();
 	afx_msg auto OnAddLogEntry(WPARAM wParam, LPARAM lParam) -> LRESULT;
+	BOOL OnCloseDockingPane(CDockablePane* pPane)override;
 	afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
 	afx_msg void OnClose();
@@ -46,6 +47,7 @@ protected:
 	afx_msg void OnViewRangePanes(UINT uMenuID);
 	afx_msg void OnUpdateRangePanes(CCmdUI* pCmdUI);
 	BOOL PreTranslateMessage(MSG* pMsg)override;
+	void SavePaneData(UINT uPaneID);
 	void SavePanesSettings();
 	DECLARE_DYNAMIC(CMainFrame);
 	DECLARE_MESSAGE_MAP();
