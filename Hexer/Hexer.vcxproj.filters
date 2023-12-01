@@ -63,16 +63,10 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.h">
       <Filter>HexCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.h">
-      <Filter>HexCtrl</Filter>
-    </ClInclude>
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgGoTo.h">
       <Filter>HexCtrl</Filter>
     </ClInclude>
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgModify.h">
-      <Filter>HexCtrl</Filter>
-    </ClInclude>
-    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgOpers.h">
       <Filter>HexCtrl</Filter>
     </ClInclude>
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.h">
@@ -119,16 +113,10 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.cpp">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.cpp">
-      <Filter>HexCtrl</Filter>
-    </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgGoTo.cpp">
       <Filter>HexCtrl</Filter>
     </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgModify.cpp">
-      <Filter>HexCtrl</Filter>
-    </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgOpers.cpp">
       <Filter>HexCtrl</Filter>
     </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.cpp">
@@ -161,20 +149,20 @@
     <ClCompile Include="Dialogs\DlgSettings.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="Dialogs\DlgLogInfo.ixx">
-      <Filter>Modules</Filter>
-    </ClCompile>
     <ClCompile Include="Dialogs\DlgFileInfo.ixx">
       <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexScroll.ixx">
-      <Filter>HexCtrl</Filter>
     </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexSelection.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\HexUtility.ixx">
       <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexScroll.ixx">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialogs\DlgLogInfo.ixx">
+      <Filter>Modules</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

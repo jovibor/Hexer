@@ -11,10 +11,11 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-import Utility;
-import HexerDockablePane;
-import DlgLogInfo;
+
 import DlgFileInfo;
+import DlgLogInfo;
+import HexerDockablePane;
+import Utility;
 
 class CHexerView;
 namespace HEXCTRL { class IHexCtrl; }; //Forward declarations.

@@ -125,7 +125,7 @@ BEGIN
     END
     POPUP "&Edit"
     BEGIN
-        MENUITEM "Edit Mode",                   IDM_EDIT_EDITMODE
+        MENUITEM "Writable Mode",               IDM_EDIT_EDITMODE
         MENUITEM SEPARATOR
         MENUITEM "&Undo\tCtrl+Z",               ID_EDIT_UNDO
         MENUITEM SEPARATOR
@@ -447,7 +447,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDM_EDIT_EDITMODE       "Toggle Edit Mode\nEdit Mode"
+    IDM_EDIT_EDITMODE       "Toggle Writable Mode\nWritable Mode"
 END
 
 STRINGTABLE

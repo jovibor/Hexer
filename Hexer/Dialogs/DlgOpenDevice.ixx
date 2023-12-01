@@ -466,7 +466,7 @@ export class CDlgOpenDevice final : public CDialogEx {
 public:
 	CDlgOpenDevice(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENDEVICE, pParent) { }
 	INT_PTR DoModal(int iTab = 0);
-	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
+	[[nodiscard]] auto GetPaths()const->std::vector<std::wstring>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	BOOL OnInitDialog()override;
@@ -478,9 +478,9 @@ private:
 private:
 	CTabCtrl m_tabMain;
 	CRect m_rcWnd; //Dialog rect to set minimum size in the OnGetMinMaxInfo.
-	std::unique_ptr<CDlgOpenDisk> m_pDlgDisk;
-	std::unique_ptr<CDlgOpenVolume> m_pDlgVolume;
-	std::unique_ptr<CDlgOpenPath> m_pDlgPath;
+	std::unique_ptr<CDlgOpenDisk> m_pDlgDisk { std::make_unique<CDlgOpenDisk>() };
+	std::unique_ptr<CDlgOpenVolume> m_pDlgVolume { std::make_unique<CDlgOpenVolume>() };
+	std::unique_ptr<CDlgOpenPath> m_pDlgPath { std::make_unique<CDlgOpenPath>() };
 	int m_iCurTab { }; //Current tab. To avoid call m_tabMain.GetCurSel after dialog destroyed.
 };
 
@@ -498,7 +498,7 @@ INT_PTR CDlgOpenDevice::DoModal(int iTab)
 	return CDialogEx::DoModal();
 }
 
-auto CDlgOpenDevice::GetPaths()->std::vector<std::wstring>&
+auto CDlgOpenDevice::GetPaths()const->std::vector<std::wstring>&
 {
 	switch (m_iCurTab) {
 	case 0:
@@ -546,17 +546,14 @@ BOOL CDlgOpenDevice::OnInitDialog()
 			RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_NONE);
 	}
 
-	m_pDlgDisk = std::make_unique<CDlgOpenDisk>();
 	m_pDlgDisk->SetIWbemServices(pWbemServices);
 	m_pDlgDisk->Create(IDD_OPENDISK, this);
 	m_pDlgDisk->SetWindowPos(nullptr, rcTab.left, rcTab.bottom + 1, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 
-	m_pDlgVolume = std::make_unique<CDlgOpenVolume>();
 	m_pDlgVolume->SetIWbemServices(pWbemServices);
 	m_pDlgVolume->Create(IDD_OPENVOLUME, this);
 	m_pDlgVolume->SetWindowPos(nullptr, rcTab.left, rcTab.bottom + 1, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_HIDEWINDOW);
 
-	m_pDlgPath = std::make_unique<CDlgOpenPath>();
 	m_pDlgPath->Create(IDD_OPENPATH, this);
 	m_pDlgPath->SetWindowPos(nullptr, rcTab.left, rcTab.bottom + 1, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_HIDEWINDOW);
 

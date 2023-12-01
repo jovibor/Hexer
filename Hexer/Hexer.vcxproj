@@ -50,11 +50,15 @@
     <OutDir>$(SolutionDir)bin\</OutDir>
     <IntDir>$(SolutionDir)bin\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)d</TargetName>
+    <PublicModuleDirectories>
+    </PublicModuleDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\</OutDir>
     <IntDir>$(SolutionDir)bin\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <PublicModuleDirectories>
+    </PublicModuleDirectories>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -64,9 +68,8 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);Dialogs\;dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <BuildStlModules>true</BuildStlModules>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -94,9 +97,8 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);Dialogs\;dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <BuildStlModules>true</BuildStlModules>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -160,10 +162,8 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCallback.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCodepage.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.h" />
-    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgGoTo.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgModify.h" />
-    <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgOpers.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.h" />
     <ClInclude Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.h" />
     <ClCompile Include="Dialogs\DlgNewFile.ixx">
@@ -201,10 +201,8 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCallback.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCodepage.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.cpp" />
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgFillData.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgGoTo.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgModify.cpp" />
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgOpers.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.cpp" />
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.cpp" />
     <ClCompile Include="stdafx.cpp">
