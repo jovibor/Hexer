@@ -26,6 +26,7 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGBKMMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
+	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_SETFONT, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlSetFont)
 	ON_UPDATE_COMMAND_UI(IDM_EDIT_EDITMODE, &CHexerView::OnUpdateEditEditMode)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
@@ -135,13 +136,20 @@ void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	GetMainFrame()->ShowPane(uPaineID, true, true);
 }
 
+void CHexerView::OnHexCtrlSetFont(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+{
+	theApp.GetAppSettings().SetHexCtrlFont(GetHexCtrl()->GetFont());
+	theApp.GetAppSettings().SetHexCtrlColors(GetHexCtrl()->GetColors()); //Because font color could be changed.
+}
+
 void CHexerView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
 
 	GetChildFrame()->SetHexerView(this);
 	const auto pDoc = GetDocument();
-	GetHexCtrl()->Create({ .hWndParent { m_hWnd }, .uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD } });
+	GetHexCtrl()->Create({ .hWndParent { m_hWnd }, .pColors { theApp.GetAppSettings().GetHexCtrlColors() },
+		.pLogFont { theApp.GetAppSettings().GetHexCtrlFont() }, .uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD } });
 	GetHexCtrl()->SetData({ .spnData { std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },
 		 .pHexVirtData { pDoc->GetVirtualInterface() }, .dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }

@@ -20,6 +20,7 @@ private:
 	afx_msg void OnEditEditMode();
 	afx_msg void OnFilePrintPreview();
 	afx_msg void OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnHexCtrlSetFont(NMHDR* pNMHDR, LRESULT* pResult);
 	void OnInitialUpdate()override;
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)override;

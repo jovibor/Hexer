@@ -5,6 +5,7 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #pragma once
+#include "HexCtrl.h"
 #include <string>
 #include <vector>
 import Utility;
