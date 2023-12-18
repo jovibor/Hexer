@@ -14,8 +14,7 @@ module;
 #include <string>
 export module Utility;
 
-export namespace Ut
-{
+export namespace Ut {
 	constexpr auto HEXER_VERSION_MAJOR = 0;
 	constexpr auto HEXER_VERSION_MINOR = 9;
 	constexpr auto HEXER_VERSION_PATCH = 3;
@@ -93,8 +92,7 @@ export namespace Ut
 
 	constexpr auto WM_ADDLOGENTRY { WM_APP + 1 }; //Custom message.
 
-	namespace Log
-	{
+	namespace Log {
 		enum class EMsgType :std::int8_t { //Enum id-number is the icon's index in the image list.
 			Unknown = -1, msg_error = 0, msg_warning = 1, msg_info = 2
 		};

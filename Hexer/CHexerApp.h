@@ -6,6 +6,7 @@
 *******************************************************************************/
 #pragma once
 #include "HexCtrl.h"
+#include <afxwin.h>
 #include <string>
 #include <vector>
 import Utility;
@@ -15,7 +16,8 @@ class CHexerApp final : public CWinAppEx {
 public:
 	afx_msg void OnFileOpen();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
-	void AddToRFL(std::wstring_view wsvPath); //Add path to Recent File List.
+	void AddToRFL(std::wstring_view wsvPath); //Add path to the Recent File List.
+	void RemoveFromRFL(std::wstring_view wsvPath); //Remove path from the RFL if any.
 private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;

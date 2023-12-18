@@ -16,7 +16,6 @@
 export module DlgLogInfo;
 
 import Utility;
-using namespace Ut;
 namespace lex = HEXCTRL::LISTEX;
 
 export class CDlgLogInfo final : public CDialogEx {

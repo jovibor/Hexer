@@ -7,10 +7,13 @@ Fast, fully-featured, multi-tab hexadecimal editor based on the [HexCtrl](https:
 * View and edit files up to **16EB** (exabyte)
 * Fully-featured **Bookmarks Manager**
 * Fully-featured **Search and Replace**
-* Changeable encoding for the text area
-* Many options to **Copy/Paste** to/from clipboard
+* Many options to **Copy/Paste** to/from the clipboard
 * **Undo/Redo**
-* Modify data with **Filling** and many predefined **Operations** options
+* Modify data with **Filling** and many **Operations** options
+* Ability to visually divide data into pages
+* Powerful system of Templates
 
-## Installation
+## How To Build
+1. Clone git repo with all submodules:  
 `git clone https://github.com/jovibor/Hexer.git --recurse-submodules`
+1. Open `Hexer\Hexer.sln` solution in the **Visual Studio 2022** or newer

@@ -17,17 +17,13 @@ import DlgOpenDevice;
 import DlgNewFile;
 import DlgSettings;
 
-using namespace Ut;
-
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 CHexerApp theApp;
 
-
 //CDlgAbout.
-
 class CDlgAbout final : public CDialogEx {
 public:
 	explicit CDlgAbout()noexcept : CDialogEx(IDD_ABOUTBOX) {}
@@ -59,7 +55,6 @@ BOOL CDlgAbout::OnInitDialog()
 
 
 //CHexerMDTemplate.
-
 class CHexerMDTemplate final : public CMultiDocTemplate {
 public:
 	CHexerMDTemplate(UINT nIDResource, CRuntimeClass* pDocClass, CRuntimeClass* pFrameClass, CRuntimeClass* pViewClass)
@@ -107,7 +102,6 @@ auto CHexerMDTemplate::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
 
 
 //CHexerDocMgr.
-
 class CHexerDocMgr final : public CDocManager {
 public:
 	auto OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU) -> CDocument* override;
@@ -250,7 +244,6 @@ auto CHexerDocMgr::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
 
 
 //CHexerApp.
-
 BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
 	ON_COMMAND(ID_FILE_NEW, &CHexerApp::OnFileNew)
 	ON_COMMAND(ID_FILE_OPEN, &CHexerApp::OnFileOpen)
@@ -266,6 +259,11 @@ END_MESSAGE_MAP()
 void CHexerApp::AddToRFL(std::wstring_view wsvPath)
 {
 	GetAppSettings().RFLAddToList(wsvPath);
+}
+
+void CHexerApp::RemoveFromRFL(std::wstring_view wsvPath)
+{
+	GetAppSettings().RFLRemoveFromList(wsvPath);
 }
 
 auto CHexerApp::GetAppSettings()->CAppSettings&
@@ -291,19 +289,19 @@ void CHexerApp::OnFileOpen()
 				pResults->GetItemAt(i, &pItem);
 				CComHeapPtr<wchar_t> pwstrPath;
 				pItem->GetDisplayName(SIGDN_FILESYSPATH, &pwstrPath);
-				const auto pDoc = OpenDocumentFile(Ut::FILEOPEN {.wstrFilePath{ pwstrPath }, .fNewFile{ false } });
+				const auto pDoc = OpenDocumentFile(Ut::FILEOPEN { .wstrFilePath { pwstrPath }, .fNewFile { false } });
 				fOpened = !fOpened ? pDoc != nullptr : true;
 			}
 			return fOpened;
 		}
 		return true;
-	};
+		};
 
 	while (!lmbFOD()) { }; //If no file has been opened (in multiple selection) show the "Open File Dialog" again.
 }
 
 
-//Private methods.
+//CHexerApp private methods.
 
 BOOL CHexerApp::InitInstance()
 {
@@ -395,7 +393,7 @@ void CHexerApp::OnFileOpenDevice()
 {
 	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& wstrPath : dlg.GetPaths()) {
-			OpenDocumentFile({ .wstrFilePath{ wstrPath }, .fNewFile { false } });
+			OpenDocumentFile({ .wstrFilePath { wstrPath }, .fNewFile { false } });
 		}
 	}
 }
@@ -408,7 +406,7 @@ void CHexerApp::OnToolsSettings()
 
 void CHexerApp::OnFileRFL(UINT uID)
 {
-	OpenDocumentFile({ .wstrFilePath { GetAppSettings().RFLGetPathFromID(uID) }, .fNewFile{ false } });
+	OpenDocumentFile({ .wstrFilePath { GetAppSettings().RFLGetPathFromID(uID) }, .fNewFile { false } });
 }
 
 void CHexerApp::OnUpdateFileNew(CCmdUI* pCmdUI)

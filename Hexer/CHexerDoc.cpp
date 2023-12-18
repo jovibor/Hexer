@@ -66,6 +66,8 @@ bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 
 	if (!m_stFileLoader.OpenFile(fosLocal)) {
+		theApp.RemoveFromRFL(m_wstrFilePath);
+		Ut::Log::AddLogEntryError(L"File open failed: " + m_wstrFileName);
 		return false;
 	}
 

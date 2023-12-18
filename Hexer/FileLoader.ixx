@@ -127,7 +127,7 @@ bool CFileLoader::OpenFile(const Ut::FILEOPEN& fos)
 		fos.fNewFile ? CREATE_ALWAYS : OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (fos.fNewFile) { //Setting the size of the new file.
-		if (SetFilePointerEx(m_hFile, { .QuadPart { static_cast<LONGLONG>(fos.ullFileSize)} }, nullptr, FILE_BEGIN) == FALSE) {
+		if (SetFilePointerEx(m_hFile, { .QuadPart { static_cast<LONGLONG>(fos.ullFileSize) } }, nullptr, FILE_BEGIN) == FALSE) {
 			PrintLastError(L"SetFilePointerEx");
 			return false;
 		}
@@ -263,7 +263,7 @@ auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXC
 	}
 
 	if (ullOffset >= m_ullOffsetCurr && (ullOffset + ullSize) <= (m_ullOffsetCurr + m_ullSizeCurr)) { //Data is already in the cache.
-		return HEXCTRL::SpanByte { m_pCache.get() + (ullOffset - m_ullOffsetCurr), ullSize};
+		return HEXCTRL::SpanByte { m_pCache.get() + (ullOffset - m_ullOffsetCurr), ullSize };
 	}
 
 	FlushData(); //Flush current cache data if it was modified, before the ReadFile.

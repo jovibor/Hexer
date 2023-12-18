@@ -29,6 +29,7 @@ public:
 	CAppSettingsRFL() = default;
 	void Initialize(HMENU hMenu, int iMenuFirstID, HBITMAP hBMPDisk, int iMaxEntry);
 	void AddToRFL(std::wstring_view wsvPath, bool fBeginning);
+	void RemoveFromRFL(std::wstring_view wsvPath);
 	void ClearRFL();
 	[[nodiscard]] auto GetPathFromRFL(UINT uID)const->std::wstring;
 	[[nodiscard]] auto GetRFL()const->const std::vector<std::wstring>&;
@@ -78,6 +79,16 @@ void CAppSettingsRFL::AddToRFL(std::wstring_view wsvPath, bool fBeginning)
 		m_vecRFL.resize(m_iMaxEntry);
 	}
 
+	RebuildRFLMenu();
+}
+
+void CAppSettingsRFL::RemoveFromRFL(std::wstring_view wsvPath)
+{
+	assert(m_fInit);
+	if (!m_fInit)
+		return;
+
+	std::erase(m_vecRFL, wsvPath);
 	RebuildRFLMenu();
 }
 
@@ -157,6 +168,7 @@ public:
 	void RFLClear();
 	[[nodiscard]] auto RFLGetPathFromID(UINT uID)const->std::wstring;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry = 20);
+	void RFLRemoveFromList(std::wstring_view wsvPath);
 	void SaveSettings(std::wstring_view wsvKeyName);
 	void SetHexCtrlFont(const LOGFONTW& lf);
 	void SetHexCtrlColors(const HEXCTRL::HEXCOLORS& clrs);
@@ -343,6 +355,11 @@ auto CAppSettings::RFLGetPathFromID(UINT uID)const->std::wstring
 void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry)
 {
 	m_stRFL.Initialize(hMenu, iIDMenuFirst, hBMPDisk, iMaxEntry);
+}
+
+void CAppSettings::RFLRemoveFromList(std::wstring_view wsvPath)
+{
+	m_stRFL.RemoveFromRFL(wsvPath);
 }
 
 void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
