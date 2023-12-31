@@ -16,30 +16,7 @@
 export module DlgFileInfo;
 
 import Utility;
-
-//CHexerPropGridCtrl.
-class CHexerPropGridCtrl final : public CMFCPropertyGridCtrl {
-public:
-	void SetRedraw(bool fRedraw) {
-		m_fRedraw = fRedraw;
-	}
-private:
-	int OnDrawProperty(CDC* pDC, CMFCPropertyGridProperty* pProp)const override {
-		return m_fRedraw ? CMFCPropertyGridCtrl::OnDrawProperty(pDC, pProp) : TRUE;
-	}
-	void OnSize(UINT /*f*/, int /*cx*/, int /*cy*/) {
-		EndEditItem();
-		AdjustLayout();
-	}
-	DECLARE_MESSAGE_MAP();
-private:
-	bool m_fRedraw { true };
-};
-
-BEGIN_MESSAGE_MAP(CHexerPropGridCtrl, CMFCPropertyGridCtrl)
-	ON_WM_SIZE()
-END_MESSAGE_MAP()
-
+import HexerPropGridCtrl;
 
 //CDlgFileInfo.
 export class CDlgFileInfo final : public CDialogEx {

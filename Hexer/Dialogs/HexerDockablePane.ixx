@@ -185,10 +185,12 @@ private:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnPaint();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	BOOL PreTranslateMessage(MSG* pMsg)override;
 	DECLARE_MESSAGE_MAP();
 private:
-	HWND m_hWndNested { };
-	HWND m_hWndOrigParent { };
+	HWND m_hWndNested { };       //Currently nested window.
+	HWND m_hWndParentOrig { };   //Original parent of the m_hWndNested.
+	LONG_PTR m_llStylesOrig { }; //Original styles of the m_hWndNested.
 };
 
 BEGIN_MESSAGE_MAP(CHexerDockablePane, CDockablePane)
@@ -204,17 +206,17 @@ void CHexerDockablePane::SetNestedHWND(HWND hWnd)
 		return;
 
 	if (m_hWndNested != nullptr) {
-		::SetParent(m_hWndNested, m_hWndOrigParent); //Restore original parent.
+		::SetWindowLongPtrW(m_hWndNested, GWL_STYLE, m_llStylesOrig); //Restore original styles.
+		::SetParent(m_hWndNested, m_hWndParentOrig); //Restore original parent.
 		::ShowWindow(m_hWndNested, SW_HIDE);
 	}
 
-	const auto llStyle = GetWindowLongPtrW(hWnd, GWL_STYLE);
-	//WS_THICKFRAME is responsible for resizability.
-	const auto llStyleNew = llStyle & ~(WS_BORDER | WS_DLGFRAME | WS_THICKFRAME);
-	SetWindowLongPtrW(hWnd, GWL_STYLE, llStyleNew);
-	::SetParent(hWnd, m_hWnd);
+	m_llStylesOrig = ::GetWindowLongPtrW(hWnd, GWL_STYLE);
+	const auto llStyleNew = m_llStylesOrig & ~(WS_BORDER | WS_DLGFRAME | WS_THICKFRAME); //WS_THICKFRAME is responsible for resizability.
+	//const auto llStyleNew = DS_SETFONT | DS_FIXEDSYS | WS_CHILD;
+	::SetWindowLongPtrW(hWnd, GWL_STYLE, llStyleNew);
+	m_hWndParentOrig = ::SetParent(hWnd, m_hWnd);
 	m_hWndNested = hWnd;
-	m_hWndOrigParent = ::GetParent(hWnd);
 	AdjustLayout();
 }
 
@@ -260,4 +262,13 @@ void CHexerDockablePane::OnSize(UINT nType, int cx, int cy)
 {
 	CDockablePane::OnSize(nType, cx, cy);
 	AdjustLayout();
+}
+
+BOOL CHexerDockablePane::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_ESCAPE) {
+		return FALSE; //To prevent App hang on pressing Esc on any Pane's title.
+	}
+
+	return CDockablePane::PreTranslateMessage(pMsg);
 }

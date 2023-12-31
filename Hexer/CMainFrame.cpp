@@ -197,14 +197,12 @@ void CMainFrame::HideAllPanes()
 auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 {
 	AddLogEntry(*reinterpret_cast<Ut::Log::LOGINFO*>(lParam));
-
 	return S_OK;
 }
 
 BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pPane)
 {
 	//When pane is closing by mouse click we save pane's data to the settings.
-
 	CStringW wstrPane;
 	pPane->GetWindowTextW(wstrPane);
 

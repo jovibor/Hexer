@@ -401,7 +401,7 @@ void CHexerApp::OnFileOpenDevice()
 void CHexerApp::OnToolsSettings()
 {
 	CDlgSettings dlg;
-	dlg.DoModal();
+	dlg.DoModal(m_stAppSettings);
 }
 
 void CHexerApp::OnFileRFL(UINT uID)
@@ -421,5 +421,5 @@ void CHexerApp::OnUpdateFileRFL(CCmdUI* pCmdUI)
 
 void CHexerApp::OnUpdateToolsSettings(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable(FALSE);
+	pCmdUI->Enable(TRUE);
 }

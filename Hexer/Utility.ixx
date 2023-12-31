@@ -17,7 +17,7 @@ export module Utility;
 export namespace Ut {
 	constexpr auto HEXER_VERSION_MAJOR = 0;
 	constexpr auto HEXER_VERSION_MINOR = 9;
-	constexpr auto HEXER_VERSION_PATCH = 3;
+	constexpr auto HEXER_VERSION_PATCH = 4;
 
 	constexpr UINT g_arrPanes[] { IDC_PANE_FILEINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGINFO };
 

@@ -24,11 +24,13 @@ public:
 private:
 	void ClearAll();
 	void DoDataExchange(CDataExchange* pDX)override;
+	void OnCancel()override;
 	BOOL OnCommand(WPARAM wParam, LPARAM lParam)override;
 	BOOL OnInitDialog()override;
 	afx_msg void OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListRClick(NMHDR* pNMHDR, LRESULT* pResult);
+	void OnOK()override;
 	DECLARE_MESSAGE_MAP();
 private:
 	enum class EMenuID : std::uint16_t {
@@ -73,6 +75,11 @@ void CDlgLogInfo::ClearAll()
 void CDlgLogInfo::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+}
+
+void CDlgLogInfo::OnCancel()
+{
+	//Just an empty handler, to not close Dialog on Escape key.
 }
 
 BOOL CDlgLogInfo::OnCommand(WPARAM wParam, LPARAM lParam)
@@ -161,4 +168,9 @@ void CDlgLogInfo::OnListRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 	POINT pt;
 	GetCursorPos(&pt);
 	m_menuList.TrackPopupMenuEx(TPM_LEFTALIGN, pt.x, pt.y, this, nullptr);
+}
+
+void CDlgLogInfo::OnOK()
+{
+	//Just an empty handler, to not close Dialog on Enter key.
 }

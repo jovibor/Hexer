@@ -11,30 +11,32 @@
 #define IDD_SETTINGS                    106
 #define IDD_FILEINFO                    107
 #define IDD_LOGINFO                     108
-#define IDR_MAINFRAME                   109
-#define IDR_HEXER_FRAME                 110
-#define IDR_TOOLBAR_MAIN                111
-#define IDB_OPENDEVICE                  112
-#define IDC_LINK_HEXER                  200
-#define IDC_LINK_HEXCTRL                201
-#define IDC_STATIC_BUILDTIME            202
-#define IDC_NEWFILE_EDIT_SIZE           203
-#define IDC_NEWFILE_COMBO_MEASURE       204
-#define IDC_NEWFILE_EDIT_PATH           205
-#define IDC_NEWFILE_BTN_BROWSE          206
-#define IDC_OPENDEVICE_TAB              207
-#define IDC_OPENDISK_LIST_DISKS         208
-#define IDC_OPENVOLUME_LIST_VOLUMES     209
-#define IDC_OPENPATH_COMBO_PATH         210
-#define IDC_PANE_FILEINFO               211
-#define IDC_PANE_BKMMGR                 212
-#define IDC_PANE_DATAINTERP             213
-#define IDC_PANE_TEMPLMGR               214
-#define IDC_PANE_LOGINFO                215
-#define IDC_HEXCTRL_MAIN                216
-#define IDC_SETTINGS_TAB                217
-#define IDC_FILEINFO_GRID               218
-#define IDC_LOGINFO_LIST                219
+#define IDD_SETTINGSHEXCTRL             110
+#define IDR_MAINFRAME                   200
+#define IDR_HEXER_FRAME                 201
+#define IDR_TOOLBAR_MAIN                202
+#define IDB_OPENDEVICE                  203
+#define IDC_LINK_HEXER                  300
+#define IDC_LINK_HEXCTRL                301
+#define IDC_STATIC_BUILDTIME            302
+#define IDC_NEWFILE_EDIT_SIZE           303
+#define IDC_NEWFILE_COMBO_MEASURE       304
+#define IDC_NEWFILE_EDIT_PATH           305
+#define IDC_NEWFILE_BTN_BROWSE          306
+#define IDC_OPENDEVICE_TAB              307
+#define IDC_OPENDISK_LIST_DISKS         308
+#define IDC_OPENVOLUME_LIST_VOLUMES     309
+#define IDC_OPENPATH_COMBO_PATH         310
+#define IDC_PANE_FILEINFO               311
+#define IDC_PANE_BKMMGR                 312
+#define IDC_PANE_DATAINTERP             313
+#define IDC_PANE_TEMPLMGR               314
+#define IDC_PANE_LOGINFO                315
+#define IDC_HEXCTRL_MAIN                316
+#define IDC_SETTINGS_TAB                317
+#define IDC_FILEINFO_GRID               318
+#define IDC_LOGINFO_LIST                319
+#define IDC_SETTINGSHEXCTRL_GRID        320
 #define IDM_FILE_RFL00                  32770
 #define IDM_FILE_RFL01                  32771
 #define IDM_FILE_RFL02                  32772
@@ -69,9 +71,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        220
+#define _APS_NEXT_RESOURCE_VALUE        222
 #define _APS_NEXT_COMMAND_VALUE         32799
-#define _APS_NEXT_CONTROL_VALUE         220
-#define _APS_NEXT_SYMED_VALUE           220
+#define _APS_NEXT_CONTROL_VALUE         203
+#define _APS_NEXT_SYMED_VALUE           321
 #endif
 #endif

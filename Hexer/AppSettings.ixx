@@ -148,10 +148,6 @@ void CAppSettingsRFL::RebuildRFLMenu()
 //CAppSettings.
 
 export class CAppSettings final {
-	struct PANESTATUS {
-		bool fIsVisible : 1{};
-		bool fIsActive : 1{};
-	};
 public:
 	CAppSettings() = default;
 	CAppSettings(const CAppSettings&) = delete;
@@ -159,8 +155,28 @@ public:
 	void operator=(const CAppSettings&) = delete;
 	~CAppSettings() = default;
 
-	[[nodiscard]] auto GetHexCtrlFont()const->const LOGFONTW*;
-	[[nodiscard]] auto GetHexCtrlColors()const->const HEXCTRL::HEXCOLORS*;
+	struct PANESTATUS {
+		bool fIsVisible : 1{};
+		bool fIsActive : 1{};
+	};
+	struct HEXCTRLDATA {
+		LOGFONTW stLogFont { .lfHeight { -MulDiv(11, Ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
+			.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } }; //HexCtrl default font.
+		HEXCTRL::HEXCOLORS stClrs; //HexCtrl default colors.
+		DWORD dwCapacity { 16UL };
+		DWORD dwDateFormat { 0xFFFFFFFFUL };
+		DWORD dwGroupSize { 1UL };
+		DWORD dwPageSize { 0U };
+		DWORD dwCharsExtraSpace { 0UL };
+		float flScrollRatio { 3.0F };
+		wchar_t wchUnprintable { L'.' }; //Replacement char for unprintable characters.
+		wchar_t wchDateSepar { L'/' };   //Date separator.
+		bool fOffsetHex { true };
+		bool fScrollLines { true };
+		bool fInfoBar { true };
+	};
+
+	[[nodiscard]] auto GetHexCtrlData() -> HEXCTRLDATA&;
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const->std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const->PANESTATUS;
 	void LoadSettings(std::wstring_view wsvKeyName);
@@ -169,11 +185,9 @@ public:
 	[[nodiscard]] auto RFLGetPathFromID(UINT uID)const->std::wstring;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry = 20);
 	void RFLRemoveFromList(std::wstring_view wsvPath);
-	void SaveSettings(std::wstring_view wsvKeyName);
-	void SetHexCtrlFont(const LOGFONTW& lf);
-	void SetHexCtrlColors(const HEXCTRL::HEXCOLORS& clrs);
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
 	void SetPaneStatus(UINT uPaneID, bool fShow, bool fActive);
+	void SaveSettings(std::wstring_view wsvKeyName);
 	[[nodiscard]] static constexpr auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 	[[nodiscard]] static constexpr auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 private:
@@ -189,20 +203,13 @@ private:
 	PANESTATUS m_stPSDataInterp { };           //Pane status for the "Data Interpreter".
 	PANESTATUS m_stPSTemplMgr { };             //Pane status for the "Template Manager".
 	PANESTATUS m_stPSLogInfo { };              //Pane status for the "Log Information".
-	LOGFONTW m_fontHexCtrl { .lfHeight { -MulDiv(11, Ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
-		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } }; //HexCtrl default font.
-	HEXCTRL::HEXCOLORS m_stHexCtrlClrs { };    //HexCtrl default colors.
+	HEXCTRLDATA m_stHexCtrlData;               //HexCtrl settings data.
 };
 
 
-auto CAppSettings::GetHexCtrlFont()const->const LOGFONTW*
+auto CAppSettings::GetHexCtrlData()->HEXCTRLDATA&
 {
-	return &m_fontHexCtrl;
-}
-
-auto CAppSettings::GetHexCtrlColors()const->const HEXCTRL::HEXCOLORS*
-{
-	return &m_stHexCtrlClrs;
+	return m_stHexCtrlData;
 }
 
 auto CAppSettings::GetPaneData(UINT uPaneID)const->std::uint64_t
@@ -265,21 +272,46 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		//PaneData.
 		QWORD ullPaneDataBkmMgr { };
 		regSettings.QueryQWORDValue(L"PaneDataBkmMgr", ullPaneDataBkmMgr);
-		SetPaneData(IDC_PANE_BKMMGR, ullPaneDataBkmMgr);
+		SetPaneData(IDC_PANE_BKMMGR, ullPaneDataBkmMgr | HEXCTRL::HEXCTRL_FLAG_BKMMGR_NOESC);
 		QWORD ullPaneDataDataInterp { };
 		regSettings.QueryQWORDValue(L"PaneDataDataInterp", ullPaneDataDataInterp);
-		SetPaneData(IDC_PANE_DATAINTERP, ullPaneDataDataInterp);
+		SetPaneData(IDC_PANE_DATAINTERP, ullPaneDataDataInterp | HEXCTRL::HEXCTRL_FLAG_DATAINTERP_NOESC);
 		QWORD ullPaneDataTemplMgr { };
 		regSettings.QueryQWORDValue(L"PaneDataTemplMgr", ullPaneDataTemplMgr);
-		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr);
+		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr | HEXCTRL::HEXCTRL_FLAG_TEMPLMGR_NOESC);
 
 		//HexCtrl settings.
 		const std::wstring wstrKeyHexCtrl = wstrKeySettings + L"\\HexCtrl";
 		if (CRegKey regHexCtrl; regHexCtrl.Open(HKEY_CURRENT_USER, wstrKeyHexCtrl.data()) == ERROR_SUCCESS) {
 
+			//HexCtrl data.
+			auto& refData = GetHexCtrlData();
+			regHexCtrl.QueryDWORDValue(L"HexCtrlCapacity", refData.dwCapacity);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlGroupSize", refData.dwGroupSize);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlPageSize", refData.dwPageSize);
+			DWORD dwUnprintable { };
+			regHexCtrl.QueryDWORDValue(L"HexCtrlUnprintable", dwUnprintable);
+			DWORD dwDateSepar { };
+			regHexCtrl.QueryDWORDValue(L"HexCtrlDateSepar", dwDateSepar);
+			refData.wchDateSepar = static_cast<wchar_t>(dwDateSepar);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlDateFormat", refData.dwDateFormat);
+			DWORD dwScrollLines { };
+			regHexCtrl.QueryDWORDValue(L"HexCtrlIsScrollLines", dwScrollLines);
+			refData.fScrollLines = dwScrollLines;
+			DWORD dwScrollRatio { };
+			regHexCtrl.QueryDWORDValue(L"HexCtrlScrollSize", dwScrollRatio);
+			refData.flScrollRatio = std::bit_cast<float>(dwScrollRatio);
+			DWORD dwInfoBar { };
+			regHexCtrl.QueryDWORDValue(L"HexCtrlIsInfoBar", dwInfoBar);
+			refData.fInfoBar = dwInfoBar;
+			DWORD dwOffsetHex { };
+			regHexCtrl.QueryDWORDValue(L"HexCtrlIsOffsetHex", dwOffsetHex);
+			refData.fOffsetHex = dwOffsetHex;
+			regHexCtrl.QueryDWORDValue(L"HexCtrlCharsExtraSpace", refData.dwCharsExtraSpace);
+
 			//HexCtrl font.
-			LOGFONTW lf { };
-			auto dwChars { static_cast<DWORD>(std::size(lf.lfFaceName)) };
+			auto& lf = GetHexCtrlData().stLogFont;
+			DWORD dwChars { 32UL };
 			regHexCtrl.QueryStringValue(L"HexCtrlFontFace", lf.lfFaceName, &dwChars);
 			DWORD dwHeight { };
 			regHexCtrl.QueryDWORDValue(L"HexCtrlFontHeight", dwHeight);
@@ -305,13 +337,23 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 			DWORD dwPitchAndFamily { };
 			regHexCtrl.QueryDWORDValue(L"HexCtrlFontPitchAndFamily", dwPitchAndFamily);
 			lf.lfPitchAndFamily = static_cast<BYTE>(dwPitchAndFamily);
-			SetHexCtrlFont(lf);
 
 			//HexCtrl colors.
-			HEXCTRL::HEXCOLORS clrs { };
-			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontHex", clrs.clrFontHex);
-			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontText", clrs.clrFontText);
-			SetHexCtrlColors(clrs);
+			auto& refClrs = GetHexCtrlData().stClrs;
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontHex", refClrs.clrFontHex);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontText", refClrs.clrFontText);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontSel", refClrs.clrFontSel);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontDataInterp", refClrs.clrFontDataInterp);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontCaption", refClrs.clrFontCaption);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontInfoParam", refClrs.clrFontInfoParam);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontInfoData", refClrs.clrFontInfoData);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontCaret", refClrs.clrFontCaret);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBk", refClrs.clrBk);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkSel", refClrs.clrBkSel);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkDataInterp", refClrs.clrBkDataInterp);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkInfoBar", refClrs.clrBkInfoBar);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkCaret", refClrs.clrBkCaret);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkCaretSel", refClrs.clrBkCaretSel);
 		}
 	}
 
@@ -402,30 +444,48 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 		regHexCtrl.Create(HKEY_CURRENT_USER, wstrKeyHexCtrl.data());
 	}
 
+	//HexCtrl data.
+	const auto& refData = GetHexCtrlData();
+	regHexCtrl.SetDWORDValue(L"HexCtrlCapacity", refData.dwCapacity);
+	regHexCtrl.SetDWORDValue(L"HexCtrlGroupSize", refData.dwGroupSize);
+	regHexCtrl.SetDWORDValue(L"HexCtrlPageSize", refData.dwPageSize);
+	regHexCtrl.SetDWORDValue(L"HexCtrlUnprintable", refData.wchUnprintable);
+	regHexCtrl.SetDWORDValue(L"HexCtrlDateFormat", refData.dwDateFormat);
+	regHexCtrl.SetDWORDValue(L"HexCtrlDateSepar", refData.wchDateSepar);
+	regHexCtrl.SetDWORDValue(L"HexCtrlIsScrollLines", refData.fScrollLines);
+	regHexCtrl.SetDWORDValue(L"HexCtrlScrollSize", std::bit_cast<DWORD>(refData.flScrollRatio));
+	regHexCtrl.SetDWORDValue(L"HexCtrlIsInfoBar", refData.fInfoBar);
+	regHexCtrl.SetDWORDValue(L"HexCtrlIsOffsetHex", refData.fOffsetHex);
+	regHexCtrl.SetDWORDValue(L"HexCtrlCharsExtraSpace", refData.dwCharsExtraSpace);
+
 	//HexCtrl font.
-	regHexCtrl.SetStringValue(L"HexCtrlFontFace", GetHexCtrlFont()->lfFaceName);
-	regHexCtrl.SetDWORDValue(L"HexCtrlFontHeight", GetHexCtrlFont()->lfHeight);
-	regHexCtrl.SetDWORDValue(L"HexCtrlFontWidth", GetHexCtrlFont()->lfWidth);
-	regHexCtrl.SetDWORDValue(L"HexCtrlFontWeight", GetHexCtrlFont()->lfWeight);
-	regHexCtrl.SetDWORDValue(L"HexCtrlFontItalic", GetHexCtrlFont()->lfItalic);
-	regHexCtrl.SetDWORDValue(L"HexCtrlFontUnderline", GetHexCtrlFont()->lfUnderline);
-	regHexCtrl.SetDWORDValue(L"HexCtrlFontStrikeout", GetHexCtrlFont()->lfStrikeOut);
-	regHexCtrl.SetDWORDValue(L"HexCtrlFontCharSet", GetHexCtrlFont()->lfCharSet);
-	regHexCtrl.SetDWORDValue(L"HexCtrlFontPitchAndFamily", GetHexCtrlFont()->lfPitchAndFamily);
+	const auto& refLF = GetHexCtrlData().stLogFont;
+	regHexCtrl.SetStringValue(L"HexCtrlFontFace", refLF.lfFaceName);
+	regHexCtrl.SetDWORDValue(L"HexCtrlFontHeight", refLF.lfHeight);
+	regHexCtrl.SetDWORDValue(L"HexCtrlFontWidth", refLF.lfWidth);
+	regHexCtrl.SetDWORDValue(L"HexCtrlFontWeight", refLF.lfWeight);
+	regHexCtrl.SetDWORDValue(L"HexCtrlFontItalic", refLF.lfItalic);
+	regHexCtrl.SetDWORDValue(L"HexCtrlFontUnderline", refLF.lfUnderline);
+	regHexCtrl.SetDWORDValue(L"HexCtrlFontStrikeout", refLF.lfStrikeOut);
+	regHexCtrl.SetDWORDValue(L"HexCtrlFontCharSet", refLF.lfCharSet);
+	regHexCtrl.SetDWORDValue(L"HexCtrlFontPitchAndFamily", refLF.lfPitchAndFamily);
 
 	//HexCtrl colors.
-	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontHex", GetHexCtrlColors()->clrFontHex);
-	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontText", GetHexCtrlColors()->clrFontText);
-}
-
-void CAppSettings::SetHexCtrlFont(const LOGFONTW& lf)
-{
-	m_fontHexCtrl = lf;
-}
-
-void CAppSettings::SetHexCtrlColors(const HEXCTRL::HEXCOLORS& clrs)
-{
-	m_stHexCtrlClrs = clrs;
+	const auto& refClrs = GetHexCtrlData().stClrs;
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontHex", refClrs.clrFontHex);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontText", refClrs.clrFontText);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontSel", refClrs.clrFontSel);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontDataInterp", refClrs.clrFontDataInterp);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontCaption", refClrs.clrFontCaption);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontInfoParam", refClrs.clrFontInfoParam);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontInfoData", refClrs.clrFontInfoData);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontCaret", refClrs.clrFontCaret);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBk", refClrs.clrBk);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkSel", refClrs.clrBkSel);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkDataInterp", refClrs.clrBkDataInterp);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkInfoBar", refClrs.clrBkInfoBar);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkCaret", refClrs.clrBkCaret);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkCaretSel", refClrs.clrBkCaretSel);
 }
 
 void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)

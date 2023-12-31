@@ -4,7 +4,7 @@ Fast, fully-featured, multi-tab hexadecimal editor based on the [HexCtrl](https:
 ![](docs/HexerMainWnd.jpg)
 
 ## Features 
-* View and edit files up to **16EB** (exabyte)
+* View and edit files, disks and partitions up to **16EB** (exabyte)
 * Fully-featured **Bookmarks Manager**
 * Fully-featured **Search and Replace**
 * Many options to **Copy/Paste** to/from the clipboard

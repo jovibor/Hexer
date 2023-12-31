@@ -138,8 +138,8 @@ void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 void CHexerView::OnHexCtrlSetFont(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	theApp.GetAppSettings().SetHexCtrlFont(GetHexCtrl()->GetFont());
-	theApp.GetAppSettings().SetHexCtrlColors(GetHexCtrl()->GetColors()); //Because font color could be changed.
+	theApp.GetAppSettings().GetHexCtrlData().stLogFont = GetHexCtrl()->GetFont();
+	theApp.GetAppSettings().GetHexCtrlData().stClrs = GetHexCtrl()->GetColors(); //Because font color could be changed.
 }
 
 void CHexerView::OnInitialUpdate()
@@ -148,10 +148,18 @@ void CHexerView::OnInitialUpdate()
 
 	GetChildFrame()->SetHexerView(this);
 	const auto pDoc = GetDocument();
-	GetHexCtrl()->Create({ .hWndParent { m_hWnd }, .pColors { theApp.GetAppSettings().GetHexCtrlColors() },
-		.pLogFont { theApp.GetAppSettings().GetHexCtrlFont() }, .uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD } });
-	GetHexCtrl()->SetData({ .spnData { std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },
-		 .pHexVirtData { pDoc->GetVirtualInterface() }, .dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
+	const auto pHex = GetHexCtrl();
+	const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlData();
+	pHex->Create({ .hWndParent { m_hWnd }, .pColors { &refHexSet.stClrs }, .pLogFont { &refHexSet.stLogFont },
+		.uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD }, .dwCapacity { refHexSet.dwCapacity },
+		.dwGroupSize { refHexSet.dwGroupSize }, .flScrollRatio { refHexSet.flScrollRatio }, .fScrollLines { refHexSet.fScrollLines },
+		.fInfoBar { refHexSet.fInfoBar }, .fOffsetHex { refHexSet.fOffsetHex } });
+	pHex->SetCharsExtraSpace(refHexSet.dwCharsExtraSpace);
+	pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
+	pHex->SetPageSize(refHexSet.dwPageSize);
+	pHex->SetUnprintableChar(refHexSet.wchUnprintable);
+	pHex->SetData({ .spnData { std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },
+		.pHexVirtData { pDoc->GetVirtualInterface() }, .dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }
 
 void CHexerView::OnSize(UINT nType, int cx, int cy)
