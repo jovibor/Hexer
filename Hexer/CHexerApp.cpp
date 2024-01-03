@@ -401,7 +401,17 @@ void CHexerApp::OnFileOpenDevice()
 void CHexerApp::OnToolsSettings()
 {
 	CDlgSettings dlg;
-	dlg.DoModal(m_stAppSettings);
+	if (dlg.DoModal(m_stAppSettings) != IDOK)
+		return;
+
+	auto posDocTempl = GetFirstDocTemplatePosition();
+	while (posDocTempl != nullptr) {
+		const auto pDocTempl = GetNextDocTemplate(posDocTempl);
+		auto posDoc = pDocTempl->GetFirstDocPosition();
+		while (posDoc != nullptr) {
+			pDocTempl->GetNextDoc(posDoc)->UpdateAllViews(nullptr, MSG_APP_SETTINGS_CHANGED);
+		}
+	}
 }
 
 void CHexerApp::OnFileRFL(UINT uID)

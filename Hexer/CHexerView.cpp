@@ -138,8 +138,8 @@ void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 void CHexerView::OnHexCtrlSetFont(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	theApp.GetAppSettings().GetHexCtrlData().stLogFont = GetHexCtrl()->GetFont();
-	theApp.GetAppSettings().GetHexCtrlData().stClrs = GetHexCtrl()->GetColors(); //Because font color could be changed.
+	theApp.GetAppSettings().GetHexCtrlSettings().stLogFont = GetHexCtrl()->GetFont();
+	theApp.GetAppSettings().GetHexCtrlSettings().stClrs = GetHexCtrl()->GetColors(); //Because font color could be changed.
 }
 
 void CHexerView::OnInitialUpdate()
@@ -149,7 +149,7 @@ void CHexerView::OnInitialUpdate()
 	GetChildFrame()->SetHexerView(this);
 	const auto pDoc = GetDocument();
 	const auto pHex = GetHexCtrl();
-	const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlData();
+	const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlSettings();
 	pHex->Create({ .hWndParent { m_hWnd }, .pColors { &refHexSet.stClrs }, .pLogFont { &refHexSet.stLogFont },
 		.uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD }, .dwCapacity { refHexSet.dwCapacity },
 		.dwGroupSize { refHexSet.dwGroupSize }, .flScrollRatio { refHexSet.flScrollRatio }, .fScrollLines { refHexSet.fScrollLines },
@@ -173,8 +173,26 @@ void CHexerView::OnSize(UINT nType, int cx, int cy)
 	::SetWindowPos(GetHexCtrl()->GetWindowHandle(HEXCTRL::EHexWnd::WND_MAIN), m_hWnd, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_NOZORDER);
 }
 
-void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM /*lHint*/, CObject* /*pHint*/)
+void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
 {
+	if (lHint == CHexerApp::MSG_APP_SETTINGS_CHANGED) {
+		const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlSettings();
+		const auto pHex = GetHexCtrl();
+		pHex->SetRedraw(false);
+		pHex->SetColors(refHexSet.stClrs);
+		pHex->SetFont(refHexSet.stLogFont);
+		pHex->SetGroupSize(refHexSet.dwGroupSize);
+		pHex->SetCapacity(refHexSet.dwCapacity);
+		pHex->SetScrollRatio(refHexSet.flScrollRatio, refHexSet.fScrollLines);
+		pHex->ShowInfoBar(refHexSet.fInfoBar);
+		pHex->SetOffsetMode(refHexSet.fOffsetHex);
+		pHex->SetCharsExtraSpace(refHexSet.dwCharsExtraSpace);
+		pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
+		pHex->SetPageSize(refHexSet.dwPageSize);
+		pHex->SetUnprintableChar(refHexSet.wchUnprintable);
+		pHex->SetRedraw(true);
+		pHex->Redraw();
+	}
 }
 
 void CHexerView::OnUpdateEditEditMode(CCmdUI* pCmdUI)

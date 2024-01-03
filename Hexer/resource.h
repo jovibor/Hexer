@@ -37,6 +37,7 @@
 #define IDC_FILEINFO_GRID               318
 #define IDC_LOGINFO_LIST                319
 #define IDC_SETTINGSHEXCTRL_GRID        320
+#define IDC_SETTINGS_DEFS               321
 #define IDM_FILE_RFL00                  32770
 #define IDM_FILE_RFL01                  32771
 #define IDM_FILE_RFL02                  32772
@@ -71,9 +72,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        222
+#define _APS_NEXT_RESOURCE_VALUE        322
 #define _APS_NEXT_COMMAND_VALUE         32799
-#define _APS_NEXT_CONTROL_VALUE         203
-#define _APS_NEXT_SYMED_VALUE           321
+#define _APS_NEXT_CONTROL_VALUE         322
+#define _APS_NEXT_SYMED_VALUE           322
 #endif
 #endif

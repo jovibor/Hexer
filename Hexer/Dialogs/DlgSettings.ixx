@@ -26,6 +26,7 @@ import Utility;
 class CDlgSettingsHexCtrl final : public CDialogEx {
 public:
 	auto Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSettings* pAppSettings) -> BOOL;
+	void ResetToDefaults();
 	void SaveSettings();
 private:
 	struct GRIDDATA; //Forward declarations.
@@ -33,16 +34,24 @@ private:
 	enum class EName : std::uint8_t;
 	void DoDataExchange(CDataExchange* pDX)override;
 	[[nodiscard]] auto GetGridData(EName eName)const->const GRIDDATA*;
+	[[nodiscard]] auto GetProperty(EName eName)const->CMFCPropertyGridProperty*;
 	[[nodiscard]] auto GetPropValueDWORD(EName eName)const->DWORD;
 	[[nodiscard]] auto GetPropValueFLOAT(EName eName)const->float;
-	[[nodiscard]] auto GetPropValueFONT(EName eName)const->const LOGFONTW*;
+	[[nodiscard]] auto GetPropValuePLOGFONT(EName eName)const->LOGFONTW*;
 	[[nodiscard]] auto GetPropValueRGB(EName eName)const->COLORREF;
+	[[nodiscard]] auto GetPropValueWCHAR(EName eName)const->wchar_t;
 	[[nodiscard]] auto GetPropValueWSTR(EName eName)const->std::wstring_view;
 	void OnCancel()override;
 	BOOL OnInitDialog()override;
+	void SetPropValueDWORD(EName eName, DWORD dwValue);
+	void SetPropValueFLOAT(EName eName, float flValue);
+	void SetPropValueLOGFONT(EName eName, const LOGFONTW& lf);
+	void SetPropValueRGB(EName eName, COLORREF clrValue);
+	void SetPropValueWCHAR(EName eName, wchar_t wchValue);
+	void SetPropValueWSTR(EName eName, LPCWSTR pwstr);
 	DECLARE_MESSAGE_MAP();
 private:
-	static constexpr const wchar_t* m_arrDateFmt[] { L"MM/DD/YYYY", L"DD/MM/YYYY", L"YYYY/MM/DD" };
+	static constexpr const wchar_t* m_arrDateFmt[] { L"MM/DD/YYYY", L"DD/MM/YYYY", L"YYYY/MM/DD", L"User default" };
 	static constexpr const wchar_t* m_arrScrollType[] { L"Lines", L"Ratio" };
 	static constexpr const wchar_t* m_arrShowHide[] { L"Show", L"Hide" };
 	static constexpr const wchar_t* m_arrOffsetMode[] { L"Hex", L"Decimal" };
@@ -57,8 +66,8 @@ enum class CDlgSettingsHexCtrl::EGroup : std::uint8_t {
 };
 
 enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
-	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, dwDateFormat, fScrollLines, flScrollRatio,
-	fInfoBar, fOffsetHex, dwCharsExtraSpace, stLogFont,
+	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, wstrDateFormat, wstrScrollLines, flScrollRatio,
+	wstrInfoBar, wstrOffsetHex, dwCharsExtraSpace, stLogFont,
 	clrFontHex, clrFontText, clrFontSel, clrFontDataInterp, clrFontCaption, clrFontInfoParam, clrFontInfoData,
 	clrFontCaret, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel
 };
@@ -80,44 +89,82 @@ auto CDlgSettingsHexCtrl::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSetting
 	return CDialogEx::Create(nIDTemplate, pParentWnd);
 }
 
+void CDlgSettingsHexCtrl::ResetToDefaults()
+{
+	using enum EName;
+	const auto& refDefs = CAppSettings::GetHexCtrlDefs();
+	SetPropValueDWORD(dwCapacity, refDefs.dwCapacity);
+	SetPropValueDWORD(dwGroupSize, refDefs.dwGroupSize);
+	SetPropValueDWORD(dwPageSize, refDefs.dwPageSize);
+	SetPropValueDWORD(dwCharsExtraSpace, refDefs.dwCharsExtraSpace);
+	SetPropValueFLOAT(flScrollRatio, refDefs.flScrollRatio);
+	SetPropValueWCHAR(wchUnprintable, refDefs.wchUnprintable);
+	SetPropValueWSTR(wstrDateFormat, m_arrDateFmt[3]); //User default.
+	SetPropValueWSTR(wstrScrollLines, m_arrScrollType[0]);
+	SetPropValueWSTR(wstrInfoBar, m_arrShowHide[0]);
+	SetPropValueWSTR(wstrOffsetHex, m_arrOffsetMode[0]);
+	SetPropValueLOGFONT(stLogFont, refDefs.stLogFont);
+
+	const auto& refClrs = refDefs.stClrs;
+	SetPropValueRGB(clrFontHex, refClrs.clrFontHex);
+	SetPropValueRGB(clrFontText, refClrs.clrFontText);
+	SetPropValueRGB(clrFontSel, refClrs.clrFontSel);
+	SetPropValueRGB(clrFontDataInterp, refClrs.clrFontDataInterp);
+	SetPropValueRGB(clrFontCaption, refClrs.clrFontCaption);
+	SetPropValueRGB(clrFontInfoParam, refClrs.clrFontInfoParam);
+	SetPropValueRGB(clrFontInfoData, refClrs.clrFontInfoData);
+	SetPropValueRGB(clrFontCaret, refClrs.clrFontCaret);
+	SetPropValueRGB(clrBk, refClrs.clrBk);
+	SetPropValueRGB(clrBkSel, refClrs.clrBkSel);
+	SetPropValueRGB(clrBkDataInterp, refClrs.clrBkDataInterp);
+	SetPropValueRGB(clrBkInfoBar, refClrs.clrBkInfoBar);
+	SetPropValueRGB(clrBkCaret, refClrs.clrBkCaret);
+	SetPropValueRGB(clrBkCaretSel, refClrs.clrBkCaretSel);
+
+	m_gridHexCtrl.RedrawWindow();
+}
+
 void CDlgSettingsHexCtrl::SaveSettings()
 {
 	using enum EName;
-	auto& refSett = m_pAppSettings->GetHexCtrlData();
+	auto& refSett = m_pAppSettings->GetHexCtrlSettings();
+
+	refSett.stLogFont = *GetPropValuePLOGFONT(stLogFont);
 	refSett.dwCapacity = GetPropValueDWORD(dwCapacity);
 	refSett.dwGroupSize = GetPropValueDWORD(dwGroupSize);
 	refSett.dwPageSize = GetPropValueDWORD(dwPageSize);
-	const auto wsvUnprint = GetPropValueWSTR(wchUnprintable);
-	refSett.wchUnprintable = wsvUnprint.empty() ? L' ' : wsvUnprint[0];
-
-	const auto wsvFmt = GetPropValueWSTR(dwDateFormat);
+	refSett.dwCharsExtraSpace = GetPropValueDWORD(dwCharsExtraSpace);
+	const auto wsvFmt = GetPropValueWSTR(wstrDateFormat);
 	for (auto const [index, wsv] : std::views::enumerate(m_arrDateFmt)) {
 		if (wsv == wsvFmt) {
-			refSett.dwDateFormat = static_cast<DWORD>(index);
+			//0xFFFFFFFFUL - User default.
+			refSett.dwDateFormat = (index == 3 ? 0xFFFFFFFFUL : static_cast<DWORD>(index));
 			break;
 		}
 	}
 
-	refSett.fScrollLines = GetPropValueWSTR(fScrollLines) == m_arrScrollType[0];
 	refSett.flScrollRatio = GetPropValueFLOAT(flScrollRatio);
-	refSett.fInfoBar = GetPropValueWSTR(fInfoBar) == m_arrShowHide[0];
-	refSett.fOffsetHex = GetPropValueWSTR(fOffsetHex) == m_arrOffsetMode[0];
-	refSett.dwCharsExtraSpace = GetPropValueDWORD(dwCharsExtraSpace);
-	refSett.stLogFont = *GetPropValueFONT(stLogFont);
-	refSett.stClrs.clrFontHex = GetPropValueRGB(clrFontHex);
-	refSett.stClrs.clrFontText = GetPropValueRGB(clrFontText);
-	refSett.stClrs.clrFontSel = GetPropValueRGB(clrFontSel);
-	refSett.stClrs.clrFontDataInterp = GetPropValueRGB(clrFontDataInterp);
-	refSett.stClrs.clrFontCaption = GetPropValueRGB(clrFontCaption);
-	refSett.stClrs.clrFontInfoParam = GetPropValueRGB(clrFontInfoParam);
-	refSett.stClrs.clrFontInfoData = GetPropValueRGB(clrFontInfoData);
-	refSett.stClrs.clrFontCaret = GetPropValueRGB(clrFontCaret);
-	refSett.stClrs.clrBk = GetPropValueRGB(clrBk);
-	refSett.stClrs.clrBkSel = GetPropValueRGB(clrBkSel);
-	refSett.stClrs.clrBkDataInterp = GetPropValueRGB(clrBkDataInterp);
-	refSett.stClrs.clrBkInfoBar = GetPropValueRGB(clrBkInfoBar);
-	refSett.stClrs.clrBkCaret = GetPropValueRGB(clrBkCaret);
-	refSett.stClrs.clrBkCaretSel = GetPropValueRGB(clrBkCaretSel);
+	const auto wchUnprint = GetPropValueWCHAR(wchUnprintable);
+	refSett.wchUnprintable = wchUnprint == 0 ? L' ' : wchUnprint;
+	refSett.fScrollLines = GetPropValueWSTR(wstrScrollLines) == m_arrScrollType[0];
+	refSett.fInfoBar = GetPropValueWSTR(wstrInfoBar) == m_arrShowHide[0];
+	refSett.fOffsetHex = GetPropValueWSTR(wstrOffsetHex) == m_arrOffsetMode[0];
+
+	auto& refClrs = refSett.stClrs;
+	refClrs.clrFontHex = GetPropValueRGB(clrFontHex);
+	refClrs.clrFontText = GetPropValueRGB(clrFontText);
+	refClrs.clrFontSel = GetPropValueRGB(clrFontSel);
+	refClrs.clrFontDataInterp = GetPropValueRGB(clrFontDataInterp);
+	refClrs.clrFontCaption = GetPropValueRGB(clrFontCaption);
+	refClrs.clrFontInfoParam = GetPropValueRGB(clrFontInfoParam);
+	refClrs.clrFontInfoData = GetPropValueRGB(clrFontInfoData);
+	refClrs.clrFontCaret = GetPropValueRGB(clrFontCaret);
+	refClrs.clrBk = GetPropValueRGB(clrBk);
+	refClrs.clrBkSel = GetPropValueRGB(clrBkSel);
+	refClrs.clrBkDataInterp = GetPropValueRGB(clrBkDataInterp);
+	refClrs.clrBkInfoBar = GetPropValueRGB(clrBkInfoBar);
+	refClrs.clrBkCaret = GetPropValueRGB(clrBkCaret);
+	refClrs.clrBkCaretSel = GetPropValueRGB(clrBkCaretSel);
 }
 
 
@@ -135,29 +182,40 @@ auto CDlgSettingsHexCtrl::GetGridData(EName eName)const->const GRIDDATA*
 		return refData.eName == eName; });
 }
 
+auto CDlgSettingsHexCtrl::GetProperty(EName eName)const->CMFCPropertyGridProperty*
+{
+	return GetGridData(eName)->pProp;
+}
+
 auto CDlgSettingsHexCtrl::GetPropValueDWORD(EName eName)const->DWORD
 {
-	return GetGridData(eName)->pProp->GetValue().uintVal;
+	return GetProperty(eName)->GetValue().uintVal;
 }
 
 auto CDlgSettingsHexCtrl::GetPropValueFLOAT(EName eName)const->float
 {
-	return GetGridData(eName)->pProp->GetValue().fltVal;
+	return GetProperty(eName)->GetValue().fltVal;
 }
 
-auto CDlgSettingsHexCtrl::GetPropValueFONT(EName eName)const->const LOGFONTW*
+auto CDlgSettingsHexCtrl::GetPropValuePLOGFONT(EName eName)const->LOGFONTW*
 {
-	return static_cast<CMFCPropertyGridFontProperty*>(GetGridData(eName)->pProp)->GetLogFont();
+	return static_cast<CMFCPropertyGridFontProperty*>(GetProperty(eName))->GetLogFont();
 }
 
 auto CDlgSettingsHexCtrl::GetPropValueRGB(EName eName)const->COLORREF
 {
-	return static_cast<CMFCPropertyGridColorProperty*>(GetGridData(eName)->pProp)->GetColor();
+	return static_cast<CMFCPropertyGridColorProperty*>(GetProperty(eName))->GetColor();
+}
+
+auto CDlgSettingsHexCtrl::GetPropValueWCHAR(EName eName)const->wchar_t
+{
+	const auto wsv = GetPropValueWSTR(eName);
+	return wsv.empty() ? L'\0' : wsv[0];
 }
 
 auto CDlgSettingsHexCtrl::GetPropValueWSTR(EName eName)const->std::wstring_view
 {
-	return GetGridData(eName)->pProp->GetValue().bstrVal;
+	return GetProperty(eName)->GetValue().bstrVal;
 }
 
 void CDlgSettingsHexCtrl::OnCancel()
@@ -183,7 +241,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	m_fntGridHexCtrl.CreateFontIndirectW(&lf);
 	m_gridHexCtrl.SetFont(&m_fntGridHexCtrl);
 
-	auto& refSett = m_pAppSettings->GetHexCtrlData();
+	auto& refSett = m_pAppSettings->GetHexCtrlSettings();
 
 	using enum EGroup; using enum EName;
 	const auto& refCapac = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Capacity:",
@@ -205,14 +263,14 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	refUnprint.pProp->AllowEdit(TRUE);
 
 	const auto& refDate = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Date format:",
-		m_arrDateFmt[(std::min)(refSett.dwDateFormat, 2UL)], 0, 0), GROUP_GENERAL, dwDateFormat);
+		m_arrDateFmt[(std::min)(refSett.dwDateFormat, 3UL)], 0, 0), GROUP_GENERAL, wstrDateFormat);
 	for (const auto p : m_arrDateFmt) {
 		refDate.pProp->AddOption(p);
 	}
 	refDate.pProp->AllowEdit(FALSE);
 
 	const auto& refScroll = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Scroll lines or ratio:",
-		m_arrScrollType[refSett.fScrollLines ? 0 : 1], 0, 0), GROUP_GENERAL, fScrollLines);
+		m_arrScrollType[refSett.fScrollLines ? 0 : 1], 0, 0), GROUP_GENERAL, wstrScrollLines);
 	for (const auto p : m_arrScrollType) {
 		refScroll.pProp->AddOption(p);
 	}
@@ -223,14 +281,14 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	refScrollSize.pProp->AllowEdit(TRUE);
 
 	const auto& refInfoBar = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Show Info bar:",
-		m_arrShowHide[refSett.fInfoBar ? 0 : 1], 0, 0), GROUP_GENERAL, fInfoBar);
+		m_arrShowHide[refSett.fInfoBar ? 0 : 1], 0, 0), GROUP_GENERAL, wstrInfoBar);
 	for (const auto p : m_arrShowHide) {
 		refInfoBar.pProp->AddOption(p);
 	}
 	refInfoBar.pProp->AllowEdit(FALSE);
 
 	const auto& refOffset = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Offset mode:",
-		m_arrOffsetMode[refSett.fOffsetHex ? 0 : 1], 0, 0), GROUP_GENERAL, fOffsetHex);
+		m_arrOffsetMode[refSett.fOffsetHex ? 0 : 1], 0, 0), GROUP_GENERAL, wstrOffsetHex);
 	for (const auto p : m_arrOffsetMode) {
 		refOffset.pProp->AddOption(p);
 	}
@@ -254,7 +312,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	m_gridHexCtrl.AddProperty(pAppear);
 
 	//HexCtrl colors.
-	const auto& refClrs = m_pAppSettings->GetHexCtrlData().stClrs;
+	const auto& refClrs = m_pAppSettings->GetHexCtrlSettings().stClrs;
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Hex", refClrs.clrFontHex), GROUP_COLORS, clrFontHex);
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Text", refClrs.clrFontText), GROUP_COLORS, clrFontText);
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Selection", refClrs.clrFontSel), GROUP_COLORS, clrFontSel);
@@ -264,11 +322,11 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Info data", refClrs.clrFontInfoData), GROUP_COLORS, clrFontInfoData);
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Caret", refClrs.clrFontCaret), GROUP_COLORS, clrFontCaret);
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Background", refClrs.clrBk), GROUP_COLORS, clrBk);
-	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Selection bk", refClrs.clrBkSel), GROUP_COLORS, clrBkSel);
-	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Data Interpreter bk", refClrs.clrBkDataInterp), GROUP_COLORS, clrBkDataInterp);
-	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Info bar bk", refClrs.clrBkInfoBar), GROUP_COLORS, clrBkInfoBar);
-	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Caret bk", refClrs.clrBkCaret), GROUP_COLORS, clrBkCaret);
-	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Caret bk in selection", refClrs.clrBkCaretSel), GROUP_COLORS, clrBkCaretSel);
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Selection", refClrs.clrBkSel), GROUP_COLORS, clrBkSel);
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Data Interpreter", refClrs.clrBkDataInterp), GROUP_COLORS, clrBkDataInterp);
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Info bar", refClrs.clrBkInfoBar), GROUP_COLORS, clrBkInfoBar);
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Caret", refClrs.clrBkCaret), GROUP_COLORS, clrBkCaret);
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Caret in selection", refClrs.clrBkCaretSel), GROUP_COLORS, clrBkCaretSel);
 
 	const auto pColors = new CMFCPropertyGridProperty(L"Colors:");
 	for (const auto& it : m_vecGrid) {
@@ -282,6 +340,36 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	return TRUE;
 }
 
+void CDlgSettingsHexCtrl::SetPropValueDWORD(EName eName, DWORD dwValue)
+{
+	GetProperty(eName)->SetValue(static_cast<_variant_t>(dwValue));
+}
+
+void CDlgSettingsHexCtrl::SetPropValueFLOAT(EName eName, float flValue)
+{
+	GetProperty(eName)->SetValue(static_cast<_variant_t>(flValue));
+}
+
+void CDlgSettingsHexCtrl::SetPropValueLOGFONT(EName eName, const LOGFONTW& lf)
+{
+	*GetPropValuePLOGFONT(eName) = lf;
+}
+
+void CDlgSettingsHexCtrl::SetPropValueRGB(EName eName, COLORREF clrValue)
+{
+	static_cast<CMFCPropertyGridColorProperty*>(GetProperty(eName))->SetColor(clrValue);
+}
+
+void CDlgSettingsHexCtrl::SetPropValueWCHAR(EName eName, wchar_t wchValue)
+{
+	GetProperty(eName)->SetValue(static_cast<_variant_t>(std::format(L"{}", wchValue).data()));
+}
+
+void CDlgSettingsHexCtrl::SetPropValueWSTR(EName eName, LPCWSTR pwstr)
+{
+	GetProperty(eName)->SetValue(pwstr);
+}
+
 
 //CDlgSettings.
 export class CDlgSettings final : public CDialogEx {
@@ -291,6 +379,7 @@ public:
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	void OnCancel()override;
+	afx_msg void OnClickedDefaults();
 	BOOL OnInitDialog()override;
 	void OnOK()override;
 	afx_msg void OnTabSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
@@ -304,6 +393,7 @@ private:
 
 BEGIN_MESSAGE_MAP(CDlgSettings, CDialogEx)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_SETTINGS_TAB, &CDlgSettings::OnTabSelChanged)
+	ON_BN_CLICKED(IDC_SETTINGS_DEFS, &CDlgSettings::OnClickedDefaults)
 END_MESSAGE_MAP()
 
 auto CDlgSettings::DoModal(CAppSettings& refSettings)->INT_PTR
@@ -325,6 +415,14 @@ void CDlgSettings::DoDataExchange(CDataExchange* pDX)
 void CDlgSettings::OnCancel()
 {
 	CDialogEx::OnCancel();
+}
+
+void CDlgSettings::OnClickedDefaults()
+{
+	if (MessageBoxW(L"Reset all settings to their defaults?", L"Defaults", MB_YESNO | MB_ICONQUESTION) != IDYES)
+		return;
+
+	m_pDlgSettingsHexCtrl->ResetToDefaults();
 }
 
 BOOL CDlgSettings::OnInitDialog()
@@ -356,6 +454,7 @@ BOOL CDlgSettings::OnInitDialog()
 	pLayout->AddItem(m_pDlgSettingsHexCtrl->m_hWnd, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
 	pLayout->AddItem(IDOK, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100), CMFCDynamicLayout::SizeNone());
 	pLayout->AddItem(IDCANCEL, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100), CMFCDynamicLayout::SizeNone());
+	pLayout->AddItem(IDC_SETTINGS_DEFS, CMFCDynamicLayout::MoveVertical(100), CMFCDynamicLayout::SizeNone());
 
 	SetCurrentTab(0); //Show HexCtrl settings.
 

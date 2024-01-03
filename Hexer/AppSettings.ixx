@@ -149,34 +149,31 @@ void CAppSettingsRFL::RebuildRFLMenu()
 
 export class CAppSettings final {
 public:
+	struct PANESTATUS {
+		bool fIsVisible : 1{};
+		bool fIsActive : 1{};
+	};
+	struct HEXCTRLSETTINGS {
+		LOGFONTW stLogFont { };
+		HEXCTRL::HEXCOLORS stClrs;
+		DWORD dwCapacity { };
+		DWORD dwDateFormat { };
+		DWORD dwGroupSize { };
+		DWORD dwPageSize { };
+		DWORD dwCharsExtraSpace { };
+		float flScrollRatio { };
+		wchar_t wchUnprintable { }; //Replacement char for unprintable characters.
+		wchar_t wchDateSepar { };   //Date separator.
+		bool fOffsetHex { };
+		bool fScrollLines { };
+		bool fInfoBar { };
+	};
 	CAppSettings() = default;
 	CAppSettings(const CAppSettings&) = delete;
 	CAppSettings(CAppSettings&&) = delete;
 	void operator=(const CAppSettings&) = delete;
 	~CAppSettings() = default;
-
-	struct PANESTATUS {
-		bool fIsVisible : 1{};
-		bool fIsActive : 1{};
-	};
-	struct HEXCTRLDATA {
-		LOGFONTW stLogFont { .lfHeight { -MulDiv(11, Ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
-			.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } }; //HexCtrl default font.
-		HEXCTRL::HEXCOLORS stClrs; //HexCtrl default colors.
-		DWORD dwCapacity { 16UL };
-		DWORD dwDateFormat { 0xFFFFFFFFUL };
-		DWORD dwGroupSize { 1UL };
-		DWORD dwPageSize { 0U };
-		DWORD dwCharsExtraSpace { 0UL };
-		float flScrollRatio { 3.0F };
-		wchar_t wchUnprintable { L'.' }; //Replacement char for unprintable characters.
-		wchar_t wchDateSepar { L'/' };   //Date separator.
-		bool fOffsetHex { true };
-		bool fScrollLines { true };
-		bool fInfoBar { true };
-	};
-
-	[[nodiscard]] auto GetHexCtrlData() -> HEXCTRLDATA&;
+	[[nodiscard]] auto GetHexCtrlSettings() -> HEXCTRLSETTINGS&;
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const->std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const->PANESTATUS;
 	void LoadSettings(std::wstring_view wsvKeyName);
@@ -188,8 +185,9 @@ public:
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
 	void SetPaneStatus(UINT uPaneID, bool fShow, bool fActive);
 	void SaveSettings(std::wstring_view wsvKeyName);
-	[[nodiscard]] static constexpr auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
-	[[nodiscard]] static constexpr auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
+	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
+	[[nodiscard]] static auto GetHexCtrlDefs() -> const HEXCTRLSETTINGS&;
+	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
 	[[nodiscard]] auto RFLGetData()const->const std::vector<std::wstring>&;
 private:
@@ -203,11 +201,11 @@ private:
 	PANESTATUS m_stPSDataInterp { };           //Pane status for the "Data Interpreter".
 	PANESTATUS m_stPSTemplMgr { };             //Pane status for the "Template Manager".
 	PANESTATUS m_stPSLogInfo { };              //Pane status for the "Log Information".
-	HEXCTRLDATA m_stHexCtrlData;               //HexCtrl settings data.
+	HEXCTRLSETTINGS m_stHexCtrlData;               //HexCtrl settings data.
 };
 
 
-auto CAppSettings::GetHexCtrlData()->HEXCTRLDATA&
+auto CAppSettings::GetHexCtrlSettings()->HEXCTRLSETTINGS&
 {
 	return m_stHexCtrlData;
 }
@@ -251,7 +249,6 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 	//Settings.
 	const std::wstring wstrKeySettings = std::wstring { L"SOFTWARE\\" } + std::wstring { wsvKeyName } + L"\\Settings";
 	if (CRegKey regSettings; regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) == ERROR_SUCCESS) {
-
 		//PaneStatus.
 		DWORD dwPaneStatusFileInfo { };
 		regSettings.QueryDWORDValue(L"PaneStatusFileInfo", dwPaneStatusFileInfo);
@@ -283,34 +280,34 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		//HexCtrl settings.
 		const std::wstring wstrKeyHexCtrl = wstrKeySettings + L"\\HexCtrl";
 		if (CRegKey regHexCtrl; regHexCtrl.Open(HKEY_CURRENT_USER, wstrKeyHexCtrl.data()) == ERROR_SUCCESS) {
-
 			//HexCtrl data.
-			auto& refData = GetHexCtrlData();
-			regHexCtrl.QueryDWORDValue(L"HexCtrlCapacity", refData.dwCapacity);
-			regHexCtrl.QueryDWORDValue(L"HexCtrlGroupSize", refData.dwGroupSize);
-			regHexCtrl.QueryDWORDValue(L"HexCtrlPageSize", refData.dwPageSize);
+			auto& refSett = GetHexCtrlSettings();
+			regHexCtrl.QueryDWORDValue(L"HexCtrlCapacity", refSett.dwCapacity);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlGroupSize", refSett.dwGroupSize);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlPageSize", refSett.dwPageSize);
 			DWORD dwUnprintable { };
 			regHexCtrl.QueryDWORDValue(L"HexCtrlUnprintable", dwUnprintable);
+			refSett.wchUnprintable = static_cast<wchar_t>(dwUnprintable);
 			DWORD dwDateSepar { };
 			regHexCtrl.QueryDWORDValue(L"HexCtrlDateSepar", dwDateSepar);
-			refData.wchDateSepar = static_cast<wchar_t>(dwDateSepar);
-			regHexCtrl.QueryDWORDValue(L"HexCtrlDateFormat", refData.dwDateFormat);
+			refSett.wchDateSepar = static_cast<wchar_t>(dwDateSepar);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlDateFormat", refSett.dwDateFormat);
 			DWORD dwScrollLines { };
 			regHexCtrl.QueryDWORDValue(L"HexCtrlIsScrollLines", dwScrollLines);
-			refData.fScrollLines = dwScrollLines;
+			refSett.fScrollLines = dwScrollLines;
 			DWORD dwScrollRatio { };
 			regHexCtrl.QueryDWORDValue(L"HexCtrlScrollSize", dwScrollRatio);
-			refData.flScrollRatio = std::bit_cast<float>(dwScrollRatio);
+			refSett.flScrollRatio = std::bit_cast<float>(dwScrollRatio);
 			DWORD dwInfoBar { };
 			regHexCtrl.QueryDWORDValue(L"HexCtrlIsInfoBar", dwInfoBar);
-			refData.fInfoBar = dwInfoBar;
+			refSett.fInfoBar = dwInfoBar;
 			DWORD dwOffsetHex { };
 			regHexCtrl.QueryDWORDValue(L"HexCtrlIsOffsetHex", dwOffsetHex);
-			refData.fOffsetHex = dwOffsetHex;
-			regHexCtrl.QueryDWORDValue(L"HexCtrlCharsExtraSpace", refData.dwCharsExtraSpace);
+			refSett.fOffsetHex = dwOffsetHex;
+			regHexCtrl.QueryDWORDValue(L"HexCtrlCharsExtraSpace", refSett.dwCharsExtraSpace);
 
 			//HexCtrl font.
-			auto& lf = GetHexCtrlData().stLogFont;
+			auto& lf = refSett.stLogFont;
 			DWORD dwChars { 32UL };
 			regHexCtrl.QueryStringValue(L"HexCtrlFontFace", lf.lfFaceName, &dwChars);
 			DWORD dwHeight { };
@@ -339,7 +336,7 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 			lf.lfPitchAndFamily = static_cast<BYTE>(dwPitchAndFamily);
 
 			//HexCtrl colors.
-			auto& refClrs = GetHexCtrlData().stClrs;
+			auto& refClrs = refSett.stClrs;
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontHex", refClrs.clrFontHex);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontText", refClrs.clrFontText);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontSel", refClrs.clrFontSel);
@@ -355,6 +352,7 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkCaret", refClrs.clrBkCaret);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkCaretSel", refClrs.clrBkCaretSel);
 		}
+		else { GetHexCtrlSettings() = GetHexCtrlDefs(); }
 	}
 
 	//Recent File List.
@@ -445,21 +443,21 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 	}
 
 	//HexCtrl data.
-	const auto& refData = GetHexCtrlData();
-	regHexCtrl.SetDWORDValue(L"HexCtrlCapacity", refData.dwCapacity);
-	regHexCtrl.SetDWORDValue(L"HexCtrlGroupSize", refData.dwGroupSize);
-	regHexCtrl.SetDWORDValue(L"HexCtrlPageSize", refData.dwPageSize);
-	regHexCtrl.SetDWORDValue(L"HexCtrlUnprintable", refData.wchUnprintable);
-	regHexCtrl.SetDWORDValue(L"HexCtrlDateFormat", refData.dwDateFormat);
-	regHexCtrl.SetDWORDValue(L"HexCtrlDateSepar", refData.wchDateSepar);
-	regHexCtrl.SetDWORDValue(L"HexCtrlIsScrollLines", refData.fScrollLines);
-	regHexCtrl.SetDWORDValue(L"HexCtrlScrollSize", std::bit_cast<DWORD>(refData.flScrollRatio));
-	regHexCtrl.SetDWORDValue(L"HexCtrlIsInfoBar", refData.fInfoBar);
-	regHexCtrl.SetDWORDValue(L"HexCtrlIsOffsetHex", refData.fOffsetHex);
-	regHexCtrl.SetDWORDValue(L"HexCtrlCharsExtraSpace", refData.dwCharsExtraSpace);
+	const auto& refSett = GetHexCtrlSettings();
+	regHexCtrl.SetDWORDValue(L"HexCtrlCapacity", refSett.dwCapacity);
+	regHexCtrl.SetDWORDValue(L"HexCtrlGroupSize", refSett.dwGroupSize);
+	regHexCtrl.SetDWORDValue(L"HexCtrlPageSize", refSett.dwPageSize);
+	regHexCtrl.SetDWORDValue(L"HexCtrlUnprintable", refSett.wchUnprintable);
+	regHexCtrl.SetDWORDValue(L"HexCtrlDateFormat", refSett.dwDateFormat);
+	regHexCtrl.SetDWORDValue(L"HexCtrlDateSepar", refSett.wchDateSepar);
+	regHexCtrl.SetDWORDValue(L"HexCtrlIsScrollLines", refSett.fScrollLines);
+	regHexCtrl.SetDWORDValue(L"HexCtrlScrollSize", std::bit_cast<DWORD>(refSett.flScrollRatio));
+	regHexCtrl.SetDWORDValue(L"HexCtrlIsInfoBar", refSett.fInfoBar);
+	regHexCtrl.SetDWORDValue(L"HexCtrlIsOffsetHex", refSett.fOffsetHex);
+	regHexCtrl.SetDWORDValue(L"HexCtrlCharsExtraSpace", refSett.dwCharsExtraSpace);
 
 	//HexCtrl font.
-	const auto& refLF = GetHexCtrlData().stLogFont;
+	const auto& refLF = refSett.stLogFont;
 	regHexCtrl.SetStringValue(L"HexCtrlFontFace", refLF.lfFaceName);
 	regHexCtrl.SetDWORDValue(L"HexCtrlFontHeight", refLF.lfHeight);
 	regHexCtrl.SetDWORDValue(L"HexCtrlFontWidth", refLF.lfWidth);
@@ -471,7 +469,7 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 	regHexCtrl.SetDWORDValue(L"HexCtrlFontPitchAndFamily", refLF.lfPitchAndFamily);
 
 	//HexCtrl colors.
-	const auto& refClrs = GetHexCtrlData().stClrs;
+	const auto& refClrs = refSett.stClrs;
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontHex", refClrs.clrFontHex);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontText", refClrs.clrFontText);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontSel", refClrs.clrFontSel);
@@ -534,17 +532,27 @@ auto CAppSettings::RFLGetData()const->const std::vector<std::wstring>&
 	return m_stRFL.GetRFL();
 }
 
-constexpr auto CAppSettings::PaneStatus2DWORD(PANESTATUS ps)->DWORD
+auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
+{
+	const std::bitset<32> bsPS(dw);
+	return { bsPS.test(0), bsPS.test(1) };
+}
+
+auto CAppSettings::GetHexCtrlDefs()->const HEXCTRLSETTINGS&
+{
+	static const HEXCTRLSETTINGS defs { .stLogFont { .lfHeight { -MulDiv(11, Ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
+		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } }, //HexCtrl default font.
+		.dwCapacity { 16UL }, .dwDateFormat { 0xFFFFFFFFUL }, .dwGroupSize { 1UL }, .dwPageSize { 0UL },
+		.dwCharsExtraSpace { 0UL }, .flScrollRatio { 3.0F }, .wchUnprintable { L'.' }, .wchDateSepar { L'/' },
+		.fOffsetHex { true }, .fScrollLines { true }, .fInfoBar { true } };
+	return defs;
+}
+
+auto CAppSettings::PaneStatus2DWORD(PANESTATUS ps)->DWORD
 {
 	std::bitset<32> bs;
 	bs[0] = ps.fIsVisible;
 	bs[1] = ps.fIsActive;
 
 	return bs.to_ulong();
-}
-
-constexpr auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
-{
-	const std::bitset<32> bsPS(dw);
-	return { bsPS.test(0), bsPS.test(1) };
 }

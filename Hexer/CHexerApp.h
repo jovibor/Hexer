@@ -18,6 +18,7 @@ public:
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
 	void AddToRFL(std::wstring_view wsvPath); //Add path to the Recent File List.
 	void RemoveFromRFL(std::wstring_view wsvPath); //Remove path from the RFL if any.
+	static constexpr auto MSG_APP_SETTINGS_CHANGED { 0x01UL };
 private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;
