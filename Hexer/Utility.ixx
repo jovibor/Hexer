@@ -1,6 +1,6 @@
 module;
 /*******************************************************************************
-* Copyright © 2023 Jovibor https://github.com/jovibor/                         *
+* Copyright © 2023-2024 Jovibor https://github.com/jovibor/                    *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
@@ -15,9 +15,9 @@ module;
 export module Utility;
 
 export namespace Ut {
-	constexpr auto HEXER_VERSION_MAJOR = 0;
-	constexpr auto HEXER_VERSION_MINOR = 9;
-	constexpr auto HEXER_VERSION_PATCH = 5;
+	constexpr auto HEXER_VERSION_MAJOR = 1;
+	constexpr auto HEXER_VERSION_MINOR = 0;
+	constexpr auto HEXER_VERSION_PATCH = 0;
 
 	constexpr UINT g_arrPanes[] { IDC_PANE_FILEINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGINFO };
 

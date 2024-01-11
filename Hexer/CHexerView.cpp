@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright © 2023 Jovibor https://github.com/jovibor/                         *
+* Copyright © 2023-2024 Jovibor https://github.com/jovibor/                    *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
@@ -52,7 +52,7 @@ auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 			SetPaneAlreadyLaunch(uPaneID);
 			return GetHexCtrl()->SetDlgData(*optDlg, theApp.GetAppSettings().GetPaneData(uPaneID));
 		}
-		return GetHexCtrl()->GetWindowHandle(*optDlg);
+		return GetHexCtrl()->GetWndHandle(*optDlg);
 	}
 
 	return { };
@@ -170,7 +170,7 @@ void CHexerView::OnSize(UINT nType, int cx, int cy)
 		return;
 	}
 
-	::SetWindowPos(GetHexCtrl()->GetWindowHandle(HEXCTRL::EHexWnd::WND_MAIN), m_hWnd, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_NOZORDER);
+	::SetWindowPos(GetHexCtrl()->GetWndHandle(HEXCTRL::EHexWnd::WND_MAIN), m_hWnd, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_NOZORDER);
 }
 
 void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
