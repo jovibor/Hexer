@@ -14,7 +14,6 @@ module;
 #include <cassert>
 #include <format>
 #include <memory>
-#include <ranges>
 #include <vector>
 export module DlgSettings;
 
@@ -35,6 +34,8 @@ private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	[[nodiscard]] auto GetGridData(EName eName)const->const GRIDDATA*;
 	[[nodiscard]] auto GetProperty(EName eName)const->CMFCPropertyGridProperty*;
+	[[nodiscard]] auto GetPropOptDataDWORD(EName eName)const->DWORD;
+	[[nodiscard]] auto GetPropOptDataULL(EName eName)const->DWORD_PTR;
 	[[nodiscard]] auto GetPropValueDWORD(EName eName)const->DWORD;
 	[[nodiscard]] auto GetPropValueFLOAT(EName eName)const->float;
 	[[nodiscard]] auto GetPropValuePLOGFONT(EName eName)const->LOGFONTW*;
@@ -45,16 +46,13 @@ private:
 	BOOL OnInitDialog()override;
 	void SetPropValueDWORD(EName eName, DWORD dwValue);
 	void SetPropValueFLOAT(EName eName, float flValue);
+	void SetPropValueByOptData(EName eName, DWORD_PTR dwData); //Value according to inner dwData.
 	void SetPropValueLOGFONT(EName eName, const LOGFONTW& lf);
 	void SetPropValueRGB(EName eName, COLORREF clrValue);
 	void SetPropValueWCHAR(EName eName, wchar_t wchValue);
 	void SetPropValueWSTR(EName eName, LPCWSTR pwstr);
 	DECLARE_MESSAGE_MAP();
 private:
-	static constexpr const wchar_t* m_arrDateFmt[] { L"MM/DD/YYYY", L"DD/MM/YYYY", L"YYYY/MM/DD", L"User default" };
-	static constexpr const wchar_t* m_arrScrollType[] { L"Lines", L"Ratio" };
-	static constexpr const wchar_t* m_arrShowHide[] { L"Show", L"Hide" };
-	static constexpr const wchar_t* m_arrOffsetMode[] { L"Hex", L"Decimal" };
 	CAppSettings* m_pAppSettings { };
 	CHexerPropGridCtrl m_gridHexCtrl;
 	std::vector<GRIDDATA> m_vecGrid;
@@ -99,10 +97,10 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueDWORD(dwCharsExtraSpace, refDefs.dwCharsExtraSpace);
 	SetPropValueFLOAT(flScrollRatio, refDefs.flScrollRatio);
 	SetPropValueWCHAR(wchUnprintable, refDefs.wchUnprintable);
-	SetPropValueWSTR(wstrDateFormat, m_arrDateFmt[3]); //User default.
-	SetPropValueWSTR(wstrScrollLines, m_arrScrollType[0]);
-	SetPropValueWSTR(wstrInfoBar, m_arrShowHide[0]);
-	SetPropValueWSTR(wstrOffsetHex, m_arrOffsetMode[0]);
+	SetPropValueByOptData(wstrDateFormat, 0xFFFFFFFFUL); //User default.
+	SetPropValueByOptData(wstrScrollLines, 1UL);
+	SetPropValueByOptData(wstrInfoBar, 1UL);
+	SetPropValueByOptData(wstrOffsetHex, 1UL);
 	SetPropValueLOGFONT(stLogFont, refDefs.stLogFont);
 
 	const auto& refClrs = refDefs.stClrs;
@@ -134,21 +132,13 @@ void CDlgSettingsHexCtrl::SaveSettings()
 	refSett.dwGroupSize = GetPropValueDWORD(dwGroupSize);
 	refSett.dwPageSize = GetPropValueDWORD(dwPageSize);
 	refSett.dwCharsExtraSpace = GetPropValueDWORD(dwCharsExtraSpace);
-	const auto wsvFmt = GetPropValueWSTR(wstrDateFormat);
-	for (auto const [index, wsv] : std::views::enumerate(m_arrDateFmt)) {
-		if (wsv == wsvFmt) {
-			//0xFFFFFFFFUL - User default.
-			refSett.dwDateFormat = (index == 3 ? 0xFFFFFFFFUL : static_cast<DWORD>(index));
-			break;
-		}
-	}
-
+	refSett.dwDateFormat = GetPropOptDataDWORD(wstrDateFormat);
 	refSett.flScrollRatio = GetPropValueFLOAT(flScrollRatio);
 	const auto wchUnprint = GetPropValueWCHAR(wchUnprintable);
 	refSett.wchUnprintable = wchUnprint == 0 ? L' ' : wchUnprint;
-	refSett.fScrollLines = GetPropValueWSTR(wstrScrollLines) == m_arrScrollType[0];
-	refSett.fInfoBar = GetPropValueWSTR(wstrInfoBar) == m_arrShowHide[0];
-	refSett.fOffsetHex = GetPropValueWSTR(wstrOffsetHex) == m_arrOffsetMode[0];
+	refSett.fScrollLines = GetPropOptDataDWORD(wstrScrollLines);
+	refSett.fInfoBar = GetPropOptDataDWORD(wstrInfoBar);
+	refSett.fOffsetHex = GetPropOptDataDWORD(wstrOffsetHex);
 
 	auto& refClrs = refSett.stClrs;
 	refClrs.clrFontHex = GetPropValueRGB(clrFontHex);
@@ -185,6 +175,16 @@ auto CDlgSettingsHexCtrl::GetGridData(EName eName)const->const GRIDDATA*
 auto CDlgSettingsHexCtrl::GetProperty(EName eName)const->CMFCPropertyGridProperty*
 {
 	return GetGridData(eName)->pProp;
+}
+
+auto CDlgSettingsHexCtrl::GetPropOptDataDWORD(EName eName)const->DWORD
+{
+	return static_cast<DWORD>(GetPropOptDataULL(eName));
+}
+
+auto CDlgSettingsHexCtrl::GetPropOptDataULL(EName eName) const -> DWORD_PTR
+{
+	return GetProperty(eName)->GetData();
 }
 
 auto CDlgSettingsHexCtrl::GetPropValueDWORD(EName eName)const->DWORD
@@ -262,37 +262,39 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 		static_cast<_variant_t>(std::format(L"{}", refSett.wchUnprintable).data()), 0, 0), GROUP_GENERAL, wchUnprintable);
 	refUnprint.pProp->AllowEdit(TRUE);
 
-	const auto& refDate = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Date format:",
-		m_arrDateFmt[(std::min)(refSett.dwDateFormat, 3UL)], 0, 0), GROUP_GENERAL, wstrDateFormat);
-	for (const auto p : m_arrDateFmt) {
-		refDate.pProp->AddOption(p);
-	}
-	refDate.pProp->AllowEdit(FALSE);
+	const auto& refDate = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Date format:", L""), GROUP_GENERAL, wstrDateFormat);
+	const auto pPropDate = static_cast<CHexerPropGridProp*>(refDate.pProp);
+	pPropDate->AddOptionEx(L"User default", 0xFFFFFFFFUL);
+	pPropDate->AddOptionEx(L"MM/DD/YYYY", 0UL);
+	pPropDate->AddOptionEx(L"DD/MM/YYYY", 1UL);
+	pPropDate->AddOptionEx(L"YYYY/MM/DD", 2UL);
+	pPropDate->SetValueFromData(refSett.dwDateFormat);
+	pPropDate->AllowEdit(FALSE);
 
-	const auto& refScroll = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Scroll lines or ratio:",
-		m_arrScrollType[refSett.fScrollLines ? 0 : 1], 0, 0), GROUP_GENERAL, wstrScrollLines);
-	for (const auto p : m_arrScrollType) {
-		refScroll.pProp->AddOption(p);
-	}
-	refScroll.pProp->AllowEdit(FALSE);
+	const auto& refScroll = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Scroll lines or ratio:", L""), GROUP_GENERAL, wstrScrollLines);
+	const auto pPropScroll = static_cast<CHexerPropGridProp*>(refScroll.pProp);
+	pPropScroll->AddOptionEx(L"Lines", 1UL);
+	pPropScroll->AddOptionEx(L"Ratio", 0UL);
+	pPropScroll->SetValueFromData(refSett.fScrollLines);
+	pPropScroll->AllowEdit(FALSE);
 
 	const auto& refScrollSize = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Scroll size:",
 		static_cast<_variant_t>(refSett.flScrollRatio), 0, 0, 0, 0, L"0123456789."), GROUP_GENERAL, flScrollRatio);
 	refScrollSize.pProp->AllowEdit(TRUE);
 
-	const auto& refInfoBar = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Show Info bar:",
-		m_arrShowHide[refSett.fInfoBar ? 0 : 1], 0, 0), GROUP_GENERAL, wstrInfoBar);
-	for (const auto p : m_arrShowHide) {
-		refInfoBar.pProp->AddOption(p);
-	}
-	refInfoBar.pProp->AllowEdit(FALSE);
+	const auto& refInfoBar = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Show Info bar:", L""), GROUP_GENERAL, wstrInfoBar);
+	const auto pPropInfoBar = static_cast<CHexerPropGridProp*>(refInfoBar.pProp);
+	pPropInfoBar->AddOptionEx(L"Show", 1UL);
+	pPropInfoBar->AddOptionEx(L"Hide", 0UL);
+	pPropInfoBar->SetValueFromData(refSett.fInfoBar);
+	pPropInfoBar->AllowEdit(FALSE);
 
-	const auto& refOffset = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Offset mode:",
-		m_arrOffsetMode[refSett.fOffsetHex ? 0 : 1], 0, 0), GROUP_GENERAL, wstrOffsetHex);
-	for (const auto p : m_arrOffsetMode) {
-		refOffset.pProp->AddOption(p);
-	}
-	refOffset.pProp->AllowEdit(FALSE);
+	const auto& refOffsetMode = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Offset mode:", L""), GROUP_GENERAL, wstrOffsetHex);
+	const auto pPropOffsetMode = static_cast<CHexerPropGridProp*>(refOffsetMode.pProp);
+	pPropOffsetMode->AddOptionEx(L"Hex", 1UL);
+	pPropOffsetMode->AddOptionEx(L"Decimal", 0UL);
+	pPropOffsetMode->SetValueFromData(refSett.fOffsetHex);
+	pPropOffsetMode->AllowEdit(FALSE);
 
 	const auto& refExtraSpace = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Chars extra space:",
 		static_cast<_variant_t>(refSett.dwCharsExtraSpace), 0, 0, 0, 0, L"0123456789"), GROUP_GENERAL, dwCharsExtraSpace);
@@ -348,6 +350,11 @@ void CDlgSettingsHexCtrl::SetPropValueDWORD(EName eName, DWORD dwValue)
 void CDlgSettingsHexCtrl::SetPropValueFLOAT(EName eName, float flValue)
 {
 	GetProperty(eName)->SetValue(static_cast<_variant_t>(flValue));
+}
+
+void CDlgSettingsHexCtrl::SetPropValueByOptData(EName eName, DWORD_PTR dwData)
+{
+	static_cast<CHexerPropGridProp*>(GetProperty(eName))->SetValueFromData(dwData);
 }
 
 void CDlgSettingsHexCtrl::SetPropValueLOGFONT(EName eName, const LOGFONTW& lf)
