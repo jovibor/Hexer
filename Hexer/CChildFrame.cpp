@@ -66,7 +66,7 @@ void CChildFrame::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeact
 
 	if (m_fCreating) {
 		if (pMainFrame->GetChildFramesCount() == 1) { //Indicates that the first tab is opening now.
-			pMainFrame->OnChildFrameFirstOpen();
+			pMainFrame->OnChildFrameOpenFirst();
 			m_fCreating = false;
 			return;
 		}

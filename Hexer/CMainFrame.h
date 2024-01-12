@@ -27,7 +27,7 @@ public:
 	[[nodiscard]] bool IsPaneActive(UINT uPaneID);  //Is Pane itself visible atm.
 	void OnChildFrameActivate();
 	void OnChildFrameCloseLast(); //When the last child frame is closed.
-	void OnChildFrameFirstOpen(); //When the first child frame is opened.
+	void OnChildFrameOpenFirst(); //When the first child frame is opened.
 	void ShowPane(UINT uPaneID, bool fShow, bool fActivate);
 	void UpdatePaneFileInfo();
 protected:
@@ -39,15 +39,16 @@ protected:
 	[[nodiscard]] bool HasChildFrame();
 	void HideAllPanes();
 	afx_msg auto OnAddLogEntry(WPARAM wParam, LPARAM lParam) -> LRESULT;
+	afx_msg void OnClose();
 	BOOL OnCloseDockingPane(CDockablePane* pPane)override;
 	afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
-	afx_msg void OnClose();
 	afx_msg BOOL OnEraseMDIClientBackground(CDC* pDC)override;
+	afx_msg void OnUpdateRangePanes(CCmdUI* pCmdUI);
 	afx_msg void OnViewCustomize();
 	afx_msg void OnViewRangePanes(UINT uMenuID);
-	afx_msg void OnUpdateRangePanes(CCmdUI* pCmdUI);
 	BOOL PreTranslateMessage(MSG* pMsg)override;
+	void SaveHexCtrlSettings();
 	void SavePaneData(UINT uPaneID);
 	void SavePanesSettings();
 	DECLARE_DYNAMIC(CMainFrame);

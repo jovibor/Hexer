@@ -73,11 +73,12 @@ void CMainFrame::OnChildFrameCloseLast()
 		return;
 	}
 
-	SavePanesSettings(); //It's called either here or in the OnClose.
-	HideAllPanes();      //To disable panes from showing at the next app's start-up.
+	SavePanesSettings();   //It's called either here or in the OnClose.
+	SaveHexCtrlSettings(); //It's called either here or in the OnClose.
+	HideAllPanes(); //To disable panes from showing at the next app's start-up.
 }
 
-void CMainFrame::OnChildFrameFirstOpen()
+void CMainFrame::OnChildFrameOpenFirst()
 {
 	if (m_fClosing) {
 		return;
@@ -200,6 +201,16 @@ auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 	return S_OK;
 }
 
+void CMainFrame::OnClose()
+{
+	m_fClosing = true;
+	SavePanesSettings();   //It's called either here or in the OnChildFrameCloseLast.
+	SaveHexCtrlSettings(); //It's called either here or in the OnClose.
+	HideAllPanes(); //To disable panes from showing at the next app's start-up.
+
+	CMDIFrameWndEx::OnClose();
+}
+
 BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pPane)
 {
 	//When pane is closing by mouse click we save pane's data to the settings.
@@ -215,15 +226,6 @@ BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pPane)
 	}
 
 	return CMDIFrameWndEx::OnCloseDockingPane(pPane);
-}
-
-void CMainFrame::OnClose()
-{
-	m_fClosing = true;
-	SavePanesSettings(); //It's called either here or in the OnChildFrameCloseLast.
-	HideAllPanes();      //To disable panes from showing at the next app's start-up.
-
-	CMDIFrameWndEx::OnClose();
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
@@ -343,6 +345,12 @@ BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/)
 	return TRUE;
 }
 
+void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(HasChildFrame());
+	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(Ut::GetPaneIDFromMenuID(pCmdUI->m_nID)) : FALSE);
+}
+
 void CMainFrame::OnViewCustomize()
 {
 	const auto pDlgCust = new CMFCToolBarsCustomizeDialog(this, TRUE /* scan menus */);
@@ -359,12 +367,6 @@ void CMainFrame::OnViewRangePanes(UINT uMenuID)
 	if (fVisible) { //If pane is closing then we save its data.
 		SavePaneData(uPaneID);
 	}
-}
-
-void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(HasChildFrame());
-	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(Ut::GetPaneIDFromMenuID(pCmdUI->m_nID)) : FALSE);
 }
 
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
@@ -426,6 +428,30 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	}
 
 	return CMDIFrameWndEx::PreTranslateMessage(pMsg);
+}
+
+void CMainFrame::SaveHexCtrlSettings()
+{
+	const auto pHexCtrl = GetHexCtrl();
+	if (pHexCtrl == nullptr)
+		return;
+
+	auto& refSett = theApp.GetAppSettings().GetHexCtrlSettings();
+	refSett.stLogFont = pHexCtrl->GetFont();
+	refSett.dwCapacity = pHexCtrl->GetCapacity();
+	refSett.dwGroupSize = pHexCtrl->GetGroupSize();
+	refSett.dwPageSize = pHexCtrl->GetPageSize();
+	refSett.dwCharsExtraSpace = pHexCtrl->GetCharsExtraSpace();
+	const auto [dwDateFormat, wchDateSepar] = pHexCtrl->GetDateInfo();
+	refSett.dwDateFormat = dwDateFormat;
+	refSett.wchDateSepar = wchDateSepar;
+	refSett.wchUnprintable = pHexCtrl->GetUnprintableChar();
+	const auto [flRatio, fLines] = pHexCtrl->GetScrollRatio();;
+	refSett.flScrollRatio = flRatio;
+	refSett.fScrollLines = fLines;
+	refSett.fInfoBar = pHexCtrl->IsInfoBar();
+	refSett.fOffsetHex = pHexCtrl->IsOffsetAsHex();
+	refSett.stClrs = pHexCtrl->GetColors();
 }
 
 void CMainFrame::SavePaneData(UINT uPaneID)

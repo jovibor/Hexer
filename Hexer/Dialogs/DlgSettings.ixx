@@ -177,9 +177,8 @@ auto CDlgSettingsHexCtrl::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSetting
 
 void CDlgSettingsHexCtrl::ResetToDefaults()
 {
-	m_grid.SetRedraw(FALSE);
-
 	using enum EName;
+	m_grid.SetRedraw(FALSE);
 	const auto& refDefs = CAppSettings::GetHexCtrlDefs();
 	SetPropValueDWORD(dwCapacity, refDefs.dwCapacity);
 	SetPropValueDWORD(dwGroupSize, refDefs.dwGroupSize);
@@ -207,7 +206,6 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueRGB(clrBkInfoBar, refClrs.clrBkInfoBar);
 	SetPropValueRGB(clrBkCaret, refClrs.clrBkCaret);
 	SetPropValueRGB(clrBkCaretSel, refClrs.clrBkCaretSel);
-
 	m_grid.SetRedraw(TRUE);
 	m_grid.RedrawWindow();
 }
@@ -216,7 +214,6 @@ void CDlgSettingsHexCtrl::SaveSettings()
 {
 	using enum EName;
 	auto& refSett = m_pAppSettings->GetHexCtrlSettings();
-
 	refSett.stLogFont = *GetPropValuePLOGFONT(stLogFont);
 	refSett.dwCapacity = GetPropValueDWORD(dwCapacity);
 	refSett.dwGroupSize = GetPropValueDWORD(dwGroupSize);
@@ -229,7 +226,6 @@ void CDlgSettingsHexCtrl::SaveSettings()
 	refSett.fScrollLines = GetPropOptDataDWORD(wstrScrollLines);
 	refSett.fInfoBar = GetPropOptDataDWORD(wstrInfoBar);
 	refSett.fOffsetHex = GetPropOptDataDWORD(wstrOffsetHex);
-
 	auto& refClrs = refSett.stClrs;
 	refClrs.clrFontHex = GetPropValueRGB(clrFontHex);
 	refClrs.clrFontText = GetPropValueRGB(clrFontText);
