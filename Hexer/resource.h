@@ -11,7 +11,8 @@
 #define IDD_SETTINGS                    106
 #define IDD_FILEINFO                    107
 #define IDD_LOGINFO                     108
-#define IDD_SETTINGSHEXCTRL             110
+#define IDD_SETTINGSHEXCTRL             109
+#define IDD_SETTINGSGENERAL             110
 #define IDR_MAINFRAME                   200
 #define IDR_HEXER_FRAME                 201
 #define IDR_TOOLBAR_MAIN                202
@@ -38,6 +39,7 @@
 #define IDC_LOGINFO_LIST                319
 #define IDC_SETTINGSHEXCTRL_GRID        320
 #define IDC_SETTINGS_DEFS               321
+#define IDC_SETTINGSGENERAL_GRID        322
 #define IDM_FILE_RFL00                  32770
 #define IDM_FILE_RFL01                  32771
 #define IDM_FILE_RFL02                  32772
@@ -72,9 +74,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        322
+#define _APS_NEXT_RESOURCE_VALUE        323
 #define _APS_NEXT_COMMAND_VALUE         32799
-#define _APS_NEXT_CONTROL_VALUE         322
+#define _APS_NEXT_CONTROL_VALUE         323
 #define _APS_NEXT_SYMED_VALUE           322
 #endif
 #endif

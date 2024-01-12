@@ -164,7 +164,7 @@
     <ClCompile Include="Dialogs\DlgLogInfo.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="HexerPropGridCtrl.ixx">
+    <ClCompile Include="Dialogs\HexerPropGridCtrl.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
   </ItemGroup>

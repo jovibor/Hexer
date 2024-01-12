@@ -21,6 +21,94 @@ import HexerPropGridCtrl;
 import AppSettings;
 import Utility;
 
+
+//CDlgSettingsGeneral.
+class CDlgSettingsGeneral final : public CDialogEx {
+public:
+	auto Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSettings* pAppSettings) -> BOOL;
+	void ResetToDefaults();
+	void SaveSettings();
+private:
+	struct GRIDDATA; //Forward declarations.
+	void DoDataExchange(CDataExchange* pDX)override;
+	BOOL OnInitDialog()override;
+	enum class EGroup : std::uint8_t;
+	enum class EName : std::uint8_t;
+	DECLARE_MESSAGE_MAP();
+private:
+	CAppSettings* m_pAppSettings { };
+	CHexerPropGridCtrl m_grid;
+	std::vector<GRIDDATA> m_vecGrid;
+	CFont m_fntGrid;
+};
+
+enum class CDlgSettingsGeneral::EGroup : std::uint8_t { };
+
+enum class CDlgSettingsGeneral::EName : std::uint8_t { };
+
+struct CDlgSettingsGeneral::GRIDDATA {
+	CMFCPropertyGridProperty* pProp { };
+	EGroup eGroup { };
+	EName eName { };
+};
+
+BEGIN_MESSAGE_MAP(CDlgSettingsGeneral, CDialogEx)
+END_MESSAGE_MAP()
+
+auto CDlgSettingsGeneral::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSettings* pAppSettings)->BOOL
+{
+	assert(pAppSettings != nullptr);
+	m_pAppSettings = pAppSettings;
+
+	return CDialogEx::Create(nIDTemplate, pParentWnd);
+}
+
+void CDlgSettingsGeneral::ResetToDefaults()
+{
+	using enum EName;
+	m_grid.SetRedraw(FALSE);
+
+
+	m_grid.SetRedraw(TRUE);
+	m_grid.RedrawWindow();
+}
+
+void CDlgSettingsGeneral::SaveSettings()
+{
+	using enum EName;
+}
+
+
+//CDlgSettingsGeneral private methods.
+
+void CDlgSettingsGeneral::DoDataExchange(CDataExchange* pDX)
+{
+	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_SETTINGSGENERAL_GRID, m_grid);
+}
+
+BOOL CDlgSettingsGeneral::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+
+	m_grid.MarkModifiedProperties(1, 0);
+	m_grid.EnableHeaderCtrl(TRUE, L"Property", L"Value");
+	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 150 };
+	m_grid.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
+
+	//Set new bigger font to the property.
+	const auto pFont = m_grid.GetFont();
+	LOGFONTW lf;
+	pFont->GetLogFont(&lf);
+	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Ut::GetHiDPIInfo().iLOGPIXELSY) + 1;
+	lf.lfHeight = -MulDiv(lFontSize, Ut::GetHiDPIInfo().iLOGPIXELSY, 72);
+	m_fntGrid.CreateFontIndirectW(&lf);
+	m_grid.SetFont(&m_fntGrid);
+
+	return TRUE;
+}
+
+
 //CDlgSettingsHexCtrl.
 class CDlgSettingsHexCtrl final : public CDialogEx {
 public:
@@ -54,9 +142,9 @@ private:
 	DECLARE_MESSAGE_MAP();
 private:
 	CAppSettings* m_pAppSettings { };
-	CHexerPropGridCtrl m_gridHexCtrl;
+	CHexerPropGridCtrl m_grid;
 	std::vector<GRIDDATA> m_vecGrid;
-	CFont m_fntGridHexCtrl;
+	CFont m_fntGrid;
 };
 
 enum class CDlgSettingsHexCtrl::EGroup : std::uint8_t {
@@ -89,6 +177,8 @@ auto CDlgSettingsHexCtrl::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSetting
 
 void CDlgSettingsHexCtrl::ResetToDefaults()
 {
+	m_grid.SetRedraw(FALSE);
+
 	using enum EName;
 	const auto& refDefs = CAppSettings::GetHexCtrlDefs();
 	SetPropValueDWORD(dwCapacity, refDefs.dwCapacity);
@@ -102,7 +192,6 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueByOptData(wstrInfoBar, 1UL);
 	SetPropValueByOptData(wstrOffsetHex, 1UL);
 	SetPropValueLOGFONT(stLogFont, refDefs.stLogFont);
-
 	const auto& refClrs = refDefs.stClrs;
 	SetPropValueRGB(clrFontHex, refClrs.clrFontHex);
 	SetPropValueRGB(clrFontText, refClrs.clrFontText);
@@ -119,7 +208,8 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueRGB(clrBkCaret, refClrs.clrBkCaret);
 	SetPropValueRGB(clrBkCaretSel, refClrs.clrBkCaretSel);
 
-	m_gridHexCtrl.RedrawWindow();
+	m_grid.SetRedraw(TRUE);
+	m_grid.RedrawWindow();
 }
 
 void CDlgSettingsHexCtrl::SaveSettings()
@@ -163,7 +253,7 @@ void CDlgSettingsHexCtrl::SaveSettings()
 void CDlgSettingsHexCtrl::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_SETTINGSHEXCTRL_GRID, m_gridHexCtrl);
+	DDX_Control(pDX, IDC_SETTINGSHEXCTRL_GRID, m_grid);
 }
 
 auto CDlgSettingsHexCtrl::GetGridData(EName eName)const->const GRIDDATA*
@@ -227,19 +317,19 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_gridHexCtrl.MarkModifiedProperties(1, 0);
-	m_gridHexCtrl.EnableHeaderCtrl(TRUE, L"Property", L"Value");
+	m_grid.MarkModifiedProperties(1, 0);
+	m_grid.EnableHeaderCtrl(TRUE, L"Property", L"Value");
 	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 150 };
-	m_gridHexCtrl.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
+	m_grid.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
 
 	//Set new bigger font to the property.
-	const auto pFont = m_gridHexCtrl.GetFont();
+	const auto pFont = m_grid.GetFont();
 	LOGFONTW lf;
 	pFont->GetLogFont(&lf);
 	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Ut::GetHiDPIInfo().iLOGPIXELSY) + 1;
 	lf.lfHeight = -MulDiv(lFontSize, Ut::GetHiDPIInfo().iLOGPIXELSY, 72);
-	m_fntGridHexCtrl.CreateFontIndirectW(&lf);
-	m_gridHexCtrl.SetFont(&m_fntGridHexCtrl);
+	m_fntGrid.CreateFontIndirectW(&lf);
+	m_grid.SetFont(&m_fntGrid);
 
 	auto& refSett = m_pAppSettings->GetHexCtrlSettings();
 
@@ -311,7 +401,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 			pAppear->AddSubItem(it.pProp);
 		}
 	}
-	m_gridHexCtrl.AddProperty(pAppear);
+	m_grid.AddProperty(pAppear);
 
 	//HexCtrl colors.
 	const auto& refClrs = m_pAppSettings->GetHexCtrlSettings().stClrs;
@@ -337,7 +427,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 			static_cast<CMFCPropertyGridColorProperty*>(it.pProp)->EnableOtherButton(L"Other");
 		}
 	}
-	m_gridHexCtrl.AddProperty(pColors);
+	m_grid.AddProperty(pColors);
 
 	return TRUE;
 }
@@ -384,23 +474,31 @@ public:
 	CDlgSettings(CWnd* pParent = nullptr) : CDialogEx(IDD_SETTINGS, pParent) {}
 	auto DoModal(CAppSettings& refSettings) -> INT_PTR;
 private:
+	enum class ETabs : std::uint8_t; //All the tabs.
 	void DoDataExchange(CDataExchange* pDX)override;
 	void OnCancel()override;
 	afx_msg void OnClickedDefaults();
 	BOOL OnInitDialog()override;
 	void OnOK()override;
 	afx_msg void OnTabSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
-	void SetCurrentTab(int iTab);
+	void SetCurrentTab(ETabs eTab);
+	[[nodiscard]] auto TabIDToName(int iTab)const->ETabs;
+	[[nodiscard]] auto TabNameToID(ETabs eTab)const->int;
 	DECLARE_MESSAGE_MAP();
 private:
 	CTabCtrl m_tabMain;
+	std::unique_ptr<CDlgSettingsGeneral> m_pDlgSettingsGeneral { std::make_unique<CDlgSettingsGeneral>() };
 	std::unique_ptr<CDlgSettingsHexCtrl> m_pDlgSettingsHexCtrl { std::make_unique<CDlgSettingsHexCtrl>() };
 	CAppSettings* m_pAppSettings { };
 };
 
+enum class CDlgSettings::ETabs : std::uint8_t {
+	TAB_GENERAL = 1, TAB_HEXCTRL
+};
+
 BEGIN_MESSAGE_MAP(CDlgSettings, CDialogEx)
-	ON_NOTIFY(TCN_SELCHANGE, IDC_SETTINGS_TAB, &CDlgSettings::OnTabSelChanged)
 	ON_BN_CLICKED(IDC_SETTINGS_DEFS, &CDlgSettings::OnClickedDefaults)
+	ON_NOTIFY(TCN_SELCHANGE, IDC_SETTINGS_TAB, &CDlgSettings::OnTabSelChanged)
 END_MESSAGE_MAP()
 
 auto CDlgSettings::DoModal(CAppSettings& refSettings)->INT_PTR
@@ -436,7 +534,8 @@ BOOL CDlgSettings::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_tabMain.InsertItem(0, L"HexCtrl");
+	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 0, L"General", 0, static_cast<int>(ETabs::TAB_GENERAL));
+	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 1, L"HexCtrl", 0, static_cast<int>(ETabs::TAB_HEXCTRL));
 
 	CRect rcTab;
 	m_tabMain.GetItemRect(0, rcTab);
@@ -452,6 +551,8 @@ BOOL CDlgSettings::OnInitDialog()
 	const auto iWidth = rcClient.Width();
 	const auto iHeight = rcOK.top - rcTab.Height() - (rcClient.bottom - rcOK.bottom);
 
+	m_pDlgSettingsGeneral->Create(IDD_SETTINGSGENERAL, this, m_pAppSettings);
+	m_pDlgSettingsGeneral->SetWindowPos(nullptr, iX, iY, iWidth, iHeight, SWP_NOZORDER | SWP_HIDEWINDOW);
 	m_pDlgSettingsHexCtrl->Create(IDD_SETTINGSHEXCTRL, this, m_pAppSettings);
 	m_pDlgSettingsHexCtrl->SetWindowPos(nullptr, iX, iY, iWidth, iHeight, SWP_NOZORDER | SWP_HIDEWINDOW);
 
@@ -459,11 +560,12 @@ BOOL CDlgSettings::OnInitDialog()
 	const auto pLayout = GetDynamicLayout();
 	pLayout->Create(this);
 	pLayout->AddItem(m_pDlgSettingsHexCtrl->m_hWnd, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
+	pLayout->AddItem(m_pDlgSettingsGeneral->m_hWnd, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
 	pLayout->AddItem(IDOK, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100), CMFCDynamicLayout::SizeNone());
 	pLayout->AddItem(IDCANCEL, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100), CMFCDynamicLayout::SizeNone());
 	pLayout->AddItem(IDC_SETTINGS_DEFS, CMFCDynamicLayout::MoveVertical(100), CMFCDynamicLayout::SizeNone());
 
-	SetCurrentTab(0); //Show HexCtrl settings.
+	SetCurrentTab(ETabs::TAB_HEXCTRL); //Setting startup tab.
 
 	return TRUE;
 }
@@ -477,20 +579,43 @@ void CDlgSettings::OnOK()
 
 void CDlgSettings::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	SetCurrentTab(m_tabMain.GetCurSel());
+	SetCurrentTab(TabIDToName(m_tabMain.GetCurSel()));
 }
 
-void CDlgSettings::SetCurrentTab(int iTab)
+void CDlgSettings::SetCurrentTab(ETabs eTab)
 {
-	m_tabMain.SetCurSel(iTab);
-	switch (iTab) {
-	case 0:
-		m_pDlgSettingsHexCtrl->ShowWindow(SW_SHOW);
-		break;
-	case 1:
+	m_tabMain.SetCurSel(TabNameToID(eTab));
+	using enum ETabs;
+	switch (eTab) {
+	case TAB_GENERAL:
+		m_pDlgSettingsGeneral->ShowWindow(SW_SHOW);
 		m_pDlgSettingsHexCtrl->ShowWindow(SW_HIDE);
+		break;
+	case TAB_HEXCTRL:
+		m_pDlgSettingsGeneral->ShowWindow(SW_HIDE);
+		m_pDlgSettingsHexCtrl->ShowWindow(SW_SHOW);
 		break;
 	default:
 		std::unreachable();
 	}
+}
+
+auto CDlgSettings::TabIDToName(int iTab)const->ETabs
+{
+	TCITEMW tci { .mask { TCIF_PARAM } };
+	m_tabMain.GetItem(iTab, &tci);
+
+	return static_cast<ETabs>(tci.lParam);
+}
+
+auto CDlgSettings::TabNameToID(ETabs eTab)const->int {
+	for (auto i { 0 }; i < m_tabMain.GetItemCount(); ++i) {
+		TCITEMW tci { .mask { TCIF_PARAM } };
+		m_tabMain.GetItem(i, &tci);
+		if (tci.lParam == static_cast<int>(eTab)) {
+			return i;
+		}
+	}
+
+	return -1;
 }
