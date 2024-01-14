@@ -16,7 +16,7 @@ class CHexerApp final : public CWinAppEx {
 public:
 	afx_msg void OnFileOpen();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
-	static constexpr auto MSG_APP_SETTINGS_CHANGED { 0x01UL };
+	[[nodiscard]] auto GetClassName()const->LPCWSTR;
 private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;

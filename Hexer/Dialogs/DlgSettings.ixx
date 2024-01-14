@@ -256,7 +256,7 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	pPropStartup->AddOptionEx(L"Do Nothing", static_cast<DWORD_PTR>(CAppSettings::EStartup::DO_NOTHING));
 	pPropStartup->AddOptionEx(L"Restore Last Opened Files", static_cast<DWORD_PTR>(CAppSettings::EStartup::RESTORE_LAST_OPENED));
 	pPropStartup->AddOptionEx(L"Show File Open Dialog", static_cast<DWORD_PTR>(CAppSettings::EStartup::SHOW_FOD));
-	pPropStartup->SetValueFromData(static_cast<DWORD_PTR>(refSett.eStartup));
+	pPropStartup->SetValueFromData(std::to_underlying(refSett.eStartup));
 	pPropStartup->AllowEdit(FALSE);
 
 	const auto& refRFLSize = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Recent Files List Size:",

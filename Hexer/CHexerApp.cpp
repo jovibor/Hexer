@@ -16,6 +16,7 @@
 import DlgOpenDevice;
 import DlgNewFile;
 import DlgSettings;
+import Utility;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -261,6 +262,12 @@ auto CHexerApp::GetAppSettings()->CAppSettings&
 	return m_stAppSettings;
 }
 
+auto CHexerApp::GetClassName()const->LPCWSTR
+{
+	//Just a "unique" string for a Window Class name.
+	return L"HexerClassUnique{78306c63-7865}";
+}
+
 void CHexerApp::OnFileOpen()
 {
 	const auto lmbFOD = [this]()->bool {
@@ -295,6 +302,17 @@ void CHexerApp::OnFileOpen()
 
 BOOL CHexerApp::InitInstance()
 {
+	GetAppSettings().LoadSettings(Ut::GetAppName());
+
+	//Check for the already running app instance.
+	if (GetAppSettings().GetGeneralSettings().dwInstances == 0) { //Single.
+		if (const auto hWnd = FindWindowExW(nullptr, nullptr, GetClassName(), nullptr); hWnd != nullptr) {
+			ShowWindow(hWnd, SW_SHOWNORMAL);
+			SetForegroundWindow(hWnd);
+			return FALSE;
+		}
+	}
+
 	CWinAppEx::InitInstance();
 
 	EnableTaskbarInteraction(FALSE);
@@ -315,7 +333,7 @@ BOOL CHexerApp::InitInstance()
 	//One when no child windows is opened, and one when any child window is opened.
 
 	const auto pMainFrame = new CMainFrame;
-	pMainFrame->LoadFrame(IDR_HEXER_FRAME);
+	pMainFrame->LoadFrame(IDR_HEXER_FRAME); //Also used in the CMainFrame::PreCreateWindow.
 	m_pMainWnd = pMainFrame;
 
 	const auto iSizeIcon = static_cast<int>(16 * Ut::GetHiDPIInfo().flDPIScale);
@@ -326,7 +344,6 @@ BOOL CHexerApp::InitInstance()
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
 	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Setting the icon for the "Open Device..." menu.
 	const auto pRFSubMenu = pFileMenu->GetSubMenu(3); //"Recent Files" sub-menu.
-	GetAppSettings().LoadSettings(Ut::GetAppName());
 	GetAppSettings().RFLInitialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk, GetAppSettings().GetGeneralSettings().dwRFLSize);
 	DrawMenuBar(pMainFrame->m_hWnd);
 
@@ -415,7 +432,7 @@ void CHexerApp::OnToolsSettings()
 		const auto pDocTempl = GetNextDocTemplate(posDocTempl);
 		auto posDoc = pDocTempl->GetFirstDocPosition();
 		while (posDoc != nullptr) {
-			pDocTempl->GetNextDoc(posDoc)->UpdateAllViews(nullptr, MSG_APP_SETTINGS_CHANGED);
+			pDocTempl->GetNextDoc(posDoc)->UpdateAllViews(nullptr, Ut::WM_APP_SETTINGS_CHANGED);
 		}
 	}
 }

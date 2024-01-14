@@ -169,7 +169,7 @@ public:
 		DO_NOTHING, RESTORE_LAST_OPENED, SHOW_FOD
 	};
 	struct GENERALSETTINGS {
-		DWORD dwInstances { };
+		DWORD dwInstances { }; //0-Single, 1-Multiple.
 		DWORD dwRFLSize { };
 		EStartup eStartup { };
 	};

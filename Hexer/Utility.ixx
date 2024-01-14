@@ -84,13 +84,14 @@ export namespace Ut {
 
 	[[nodiscard]] auto GetAppName() -> const std::wstring& {
 		static const std::wstring wstrAppName { [] {
-			CStringW str;
-			str.LoadStringW(IDR_HEXER_FRAME);
-			return str; }() };
+			CStringW strw;
+			strw.LoadStringW(IDR_HEXER_FRAME);
+			return strw; }() };
 		return wstrAppName;
 	}
 
-	constexpr auto WM_ADDLOGENTRY { WM_APP + 1 }; //Custom message.
+	constexpr auto WM_ADD_LOG_ENTRY { WM_APP + 1 }; //Custom messages.
+	constexpr auto WM_APP_SETTINGS_CHANGED { WM_APP + 2 };
 
 	namespace Log {
 		enum class EMsgType :std::int8_t { //Enum id-number is the icon's index in the image list.
@@ -105,7 +106,7 @@ export namespace Ut {
 		};
 
 		void AddLogEntry(const LOGINFO& li) {
-			AfxGetMainWnd()->SendMessageW(WM_ADDLOGENTRY, 0, reinterpret_cast<WPARAM>(&li));
+			AfxGetMainWnd()->SendMessageW(WM_ADD_LOG_ENTRY, 0, reinterpret_cast<WPARAM>(&li));
 		}
 
 		void AddLogEntryError(std::wstring_view wsvMsg) {

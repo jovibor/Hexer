@@ -48,6 +48,7 @@ protected:
 	afx_msg void OnUpdateRangePanes(CCmdUI* pCmdUI);
 	afx_msg void OnViewCustomize();
 	afx_msg void OnViewRangePanes(UINT uMenuID);
+	BOOL PreCreateWindow(CREATESTRUCT& cs)override;
 	BOOL PreTranslateMessage(MSG* pMsg)override;
 	void SaveHexCtrlSettings();
 	void SavePaneData(UINT uPaneID);

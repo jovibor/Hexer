@@ -12,6 +12,8 @@
 #include "CHexerView.h"
 #include "resource.h"
 
+import Utility;
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -175,7 +177,7 @@ void CHexerView::OnSize(UINT nType, int cx, int cy)
 
 void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
 {
-	if (lHint == CHexerApp::MSG_APP_SETTINGS_CHANGED) {
+	if (lHint == Ut::WM_APP_SETTINGS_CHANGED) {
 		const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlSettings();
 		const auto pHex = GetHexCtrl();
 		pHex->SetRedraw(false);

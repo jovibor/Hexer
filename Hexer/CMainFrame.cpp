@@ -20,7 +20,7 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWndEx)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
 	ON_COMMAND_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnViewRangePanes)
-	ON_MESSAGE(Ut::WM_ADDLOGENTRY, OnAddLogEntry)
+	ON_MESSAGE(Ut::WM_ADD_LOG_ENTRY, OnAddLogEntry)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnUpdateRangePanes)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
@@ -372,6 +372,28 @@ void CMainFrame::OnViewRangePanes(UINT uMenuID)
 	if (fVisible) { //If pane is closing then we save its data.
 		SavePaneData(uPaneID);
 	}
+}
+
+BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
+{
+	CMDIFrameWndEx::PreCreateWindow(cs);
+
+	//Replacing MFC internal Window Class Name with our own, to easily finding it in the CHexerApp::InitInstance.
+	if (WNDCLASSEX wc { .cbSize { sizeof(WNDCLASSEX) } }; ::GetClassInfoExW(AfxGetInstanceHandle(),
+		theApp.GetClassName(), &wc) == FALSE) { //Check first that our class is not already registered.
+		GetClassInfoExW(AfxGetInstanceHandle(), cs.lpszClass, &wc); //Get class info of the MFC provided class name.
+		wc.lpszClassName = theApp.GetClassName();
+		wc.hIcon = ::LoadIconW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDR_HEXER_FRAME));
+		wc.hIcon = static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(),
+			MAKEINTRESOURCEW(IDR_HEXER_FRAME), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
+		if (!::RegisterClassExW(&wc)) {
+			_ASSERTE("RegisterClassExW failed");
+			return FALSE;
+		}
+	}
+
+	cs.lpszClass = theApp.GetClassName();
+	return TRUE;
 }
 
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
