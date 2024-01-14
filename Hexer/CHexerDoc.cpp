@@ -66,12 +66,13 @@ bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 
 	if (!m_stFileLoader.OpenFile(fosLocal)) {
-		theApp.RemoveFromRFL(m_wstrFilePath);
+		theApp.GetAppSettings().RFLRemoveFromList(m_wstrFilePath);
 		Ut::Log::AddLogEntryError(L"File open failed: " + m_wstrFileName);
 		return false;
 	}
 
-	theApp.AddToRFL(m_wstrFilePath);
+	theApp.GetAppSettings().AddToLastOpened(m_wstrFilePath);
+	theApp.GetAppSettings().RFLAddToList(m_wstrFilePath);
 	Ut::Log::AddLogEntryInfo(L"File opened: " + m_wstrFileName + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" });
 
 	return true;
@@ -88,6 +89,9 @@ BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 void CHexerDoc::OnCloseDocument()
 {
 	Ut::Log::AddLogEntryInfo(L"File closed: " + m_wstrFileName);
+	if (!static_cast<CMainFrame*>(AfxGetMainWnd())->IsAppClosing()) {
+		theApp.GetAppSettings().RemoveFromLastOpened(m_wstrFilePath);
+	}
 
 	CDocument::OnCloseDocument();
 }

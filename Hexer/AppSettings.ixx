@@ -15,6 +15,7 @@ module;
 #include <format>
 #include <ranges>
 #include <string>
+#include <utility>
 #include <vector>
 export module AppSettings;
 
@@ -54,7 +55,7 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk
 	m_hMenu = hMenu;
 	m_iIDMenuFirst = iIDMenuFirst;
 	m_hBMPDisk = hBMPDisk;
-	m_iMaxEntry = iMaxEntry;
+	m_iMaxEntry = std::clamp(iMaxEntry, 0, 20);
 	m_fInit = true;
 
 	RebuildRFLMenu();
@@ -62,10 +63,6 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk
 
 void CAppSettingsRFL::AddToRFL(std::wstring_view wsvPath, bool fBeginning)
 {
-	assert(m_fInit);
-	if (!m_fInit)
-		return;
-
 	std::erase(m_vecRFL, wsvPath); //Remove any duplicates.
 
 	if (fBeginning) {
@@ -120,6 +117,10 @@ auto CAppSettingsRFL::GetRFL()const->const std::vector<std::wstring>&
 
 void CAppSettingsRFL::RebuildRFLMenu()
 {
+	assert(m_fInit);
+	if (!m_fInit)
+		return;
+
 	while (GetMenuItemCount(m_hMenu) > 0) {
 		DeleteMenu(m_hMenu, 0, MF_BYPOSITION); //Removing all RFL menu items.
 	}
@@ -153,6 +154,25 @@ public:
 		bool fIsVisible : 1{};
 		bool fIsActive : 1{};
 	};
+	struct PANESETTINGS {
+		std::uint64_t ullPaneDataFileInfo { };   //Pane data for the "File Info".
+		std::uint64_t ullPaneDataBkmMgr { };     //Pane data for the "Bokmark Manager".
+		std::uint64_t ullPaneDataDataInterp { }; //Pane data for the "Template Manager".
+		std::uint64_t ullPaneDataTemplMgr { };   //Pane data for the "Data Interpreter".
+		PANESTATUS stPSFileInfo { };             //Pane status for the "File Properties".
+		PANESTATUS stPSBkmMgr { };               //Pane status for the "Bokmark Manager".
+		PANESTATUS stPSDataInterp { };           //Pane status for the "Data Interpreter".
+		PANESTATUS stPSTemplMgr { };             //Pane status for the "Template Manager".
+		PANESTATUS stPSLogInfo { };              //Pane status for the "Log Information".
+	};
+	enum class EStartup :std::uint8_t {
+		DO_NOTHING, RESTORE_LAST_OPENED, SHOW_FOD
+	};
+	struct GENERALSETTINGS {
+		DWORD dwInstances { };
+		DWORD dwRFLSize { };
+		EStartup eStartup { };
+	};
 	struct HEXCTRLSETTINGS {
 		LOGFONTW stLogFont { };
 		HEXCTRL::HEXCOLORS stClrs;
@@ -173,10 +193,14 @@ public:
 	CAppSettings(CAppSettings&&) = delete;
 	CAppSettings& operator=(const CAppSettings&) = delete;
 	~CAppSettings() = default;
+	void AddToLastOpened(std::wstring_view wsvPath);
+	[[nodiscard]] auto GetGeneralSettings() -> GENERALSETTINGS&;
 	[[nodiscard]] auto GetHexCtrlSettings() -> HEXCTRLSETTINGS&;
+	[[nodiscard]] auto GetLastOpenedFromReg()const->std::vector<std::wstring>;
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const->std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const->PANESTATUS;
 	void LoadSettings(std::wstring_view wsvKeyName);
+	void RemoveFromLastOpened(std::wstring_view wsvPath);
 	void RFLAddToList(std::wstring_view wsvPath, bool fBeginning = true);
 	void RFLClear();
 	[[nodiscard]] auto RFLGetPathFromID(UINT uID)const->std::wstring;
@@ -186,41 +210,87 @@ public:
 	void SetPaneStatus(UINT uPaneID, bool fShow, bool fActive);
 	void SaveSettings(std::wstring_view wsvKeyName);
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
+	[[nodiscard]] static auto GetGeneralDefs() -> const GENERALSETTINGS&;
 	[[nodiscard]] static auto GetHexCtrlDefs() -> const HEXCTRLSETTINGS&;
 	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
+	[[nodiscard]] auto GetPanesSettings() -> PANESETTINGS&;
+	[[nodiscard]] auto GetPanesSettings()const->const PANESETTINGS&;
 	[[nodiscard]] auto RFLGetData()const->const std::vector<std::wstring>&;
 private:
 	CAppSettingsRFL m_stRFL;
-	std::uint64_t m_ullPaneDataFileInfo { };   //Pane data for the "File Info".
-	std::uint64_t m_ullPaneDataBkmMgr { };     //Pane data for the "Bokmark Manager".
-	std::uint64_t m_ullPaneDataDataInterp { }; //Pane data for the "Template Manager".
-	std::uint64_t m_ullPaneDataTemplMgr { };   //Pane data for the "Data Interpreter".
-	PANESTATUS m_stPSFileInfo { };             //Pane status for the "File Properties".
-	PANESTATUS m_stPSBkmMgr { };               //Pane status for the "Bokmark Manager".
-	PANESTATUS m_stPSDataInterp { };           //Pane status for the "Data Interpreter".
-	PANESTATUS m_stPSTemplMgr { };             //Pane status for the "Template Manager".
-	PANESTATUS m_stPSLogInfo { };              //Pane status for the "Log Information".
-	HEXCTRLSETTINGS m_stHexCtrlData;               //HexCtrl settings data.
+	PANESETTINGS m_stPaneSettings;   //"Panes" settings data.
+	GENERALSETTINGS m_stGeneralData; //"General" settings data.
+	HEXCTRLSETTINGS m_stHexCtrlData; //"HexCtrl" settings data.
+	std::wstring m_wstrKeyName;      //Registry Key name.
+	std::vector<std::wstring> m_vecLastOpened; //Last Opened files list.
+	bool m_fLoaded { false };        //LoadSettings has succeeded.
 };
 
+
+void CAppSettings::AddToLastOpened(std::wstring_view wsvPath)
+{
+	if (m_vecLastOpened.size() < 20) {
+		m_vecLastOpened.emplace_back(wsvPath);
+	}
+}
+
+auto CAppSettings::GetGeneralSettings()->GENERALSETTINGS&
+{
+	return m_stGeneralData;
+}
 
 auto CAppSettings::GetHexCtrlSettings()->HEXCTRLSETTINGS&
 {
 	return m_stHexCtrlData;
 }
 
+auto CAppSettings::GetLastOpenedFromReg()const->std::vector<std::wstring>
+{
+	assert(m_fLoaded);
+	if (!m_fLoaded)
+		return { };
+
+	//Last Opened List.
+	std::vector<std::wstring> vec;
+	const std::wstring wstrKeyRFL = std::wstring { L"SOFTWARE\\" } + m_wstrKeyName + L"\\Last Opened List";
+	if (CRegKey regRFL; regRFL.Open(HKEY_CURRENT_USER, wstrKeyRFL.data()) == ERROR_SUCCESS) {
+		int iCode { };
+		wchar_t buffName[32];
+		wchar_t buffData[MAX_PATH];
+		DWORD dwIndex = 0;
+		while (iCode != ERROR_NO_MORE_ITEMS && dwIndex < 20) { //Maximum 20 files.
+			DWORD dwNameSize { sizeof(buffName) / sizeof(wchar_t) };
+			DWORD dwDataType { };
+			DWORD dwDataSize { MAX_PATH * sizeof(wchar_t) };
+			iCode = RegEnumValueW(regRFL, dwIndex, buffName, &dwNameSize, nullptr, &dwDataType,
+				reinterpret_cast<LPBYTE>(&buffData), &dwDataSize);
+			if (iCode == ERROR_SUCCESS && dwDataType == REG_SZ) {
+				vec.emplace_back(buffData);
+			}
+			++dwIndex;
+		}
+	}
+
+	return vec;
+}
+
 auto CAppSettings::GetPaneData(UINT uPaneID)const->std::uint64_t
 {
+	assert(m_fLoaded);
+	if (!m_fLoaded)
+		return { };
+
+	const auto& refPanes = GetPanesSettings();
 	switch (uPaneID) {
 	case IDC_PANE_FILEINFO:
-		return m_ullPaneDataFileInfo;
+		return refPanes.ullPaneDataFileInfo;
 	case IDC_PANE_BKMMGR:
-		return m_ullPaneDataBkmMgr;
+		return refPanes.ullPaneDataBkmMgr;
 	case IDC_PANE_DATAINTERP:
-		return m_ullPaneDataDataInterp;
+		return refPanes.ullPaneDataDataInterp;
 	case IDC_PANE_TEMPLMGR:
-		return m_ullPaneDataTemplMgr;
+		return refPanes.ullPaneDataTemplMgr;
 	default:
 		return { };
 	}
@@ -228,17 +298,22 @@ auto CAppSettings::GetPaneData(UINT uPaneID)const->std::uint64_t
 
 auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 {
+	assert(m_fLoaded);
+	if (!m_fLoaded)
+		return { };
+
+	const auto& refPanes = GetPanesSettings();
 	switch (uPaneID) {
 	case IDC_PANE_FILEINFO:
-		return m_stPSFileInfo;
+		return refPanes.stPSFileInfo;
 	case IDC_PANE_BKMMGR:
-		return m_stPSBkmMgr;
+		return refPanes.stPSBkmMgr;
 	case IDC_PANE_DATAINTERP:
-		return m_stPSDataInterp;
+		return refPanes.stPSDataInterp;
 	case IDC_PANE_TEMPLMGR:
-		return m_stPSTemplMgr;
+		return refPanes.stPSTemplMgr;
 	case IDC_PANE_LOGINFO:
-		return m_stPSLogInfo;
+		return refPanes.stPSLogInfo;
 	default:
 		return { };
 	}
@@ -246,25 +321,28 @@ auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 
 void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 {
+	m_wstrKeyName = wsvKeyName;
+
 	//Settings.
 	const std::wstring wstrKeySettings = std::wstring { L"SOFTWARE\\" } + std::wstring { wsvKeyName } + L"\\Settings";
 	if (CRegKey regSettings; regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) == ERROR_SUCCESS) {
 		//PaneStatus.
+		auto& refPanes = GetPanesSettings();
 		DWORD dwPaneStatusFileInfo { };
 		regSettings.QueryDWORDValue(L"PaneStatusFileInfo", dwPaneStatusFileInfo);
-		m_stPSFileInfo = DWORD2PaneStatus(dwPaneStatusFileInfo);
+		refPanes.stPSFileInfo = DWORD2PaneStatus(dwPaneStatusFileInfo);
 		DWORD dwPaneStatusBkmMgr { };
 		regSettings.QueryDWORDValue(L"PaneStatusBkmMgr", dwPaneStatusBkmMgr);
-		m_stPSBkmMgr = DWORD2PaneStatus(dwPaneStatusBkmMgr);
+		refPanes.stPSBkmMgr = DWORD2PaneStatus(dwPaneStatusBkmMgr);
 		DWORD dwPaneStatusDataInterp { };
 		regSettings.QueryDWORDValue(L"PaneStatusDataInterp", dwPaneStatusDataInterp);
-		m_stPSDataInterp = DWORD2PaneStatus(dwPaneStatusDataInterp);
+		refPanes.stPSDataInterp = DWORD2PaneStatus(dwPaneStatusDataInterp);
 		DWORD dwPaneStatusTemplMgr { };
 		regSettings.QueryDWORDValue(L"PaneStatusTemplMgr", dwPaneStatusTemplMgr);
-		m_stPSTemplMgr = DWORD2PaneStatus(dwPaneStatusTemplMgr);
+		refPanes.stPSTemplMgr = DWORD2PaneStatus(dwPaneStatusTemplMgr);
 		DWORD dwPaneStatusLogInfo { };
 		regSettings.QueryDWORDValue(L"PaneStatusLogInfo", dwPaneStatusLogInfo);
-		m_stPSLogInfo = DWORD2PaneStatus(dwPaneStatusLogInfo);
+		refPanes.stPSLogInfo = DWORD2PaneStatus(dwPaneStatusLogInfo);
 
 		//PaneData.
 		QWORD ullPaneDataBkmMgr { };
@@ -276,6 +354,14 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		QWORD ullPaneDataTemplMgr { };
 		regSettings.QueryQWORDValue(L"PaneDataTemplMgr", ullPaneDataTemplMgr);
 		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr | HEXCTRL::HEXCTRL_FLAG_TEMPLMGR_NOESC);
+
+		//General settings.
+		auto& refGeneral = GetGeneralSettings();
+		regSettings.QueryDWORDValue(L"GeneralInstances", refGeneral.dwInstances);
+		regSettings.QueryDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
+		DWORD dwStartup { };
+		regSettings.QueryDWORDValue(L"GeneralStartup", dwStartup);
+		refGeneral.eStartup = static_cast<EStartup>(dwStartup);
 
 		//HexCtrl settings.
 		const std::wstring wstrKeyHexCtrl = wstrKeySettings + L"\\HexCtrl";
@@ -354,9 +440,49 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		}
 		else { GetHexCtrlSettings() = GetHexCtrlDefs(); }
 	}
+	else { GetGeneralSettings() = GetGeneralDefs(); }
+
+	m_fLoaded = true;
+}
+
+void CAppSettings::RemoveFromLastOpened(std::wstring_view wsvPath)
+{
+	std::erase(m_vecLastOpened, wsvPath);
+}
+
+void CAppSettings::RFLAddToList(std::wstring_view wsvPath, bool fBeginning)
+{
+	assert(m_fLoaded);
+	if (!m_fLoaded)
+		return;
+
+	m_stRFL.AddToRFL(wsvPath, fBeginning);
+}
+
+void CAppSettings::RFLClear()
+{
+	m_stRFL.ClearRFL();
+}
+
+auto CAppSettings::RFLGetPathFromID(UINT uID)const->std::wstring
+{
+	assert(m_fLoaded);
+	if (!m_fLoaded)
+		return { };
+
+	return m_stRFL.GetPathFromRFL(uID);
+}
+
+void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry)
+{
+	assert(m_fLoaded);
+	if (!m_fLoaded)
+		return;
+
+	m_stRFL.Initialize(hMenu, iIDMenuFirst, hBMPDisk, iMaxEntry);
 
 	//Recent File List.
-	const std::wstring wstrKeyRFL = std::wstring { L"SOFTWARE\\" } + std::wstring { wsvKeyName } + L"\\Recent File List";
+	const std::wstring wstrKeyRFL = std::wstring { L"SOFTWARE\\" } + m_wstrKeyName + L"\\Recent File List";
 	if (CRegKey regRFL; regRFL.Open(HKEY_CURRENT_USER, wstrKeyRFL.data()) == ERROR_SUCCESS) {
 		int iCode { };
 		wchar_t buffName[32];
@@ -377,28 +503,12 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 	}
 }
 
-void CAppSettings::RFLAddToList(std::wstring_view wsvPath, bool fBeginning)
-{
-	m_stRFL.AddToRFL(wsvPath, fBeginning);
-}
-
-void CAppSettings::RFLClear()
-{
-	m_stRFL.ClearRFL();
-}
-
-auto CAppSettings::RFLGetPathFromID(UINT uID)const->std::wstring
-{
-	return m_stRFL.GetPathFromRFL(uID);
-}
-
-void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry)
-{
-	m_stRFL.Initialize(hMenu, iIDMenuFirst, hBMPDisk, iMaxEntry);
-}
-
 void CAppSettings::RFLRemoveFromList(std::wstring_view wsvPath)
 {
+	assert(m_fLoaded);
+	if (!m_fLoaded)
+		return;
+
 	m_stRFL.RemoveFromRFL(wsvPath);
 }
 
@@ -414,6 +524,16 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 	regRFL.Create(HKEY_CURRENT_USER, wstrKeyRFL.data());
 	for (const auto [idx, wstr] : RFLGetData() | std::views::enumerate) {
 		regRFL.SetStringValue(std::format(L"File{:02d}", idx).data(), wstr.data());
+	}
+
+	//Last Opened List.
+	CRegKey regLOL;
+	regLOL.Open(HKEY_CURRENT_USER, wstrAppKey.data());
+	regLOL.RecurseDeleteKey(L"Last Opened List"); //Remove all data to set it below.
+	const std::wstring wstrKeyLOL = wstrAppKey + L"\\Last Opened List";
+	regLOL.Create(HKEY_CURRENT_USER, wstrKeyLOL.data());
+	for (const auto [idx, wstr] : m_vecLastOpened | std::views::enumerate) {
+		regLOL.SetStringValue(std::format(L"File{:02d}", idx).data(), wstr.data());
 	}
 
 	//Settings.
@@ -434,6 +554,12 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 	regSettings.SetQWORDValue(L"PaneDataBkmMgr", GetPaneData(IDC_PANE_BKMMGR));
 	regSettings.SetQWORDValue(L"PaneDataDataInterp", GetPaneData(IDC_PANE_DATAINTERP));
 	regSettings.SetQWORDValue(L"PaneDataTemplMgr", GetPaneData(IDC_PANE_TEMPLMGR));
+
+	//General settings.
+	const auto& refGeneral = GetGeneralSettings();
+	regSettings.SetDWORDValue(L"GeneralInstances", refGeneral.dwInstances);
+	regSettings.SetDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
+	regSettings.SetDWORDValue(L"GeneralStartup", std::to_underlying(refGeneral.eStartup));
 
 	//HexCtrl settings.
 	CRegKey regHexCtrl;
@@ -488,18 +614,19 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 
 void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
 {
+	auto& refPanes = GetPanesSettings();
 	switch (uPaneID) {
 	case IDC_PANE_FILEINFO:
-		m_ullPaneDataFileInfo = ullData;
+		refPanes.ullPaneDataFileInfo = ullData;
 		break;
 	case IDC_PANE_BKMMGR:
-		m_ullPaneDataBkmMgr = ullData;
+		refPanes.ullPaneDataBkmMgr = ullData;
 		break;
 	case IDC_PANE_DATAINTERP:
-		m_ullPaneDataDataInterp = ullData;
+		refPanes.ullPaneDataDataInterp = ullData;
 		break;
 	case IDC_PANE_TEMPLMGR:
-		m_ullPaneDataTemplMgr = ullData;
+		refPanes.ullPaneDataTemplMgr = ullData;
 		break;
 	default:
 		return;
@@ -508,17 +635,18 @@ void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
 
 void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
 {
+	auto& refPanes = GetPanesSettings();
 	switch (uPaneID) {
 	case IDC_PANE_FILEINFO:
-		m_stPSFileInfo = { fShow, fActive };
+		refPanes.stPSFileInfo = { fShow, fActive };
 	case IDC_PANE_BKMMGR:
-		m_stPSBkmMgr = { fShow, fActive };
+		refPanes.stPSBkmMgr = { fShow, fActive };
 	case IDC_PANE_DATAINTERP:
-		m_stPSDataInterp = { fShow, fActive };
+		refPanes.stPSDataInterp = { fShow, fActive };
 	case IDC_PANE_TEMPLMGR:
-		m_stPSTemplMgr = { fShow, fActive };
+		refPanes.stPSTemplMgr = { fShow, fActive };
 	case IDC_PANE_LOGINFO:
-		m_stPSLogInfo = { fShow, fActive };
+		refPanes.stPSLogInfo = { fShow, fActive };
 	default:
 		return;
 	}
@@ -526,6 +654,16 @@ void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
 
 
 //CAppSettings Private methods.
+
+auto CAppSettings::GetPanesSettings()->PANESETTINGS&
+{
+	return m_stPaneSettings;
+}
+
+auto CAppSettings::GetPanesSettings()const->const PANESETTINGS&
+{
+	return m_stPaneSettings;
+}
 
 auto CAppSettings::RFLGetData()const->const std::vector<std::wstring>&
 {
@@ -536,6 +674,12 @@ auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 {
 	const std::bitset<32> bsPS(dw);
 	return { bsPS.test(0), bsPS.test(1) };
+}
+
+auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
+{
+	static const GENERALSETTINGS defs { .dwInstances { 0 }, .dwRFLSize { 20 }, .eStartup { EStartup::DO_NOTHING } };
+	return defs;
 }
 
 auto CAppSettings::GetHexCtrlDefs()->const HEXCTRLSETTINGS&

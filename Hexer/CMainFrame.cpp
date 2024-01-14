@@ -36,6 +36,11 @@ int& CMainFrame::GetChildFramesCount()
 	return m_iChildFrames;
 }
 
+bool CMainFrame::IsAppClosing()const
+{
+	return m_fClosing;
+}
+
 bool CMainFrame::IsPaneActive(UINT uPaneID)
 {
 	return GetPtrFromPaneID(uPaneID)->IsPaneVisible();
@@ -48,7 +53,7 @@ bool CMainFrame::IsPaneVisible(UINT uPaneID)
 
 void CMainFrame::OnChildFrameActivate()
 {
-	if (m_fClosing) {
+	if (IsAppClosing()) {
 		return;
 	}
 
@@ -69,7 +74,7 @@ void CMainFrame::OnChildFrameActivate()
 
 void CMainFrame::OnChildFrameCloseLast()
 {
-	if (m_fClosing) {
+	if (IsAppClosing()) {
 		return;
 	}
 
@@ -80,7 +85,7 @@ void CMainFrame::OnChildFrameCloseLast()
 
 void CMainFrame::OnChildFrameOpenFirst()
 {
-	if (m_fClosing) {
+	if (IsAppClosing()) {
 		return;
 	}
 

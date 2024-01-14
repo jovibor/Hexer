@@ -23,6 +23,7 @@ class CMainFrame final : public CMDIFrameWndEx {
 public:
 	void AddLogEntry(const Ut::Log::LOGINFO& stData);
 	[[nodiscard]] int& GetChildFramesCount();
+	[[nodiscard]] bool IsAppClosing()const;
 	[[nodiscard]] bool IsPaneVisible(UINT uPaneID); //Is Pane visible even if pane's window itself is tabbed and hidden atm (not active).
 	[[nodiscard]] bool IsPaneActive(UINT uPaneID);  //Is Pane itself visible atm.
 	void OnChildFrameActivate();

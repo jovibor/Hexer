@@ -256,16 +256,6 @@ BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_FILE_RFL00, IDM_FILE_RFL19, &CHexerApp::OnUpdateFileRFL)
 END_MESSAGE_MAP()
 
-void CHexerApp::AddToRFL(std::wstring_view wsvPath)
-{
-	GetAppSettings().RFLAddToList(wsvPath);
-}
-
-void CHexerApp::RemoveFromRFL(std::wstring_view wsvPath)
-{
-	GetAppSettings().RFLRemoveFromList(wsvPath);
-}
-
 auto CHexerApp::GetAppSettings()->CAppSettings&
 {
 	return m_stAppSettings;
@@ -336,8 +326,8 @@ BOOL CHexerApp::InitInstance()
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
 	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Setting the icon for the "Open Device..." menu.
 	const auto pRFSubMenu = pFileMenu->GetSubMenu(3); //"Recent Files" sub-menu.
-	GetAppSettings().RFLInitialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk);
 	GetAppSettings().LoadSettings(Ut::GetAppName());
+	GetAppSettings().RFLInitialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk, GetAppSettings().GetGeneralSettings().dwRFLSize);
 	DrawMenuBar(pMainFrame->m_hWnd);
 
 	//For Drag'n Drop to work, even in elevated mode.
@@ -359,6 +349,22 @@ BOOL CHexerApp::InitInstance()
 
 	pMainFrame->ShowWindow(m_nCmdShow);
 	pMainFrame->UpdateWindow();
+
+	const auto& refGeneral = GetAppSettings().GetGeneralSettings();
+	switch (refGeneral.eStartup) {
+	case CAppSettings::EStartup::DO_NOTHING:
+		break;
+	case CAppSettings::EStartup::SHOW_FOD:
+		OnFileOpen();
+		break;
+	case CAppSettings::EStartup::RESTORE_LAST_OPENED:
+		for (const auto& wstr : GetAppSettings().GetLastOpenedFromReg()) {
+			OpenDocumentFile(Ut::FILEOPEN { .wstrFilePath { wstr }, .fNewFile { false } });
+		}
+		break;
+	default:
+		break;
+	};
 
 	return TRUE;
 }
