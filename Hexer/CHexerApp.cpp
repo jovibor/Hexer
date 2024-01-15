@@ -106,82 +106,47 @@ auto CHexerMDTemplate::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
 class CHexerDocMgr final : public CDocManager {
 public:
 	auto OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU) -> CDocument* override;
-	auto OpenDocumentFile(const Ut::FILEOPEN& fos) -> CDocument*;
+	auto OpenDocumentFile(Ut::FILEOPEN& fos) -> CDocument*;
 	DECLARE_DYNCREATE(CHexerDocMgr);
 };
 
 IMPLEMENT_DYNCREATE(CHexerDocMgr, CDocument)
 
-auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU)->CDocument*
+auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL /*bAddToMRU*/)->CDocument*
 {
-	//This code is copy-pasted from the original CDocManager::OpenDocumentFile.
-	//We need to override this method to remove calls to AtlStrLen, AfxFullPath, AfxResolveShortcut
-	//functions from the original method, because these functions can't handle paths like "\\?\PhysicalDisk".
-	//This method also takes a part in HDROP.
+	//This method also takes a part in a HDROP.
 
-	if (lpszFileName == nullptr) {
-		AfxThrowInvalidArgException();
-	}
-	// find the highest confidence
-	POSITION pos = m_templateList.GetHeadPosition();
-	CDocTemplate::Confidence bestMatch = CDocTemplate::noAttempt;
-	CDocTemplate* pBestTemplate = nullptr;
-	CDocument* pOpenDocument = nullptr;
-
-	while (pos != nullptr) {
-		const auto pTemplate = static_cast<CDocTemplate*>(m_templateList.GetNext(pos));
-		ASSERT_KINDOF(CDocTemplate, pTemplate);
-
-		CDocTemplate::Confidence match;
-		ASSERT(pOpenDocument == nullptr);
-		match = pTemplate->MatchDocType(lpszFileName, pOpenDocument);
-		if (match > bestMatch) {
-			bestMatch = match;
-			pBestTemplate = pTemplate;
-		}
-		if (match == CDocTemplate::yesAlreadyOpen)
-			break;      // stop here
-	}
-
-	if (pOpenDocument != nullptr) {
-		auto posOpenDoc = pOpenDocument->GetFirstViewPosition();
-		if (posOpenDoc != nullptr) {
-			const auto pView = pOpenDocument->GetNextView(posOpenDoc); // get first one
-			ASSERT_VALID(pView);
-			const auto pFrame = pView->GetParentFrame();
-
-			if (pFrame == nullptr) {
-				TRACE(traceAppMsg, 0, "Error: Can not find a frame for document to activate.\n");
-			}
-			else {
-				pFrame->ActivateFrame();
-
-				if (pFrame->GetParent() != nullptr) {
-					if (const auto pAppFrame = static_cast<CFrameWnd*>(AfxGetApp()->m_pMainWnd); pFrame != pAppFrame) {
-						ASSERT_KINDOF(CFrameWnd, pAppFrame);
-						pAppFrame->ActivateFrame();
-					}
-				}
-			}
-		}
-		else {
-			TRACE(traceAppMsg, 0, "Error: Can not find a view for document to activate.\n");
-		}
-
-		return pOpenDocument;
-	}
-
-	if (pBestTemplate == nullptr) {
-		AfxMessageBox(AFX_IDP_FAILED_TO_OPEN_DOC);
-		return nullptr;
-	}
-
-	return pBestTemplate->OpenDocumentFile(lpszFileName, bAddToMRU, TRUE);
+	Ut::FILEOPEN fos { .wstrFilePath { lpszFileName } };
+	return OpenDocumentFile(fos);
 }
 
-auto CHexerDocMgr::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
+auto CHexerDocMgr::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
 {
-	//This code is copy-pasted from the original CDocManager::OpenDocumentFile.
+	//Lambda to resolve .lnk files.
+	const auto lmbResolveLNK = [](const wchar_t* pwszPath)->std::wstring {
+		if (!std::wstring_view(pwszPath).ends_with(L".lnk")) {
+			return pwszPath; //If it's not a `.lnk`, just return the path as is.
+		}
+
+		CComPtr<IShellLinkW> pIShellLinkW;
+		pIShellLinkW.CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER);
+		CComPtr<IPersistFile> pIPersistFile;
+		pIShellLinkW->QueryInterface(IID_PPV_ARGS(&pIPersistFile));
+		pIPersistFile->Load(pwszPath, STGM_READ);
+
+		std::wstring wstrPath;
+		wstrPath.resize_and_overwrite(MAX_PATH, [pIShellLinkW = pIShellLinkW](wchar_t* pData, std::size_t sSize) {
+			pIShellLinkW->GetPath(pData, static_cast<int>(sSize), nullptr, 0);
+			return sSize; });
+		wstrPath.resize(wstrPath.find_first_of(L'\0')); //Resize to the actual data size.
+
+		return wstrPath;
+		};
+	if (!fos.fNewFile) {
+		fos.wstrFilePath = lmbResolveLNK(fos.wstrFilePath.data());
+	}
+
+	//This code below is copy-pasted from the original CDocManager::OpenDocumentFile.
 	//We need to override this method to remove calls to AtlStrLen, AfxFullPath, AfxResolveShortcut
 	//functions from the original method, because these functions can't handle paths like "\\?\PhysicalDisk".
 	//Also this method is adapted to work with the FILEOPEN struct.
@@ -286,7 +251,8 @@ void CHexerApp::OnFileOpen()
 				pResults->GetItemAt(i, &pItem);
 				CComHeapPtr<wchar_t> pwstrPath;
 				pItem->GetDisplayName(SIGDN_FILESYSPATH, &pwstrPath);
-				const auto pDoc = OpenDocumentFile(Ut::FILEOPEN { .wstrFilePath { pwstrPath }, .fNewFile { false } });
+				Ut::FILEOPEN fos { .wstrFilePath { pwstrPath }, .fNewFile { false } };
+				const auto pDoc = OpenDocumentFile(fos);
 				fOpened = !fOpened ? pDoc != nullptr : true;
 			}
 			return fOpened;
@@ -302,6 +268,8 @@ void CHexerApp::OnFileOpen()
 
 BOOL CHexerApp::InitInstance()
 {
+	CWinAppEx::InitInstance();
+
 	GetAppSettings().LoadSettings(Ut::GetAppName());
 
 	//Check for the already running app instance.
@@ -312,8 +280,6 @@ BOOL CHexerApp::InitInstance()
 			return FALSE;
 		}
 	}
-
-	CWinAppEx::InitInstance();
 
 	EnableTaskbarInteraction(FALSE);
 	SetRegistryKey(Ut::GetAppName().data());
@@ -359,7 +325,6 @@ BOOL CHexerApp::InitInstance()
 	if (cmdInfo.m_nShellCommand == CCommandLineInfo::FileNew) {
 		cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
 	}
-
 	if (!ProcessShellCommand(cmdInfo)) {
 		return FALSE;
 	}
@@ -376,7 +341,8 @@ BOOL CHexerApp::InitInstance()
 		break;
 	case CAppSettings::EStartup::RESTORE_LAST_OPENED:
 		for (const auto& wstr : GetAppSettings().GetLastOpenedFromReg()) {
-			OpenDocumentFile(Ut::FILEOPEN { .wstrFilePath { wstr }, .fNewFile { false } });
+			Ut::FILEOPEN fos { .wstrFilePath { wstr }, .fNewFile { false } };
+			OpenDocumentFile(fos);
 		}
 		break;
 	default:
@@ -393,7 +359,7 @@ int CHexerApp::ExitInstance()
 	return CWinAppEx::ExitInstance();
 }
 
-auto CHexerApp::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
+auto CHexerApp::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
 {
 	ENSURE_VALID(m_pDocManager);
 	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentFile(fos);
@@ -408,7 +374,8 @@ void CHexerApp::OnAppAbout()
 void CHexerApp::OnFileNew()
 {
 	if (CDlgNewFile dlg; dlg.DoModal() == IDOK) {
-		OpenDocumentFile(dlg.GetNewFileInfo());
+		auto fos = dlg.GetNewFileInfo();
+		OpenDocumentFile(fos);
 	}
 }
 
@@ -416,7 +383,8 @@ void CHexerApp::OnFileOpenDevice()
 {
 	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& wstrPath : dlg.GetPaths()) {
-			OpenDocumentFile({ .wstrFilePath { wstrPath }, .fNewFile { false } });
+			Ut::FILEOPEN fos { .wstrFilePath { wstrPath }, .fNewFile { false } };
+			OpenDocumentFile(fos);
 		}
 	}
 }
@@ -439,7 +407,8 @@ void CHexerApp::OnToolsSettings()
 
 void CHexerApp::OnFileRFL(UINT uID)
 {
-	OpenDocumentFile({ .wstrFilePath { GetAppSettings().RFLGetPathFromID(uID) }, .fNewFile { false } });
+	Ut::FILEOPEN fos { .wstrFilePath { GetAppSettings().RFLGetPathFromID(uID) }, .fNewFile { false } };
+	OpenDocumentFile(fos);
 }
 
 void CHexerApp::OnUpdateFileNew(CCmdUI* pCmdUI)
