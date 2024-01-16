@@ -325,19 +325,21 @@ BOOL CHexerApp::InitInstance()
 	if (cmdInfo.m_nShellCommand == CCommandLineInfo::FileNew) {
 		cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
 	}
-	if (!ProcessShellCommand(cmdInfo)) {
-		return FALSE;
-	}
 
-	pMainFrame->ShowWindow(m_nCmdShow);
-	pMainFrame->UpdateWindow();
+	//If it was a file drop on a shortcut.
+	const auto fHDROP = cmdInfo.m_nShellCommand == CCommandLineInfo::FileOpen;
 
+	//First we process App's startup options, only then ProcessShellCommand.
+	//So that if we restore Last Opened Files and at the same time it was a file drop
+	//on a shortcut, the file dropped will de opened in the last tab.
 	const auto& refGeneral = GetAppSettings().GetGeneralSettings();
 	switch (refGeneral.eStartup) {
 	case CAppSettings::EStartup::DO_NOTHING:
 		break;
 	case CAppSettings::EStartup::SHOW_FOD:
-		OnFileOpen();
+		if (!fHDROP) { //Not showing dialog if it was a drop.
+			OnFileOpen();
+		}
 		break;
 	case CAppSettings::EStartup::RESTORE_LAST_OPENED:
 		for (const auto& wstr : GetAppSettings().GetLastOpenedFromReg()) {
@@ -348,6 +350,10 @@ BOOL CHexerApp::InitInstance()
 	default:
 		break;
 	};
+
+	if (!ProcessShellCommand(cmdInfo)) {
+		return FALSE;
+	}
 
 	return TRUE;
 }

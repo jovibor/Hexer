@@ -54,8 +54,11 @@ private:
 
 auto IPropsHelper::GetGridData(std::uint8_t ui8Name)const->const GRIDDATA*
 {
-	return &*std::find_if(GetGridVec().begin(), GetGridVec().end(), [=](const GRIDDATA& refData) {
+	const auto it = std::find_if(GetGridVec().begin(), GetGridVec().end(), [=](const GRIDDATA& refData) {
 		return refData.ui8Name == ui8Name; });
+	assert(it != GetGridVec().end());
+
+	return it != GetGridVec().end() ? &*it : nullptr;
 }
 
 auto IPropsHelper::GetProperty(std::uint8_t ui8Name)const->CMFCPropertyGridProperty*

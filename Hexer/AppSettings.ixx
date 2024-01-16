@@ -347,13 +347,13 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		//PaneData.
 		QWORD ullPaneDataBkmMgr { };
 		regSettings.QueryQWORDValue(L"PaneDataBkmMgr", ullPaneDataBkmMgr);
-		SetPaneData(IDC_PANE_BKMMGR, ullPaneDataBkmMgr | HEXCTRL::HEXCTRL_FLAG_BKMMGR_NOESC);
+		SetPaneData(IDC_PANE_BKMMGR, ullPaneDataBkmMgr | HEXCTRL::HEXCTRL_FLAG_NOESC);
 		QWORD ullPaneDataDataInterp { };
 		regSettings.QueryQWORDValue(L"PaneDataDataInterp", ullPaneDataDataInterp);
-		SetPaneData(IDC_PANE_DATAINTERP, ullPaneDataDataInterp | HEXCTRL::HEXCTRL_FLAG_DATAINTERP_NOESC);
+		SetPaneData(IDC_PANE_DATAINTERP, ullPaneDataDataInterp | HEXCTRL::HEXCTRL_FLAG_NOESC);
 		QWORD ullPaneDataTemplMgr { };
 		regSettings.QueryQWORDValue(L"PaneDataTemplMgr", ullPaneDataTemplMgr);
-		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr | HEXCTRL::HEXCTRL_FLAG_TEMPLMGR_NOESC);
+		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr | HEXCTRL::HEXCTRL_FLAG_NOESC);
 
 		//General settings.
 		auto& refGeneral = GetGeneralSettings();
@@ -629,7 +629,7 @@ void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
 		refPanes.ullPaneDataTemplMgr = ullData;
 		break;
 	default:
-		return;
+		break;
 	}
 }
 
@@ -639,16 +639,21 @@ void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
 	switch (uPaneID) {
 	case IDC_PANE_FILEINFO:
 		refPanes.stPSFileInfo = { fShow, fActive };
+		break;
 	case IDC_PANE_BKMMGR:
 		refPanes.stPSBkmMgr = { fShow, fActive };
+		break;
 	case IDC_PANE_DATAINTERP:
 		refPanes.stPSDataInterp = { fShow, fActive };
+		break;
 	case IDC_PANE_TEMPLMGR:
 		refPanes.stPSTemplMgr = { fShow, fActive };
+		break;
 	case IDC_PANE_LOGINFO:
 		refPanes.stPSLogInfo = { fShow, fActive };
+		break;
 	default:
-		return;
+		break;
 	}
 }
 

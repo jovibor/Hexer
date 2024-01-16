@@ -210,7 +210,7 @@ void CMainFrame::OnClose()
 {
 	m_fClosing = true;
 	SavePanesSettings();   //It's called either here or in the OnChildFrameCloseLast.
-	SaveHexCtrlSettings(); //It's called either here or in the OnClose.
+	SaveHexCtrlSettings(); //It's called either here or in the OnChildFrameCloseLast.
 	HideAllPanes(); //To disable panes from showing at the next app's start-up.
 
 	CMDIFrameWndEx::OnClose();

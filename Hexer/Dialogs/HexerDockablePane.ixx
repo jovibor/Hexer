@@ -212,9 +212,7 @@ void CHexerDockablePane::SetNestedHWND(HWND hWnd)
 	}
 
 	m_llStylesOrig = ::GetWindowLongPtrW(hWnd, GWL_STYLE);
-	const auto llStyleNew = m_llStylesOrig & ~(WS_BORDER | WS_DLGFRAME | WS_THICKFRAME); //WS_THICKFRAME is responsible for resizability.
-	//const auto llStyleNew = DS_SETFONT | DS_FIXEDSYS | WS_CHILD;
-	::SetWindowLongPtrW(hWnd, GWL_STYLE, llStyleNew);
+	::SetWindowLongPtrW(hWnd, GWL_STYLE, DS_SETFONT | DS_FIXEDSYS);
 	m_hWndParentOrig = ::SetParent(hWnd, m_hWnd);
 	m_hWndNested = hWnd;
 	AdjustLayout();
@@ -236,8 +234,8 @@ void CHexerDockablePane::AdjustLayout()
 
 	CRect rcClient;
 	GetClientRect(rcClient);
-	::SetWindowPos(m_hWndNested, nullptr, 0, 0, rcClient.Width(), rcClient.Height(),
-		SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
+	//SWP_NOACTIVATE flag doesn't send WM_ACTIVATE message which is vital to dialogs like DataInterp.
+	::SetWindowPos(m_hWndNested, nullptr, 0, 0, rcClient.Width(), rcClient.Height(), SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 
 int CHexerDockablePane::OnCreate(LPCREATESTRUCT lpCreateStruct)
