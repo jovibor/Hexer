@@ -17,8 +17,8 @@ import DlgLogInfo;
 import HexerDockablePane;
 import Utility;
 
-class CHexerView;
-namespace HEXCTRL { class IHexCtrl; }; //Forward declarations.
+class CHexerView; //Forward declarations.
+namespace HEXCTRL { class IHexCtrl; }
 class CMainFrame final : public CMDIFrameWndEx {
 public:
 	void AddLogEntry(const Ut::Log::LOGINFO& stData);

@@ -36,7 +36,7 @@ private:
 	void PrintLastError(std::wstring_view wsvSource)const;
 	[[nodiscard]] auto ReadData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
 private:
-	static constexpr auto m_uBuffSize { 1024UL * 512UL }; //512KB cache buffer size.
+	static constexpr auto m_dwCacheSize { 1024UL * 512UL }; //512KB cache size.
 	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
 	std::wstring m_wstrFileName; //File name.
 	std::wstring m_wstrFilePath; //File path to open.
@@ -86,7 +86,7 @@ void CFileLoader::CloseFile()
 
 auto CFileLoader::GetCacheSize()const->DWORD
 {
-	return m_uBuffSize;
+	return m_dwCacheSize;
 }
 
 auto CFileLoader::GetFileSize()const->std::uint64_t
@@ -178,11 +178,8 @@ void CFileLoader::FlushData()
 	if (!IsModified())
 		return;
 
-	OVERLAPPED ol { };
-	ol.Offset = LODWORD(m_ullOffsetCurr);
-	ol.OffsetHigh = HIDWORD(m_ullOffsetCurr);
+	OVERLAPPED ol { .Offset { LODWORD(m_ullOffsetCurr) }, .OffsetHigh { HIDWORD(m_ullOffsetCurr) } };
 	DWORD dwBytesWritten { };
-
 	if (WriteFile(m_hFile, m_pCache.get(), static_cast<DWORD>(m_ullSizeCurr), &dwBytesWritten, &ol) == FALSE) {
 		PrintLastError(L"WriteFile");
 	}
@@ -241,7 +238,7 @@ bool CFileLoader::OpenVirtual()
 	}
 
 	m_stFileSize.QuadPart = stLengthInfo.Length.QuadPart;
-	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(m_uBuffSize, m_dwAlignment))); //Initialize the data cache.
+	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetCacheSize(), m_dwAlignment))); //Initialize the data cache.
 
 	return true;
 }
@@ -263,20 +260,18 @@ auto CFileLoader::ReadData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXC
 	}
 
 	if (ullOffset >= m_ullOffsetCurr && (ullOffset + ullSize) <= (m_ullOffsetCurr + m_ullSizeCurr)) { //Data is already in the cache.
-		return HEXCTRL::SpanByte { m_pCache.get() + (ullOffset - m_ullOffsetCurr), ullSize };
+		return { m_pCache.get() + (ullOffset - m_ullOffsetCurr), ullSize };
 	}
 
 	FlushData(); //Flush current cache data if it was modified, before the ReadFile.
 
 	const auto ullOffsetRemainder = ullOffset % m_dwAlignment;
 	const auto ullOffsetAligned = ullOffset - ullOffsetRemainder;
-	const auto ullSizeAligned = (ullOffsetAligned + m_uBuffSize) <= static_cast<std::uint64_t>(m_stFileSize.QuadPart) ?
-		m_uBuffSize : m_stFileSize.QuadPart - ullOffsetAligned; //Size at the end of a file can be not aligned.
+	const auto ullSizeAligned = (ullOffsetAligned + GetCacheSize()) <= static_cast<std::uint64_t>(m_stFileSize.QuadPart) ?
+		GetCacheSize() : m_stFileSize.QuadPart - ullOffsetAligned; //Size at the end of a file can be not aligned.
 	assert(ullSizeAligned >= ullSize);
 
-	OVERLAPPED ol { };
-	ol.Offset = LODWORD(ullOffsetAligned);
-	ol.OffsetHigh = HIDWORD(ullOffsetAligned);
+	OVERLAPPED ol { .Offset { LODWORD(ullOffsetAligned) }, .OffsetHigh { HIDWORD(ullOffsetAligned) } };
 	DWORD dwBytesRead { };
 	if (ReadFile(m_hFile, m_pCache.get(), static_cast<DWORD>(ullSizeAligned), &dwBytesRead, &ol) == FALSE) {
 		PrintLastError(L"ReadFile");

@@ -212,7 +212,10 @@ void CHexerDockablePane::SetNestedHWND(HWND hWnd)
 	}
 
 	m_llStylesOrig = ::GetWindowLongPtrW(hWnd, GWL_STYLE);
-	::SetWindowLongPtrW(hWnd, GWL_STYLE, DS_SETFONT | DS_FIXEDSYS);
+	//We preserve all original styles, removing only those responsible for border,
+	//caption, and resizability. Some nested dialogs might be WS_CHILD, some not.
+	const auto llStylesNew = m_llStylesOrig & ~(WS_BORDER | WS_DLGFRAME | WS_THICKFRAME);
+	::SetWindowLongPtrW(hWnd, GWL_STYLE, llStylesNew);
 	m_hWndParentOrig = ::SetParent(hWnd, m_hWnd);
 	m_hWndNested = hWnd;
 	AdjustLayout();

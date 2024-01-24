@@ -12,6 +12,7 @@ module;
 #include <algorithm>
 #include <cassert>
 #include <bitset>
+#include <filesystem>
 #include <format>
 #include <ranges>
 #include <string>
@@ -23,7 +24,6 @@ import Utility;
 
 
 //CAppSettingsRFL.
-
 class CAppSettingsRFL final //Recent File List.
 {
 public:
@@ -147,9 +147,9 @@ void CAppSettingsRFL::RebuildRFLMenu()
 
 
 //CAppSettings.
-
 export class CAppSettings final {
 public:
+	using VecTemplates = std::vector<std::unique_ptr<HEXCTRL::HEXTEMPLATE>>;
 	struct PANESTATUS {
 		bool fIsVisible : 1{};
 		bool fIsActive : 1{};
@@ -196,6 +196,7 @@ public:
 	void AddToLastOpened(std::wstring_view wsvPath);
 	[[nodiscard]] auto GetGeneralSettings() -> GENERALSETTINGS&;
 	[[nodiscard]] auto GetHexCtrlSettings() -> HEXCTRLSETTINGS&;
+	[[nodiscard]] auto GetHexCtrlTemplates()const->const VecTemplates&;
 	[[nodiscard]] auto GetLastOpenedFromReg()const->std::vector<std::wstring>;
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const->std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const->PANESTATUS;
@@ -216,6 +217,7 @@ public:
 private:
 	[[nodiscard]] auto GetPanesSettings() -> PANESETTINGS&;
 	[[nodiscard]] auto GetPanesSettings()const->const PANESETTINGS&;
+	void LoadHexCtrlTemplates();
 	[[nodiscard]] auto RFLGetData()const->const std::vector<std::wstring>&;
 private:
 	CAppSettingsRFL m_stRFL;
@@ -224,6 +226,7 @@ private:
 	HEXCTRLSETTINGS m_stHexCtrlData; //"HexCtrl" settings data.
 	std::wstring m_wstrKeyName;      //Registry Key name.
 	std::vector<std::wstring> m_vecLastOpened; //Last Opened files list.
+	VecTemplates m_vecHexCtrlTemplates; //HexCtrl loaded templates.
 	bool m_fLoaded { false };        //LoadSettings has succeeded.
 };
 
@@ -243,6 +246,11 @@ auto CAppSettings::GetGeneralSettings()->GENERALSETTINGS&
 auto CAppSettings::GetHexCtrlSettings()->HEXCTRLSETTINGS&
 {
 	return m_stHexCtrlData;
+}
+
+auto CAppSettings::GetHexCtrlTemplates()const->const VecTemplates&
+{
+	return m_vecHexCtrlTemplates;
 }
 
 auto CAppSettings::GetLastOpenedFromReg()const->std::vector<std::wstring>
@@ -441,6 +449,8 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		else { GetHexCtrlSettings() = GetHexCtrlDefs(); }
 	}
 	else { GetGeneralSettings() = GetGeneralDefs(); }
+
+	LoadHexCtrlTemplates();
 
 	m_fLoaded = true;
 }
@@ -668,6 +678,26 @@ auto CAppSettings::GetPanesSettings()->PANESETTINGS&
 auto CAppSettings::GetPanesSettings()const->const PANESETTINGS&
 {
 	return m_stPaneSettings;
+}
+
+void CAppSettings::LoadHexCtrlTemplates()
+{
+	wchar_t buff[MAX_PATH];
+	GetModuleFileNameW(nullptr, buff, MAX_PATH);
+	std::wstring wstrPath = buff;
+	wstrPath = wstrPath.substr(0, wstrPath.find_last_of(L'\\'));
+	wstrPath += L"\\Templates\\";
+	if (const std::filesystem::path pathTemplates { wstrPath }; std::filesystem::exists(pathTemplates)) {
+		for (const auto& entry : std::filesystem::directory_iterator { pathTemplates }) {
+			const std::wstring_view wsvFile = entry.path().c_str();
+			if (const auto npos = wsvFile.find_last_of(L'.'); npos != std::wstring_view::npos
+				&& wsvFile.substr(npos + 1) == L"json") { //Check json extension of templates.
+				if (auto p = HEXCTRL::IHexTemplates::LoadFromFile(wsvFile.data()); p != nullptr) {
+					m_vecHexCtrlTemplates.emplace_back(std::move(p));
+				}
+			}
+		}
+	}
 }
 
 auto CAppSettings::RFLGetData()const->const std::vector<std::wstring>&

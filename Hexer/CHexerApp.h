@@ -7,8 +7,6 @@
 #pragma once
 #include "HexCtrl.h"
 #include <afxwin.h>
-#include <string>
-#include <vector>
 import Utility;
 import AppSettings;
 

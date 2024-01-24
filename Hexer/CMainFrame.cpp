@@ -22,8 +22,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnViewRangePanes)
 	ON_MESSAGE(Ut::WM_ADD_LOG_ENTRY, OnAddLogEntry)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnUpdateRangePanes)
-	ON_WM_CREATE()
 	ON_WM_CLOSE()
+	ON_WM_CREATE()
 END_MESSAGE_MAP()
 
 void CMainFrame::AddLogEntry(const Ut::Log::LOGINFO& stData)
@@ -53,9 +53,8 @@ bool CMainFrame::IsPaneVisible(UINT uPaneID)
 
 void CMainFrame::OnChildFrameActivate()
 {
-	if (IsAppClosing()) {
+	if (IsAppClosing() || !HasChildFrame())
 		return;
-	}
 
 	//The ON_REGISTERED_MESSAGE(AFX_WM_CHANGE_ACTIVE_TAB,...) message does in fact work,
 	//but this message is generated for ANY tab that is being activated in ANY tab-control,
@@ -63,11 +62,9 @@ void CMainFrame::OnChildFrameActivate()
 	//Docking Panes that are combined in a tab group also send this message to the CMainFrame window.
 
 	//Setting Panes' HWND according to the current active ChildFrame.
-	if (HasChildFrame()) {
-		for (auto uPaneID : Ut::g_arrPanes) {
-			if (IsPaneVisible(uPaneID)) {
-				ShowPane(uPaneID, true, IsPaneActive(uPaneID));
-			}
+	for (auto uPaneID : Ut::g_arrPanes) {
+		if (IsPaneVisible(uPaneID)) {
+			ShowPane(uPaneID, true, IsPaneActive(uPaneID));
 		}
 	}
 }

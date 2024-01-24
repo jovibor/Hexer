@@ -160,6 +160,9 @@ void CHexerView::OnInitialUpdate()
 	pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
 	pHex->SetPageSize(refHexSet.dwPageSize);
 	pHex->SetUnprintableChar(refHexSet.wchUnprintable);
+	for (const auto& p : theApp.GetAppSettings().GetHexCtrlTemplates()) {
+		pHex->GetTemplates()->AddTemplate(*p);
+	}
 	pHex->SetData({ .spnData { std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },
 		.pHexVirtData { pDoc->GetVirtualInterface() }, .dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }
