@@ -40,6 +40,7 @@
 #define IDC_SETTINGSHEXCTRL_GRID        320
 #define IDC_SETTINGS_DEFS               321
 #define IDC_SETTINGSGENERAL_GRID        322
+#define IDC_ABOUT_STATIC_VERSION        323
 #define IDM_FILE_RFL00                  32770
 #define IDM_FILE_RFL01                  32771
 #define IDM_FILE_RFL02                  32772
@@ -76,7 +77,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        323
 #define _APS_NEXT_COMMAND_VALUE         32799
-#define _APS_NEXT_CONTROL_VALUE         323
+#define _APS_NEXT_CONTROL_VALUE         324
 #define _APS_NEXT_SYMED_VALUE           322
 #endif
 #endif

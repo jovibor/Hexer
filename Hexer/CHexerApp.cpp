@@ -43,12 +43,11 @@ BOOL CDlgAbout::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	const auto wstrVerHexer = std::format(L"Hexer Hexadecimal Editor v{}.{}.{}",
-		Ut::HEXER_VERSION_MAJOR, Ut::HEXER_VERSION_MINOR, Ut::HEXER_VERSION_PATCH);
-	GetDlgItem(IDC_LINK_HEXER)->SetWindowTextW(wstrVerHexer.data());
-	const auto wstrVerHexCtrl = std::format(L"HexCtrl v{}.{}.{}",
+	const auto wstrDescr = std::format(L"Hexer Editor v{}.{}.{}, based on HexCtrl v{}.{}.{}\r\n"
+		"Copyright © 2023-2024 Jovibor",
+		Ut::HEXER_VERSION_MAJOR, Ut::HEXER_VERSION_MINOR, Ut::HEXER_VERSION_PATCH,
 		HEXCTRL::HEXCTRL_VERSION_MAJOR, HEXCTRL::HEXCTRL_VERSION_MINOR, HEXCTRL::HEXCTRL_VERSION_PATCH);
-	GetDlgItem(IDC_LINK_HEXCTRL)->SetWindowTextW(wstrVerHexCtrl.data());
+	GetDlgItem(IDC_ABOUT_STATIC_VERSION)->SetWindowTextW(wstrDescr.data());
 	GetDlgItem(IDC_STATIC_BUILDTIME)->SetWindowTextW(L"Built on: " STRWIDER(__DATE__) L" "  STRWIDER(__TIME__));
 
 	return TRUE;

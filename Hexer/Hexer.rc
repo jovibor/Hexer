@@ -175,17 +175,19 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 199, 80
+IDD_ABOUTBOX DIALOGEX 0, 0, 199, 74
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Hexer"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    ICON            IDR_HEXER_FRAME,IDC_STATIC,12,11,21,20
-    DEFPUSHBUTTON   "OK",IDOK,144,61,50,14,WS_GROUP
-    CONTROL         "MfcLink1",IDC_LINK_HEXER,"MfcLink",WS_TABSTOP,42,9,142,11
-    CONTROL         "MfcLink2",IDC_LINK_HEXCTRL,"MfcLink",WS_TABSTOP,47,35,111,11
-    LTEXT           "Static",IDC_STATIC_BUILDTIME,12,67,106,8,WS_DISABLED
-    GROUPBOX        "Third party libraries used within the Hexer:",IDC_STATIC,42,25,150,28
+    ICON            IDR_HEXER_FRAME,IDC_STATIC,10,11,21,20
+    DEFPUSHBUTTON   "OK",IDOK,144,53,50,14,WS_GROUP
+    CONTROL         "https://github.com/jovibor/Hexer",IDC_LINK_HEXER,
+                    "MfcLink",WS_TABSTOP,38,26,109,11
+    CONTROL         "https://github.com/jovibor/HexCtrl",IDC_LINK_HEXCTRL,
+                    "MfcLink",WS_TABSTOP,38,36,111,11
+    LTEXT           "Static",IDC_STATIC_BUILDTIME,12,59,106,8,WS_DISABLED
+    LTEXT           "<--Version-->",IDC_ABOUT_STATIC_VERSION,39,9,148,17
 END
 
 IDD_OPENDISK DIALOGEX 0, 0, 383, 162
