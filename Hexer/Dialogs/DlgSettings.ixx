@@ -51,7 +51,6 @@ private:
 	[[nodiscard]] virtual auto GetGridVec()const->const std::vector<GRIDDATA> & = 0;
 };
 
-
 auto IPropsHelper::GetGridData(std::uint8_t ui8Name)const->const GRIDDATA*
 {
 	const auto it = std::find_if(GetGridVec().begin(), GetGridVec().end(), [=](const GRIDDATA& refData) {
@@ -141,7 +140,6 @@ void IPropsHelper::SetPropValueWSTR(std::uint8_t ui8Name, LPCWSTR pwstr)
 {
 	GetProperty(ui8Name)->SetValue(pwstr);
 }
-
 
 
 //CDlgSettingsGeneral.
@@ -312,7 +310,6 @@ enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
 	clrFontCaret, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel
 };
 
-
 BEGIN_MESSAGE_MAP(CDlgSettingsHexCtrl, CDialogEx)
 END_MESSAGE_MAP()
 
@@ -450,8 +447,8 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	refPageSize.pProp->AllowEdit(TRUE);
 
 	const auto& refUnprint = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Unprintable Char:",
-		static_cast<_variant_t>(std::format(L"{}", refSett.wchUnprintable).data()), 0, 0), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(wchUnprintable));
+		static_cast<_variant_t>(std::format(L"{}", refSett.wchUnprintable).data()), nullptr, 0, L"*", L"_"),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(wchUnprintable));
 	refUnprint.pProp->AllowEdit(TRUE);
 
 	const auto& refDate = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Date Format:", L""), std::to_underlying(GROUP_GENERAL),
@@ -553,7 +550,6 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 
 	return TRUE;
 }
-
 
 
 //CDlgSettings.
