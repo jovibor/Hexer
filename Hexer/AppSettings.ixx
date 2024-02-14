@@ -125,15 +125,16 @@ void CAppSettingsRFL::RebuildRFLMenu()
 		DeleteMenu(m_hMenu, 0, MF_BYPOSITION); //Removing all RFL menu items.
 	}
 
-	auto uIndex { 0 };
+	auto iIndex { 0 };
 	for (const auto& wstr : m_vecRFL) {
-		if (uIndex >= m_iMaxEntry) //Adding not more than m_iMaxEntry.
+		if (iIndex >= m_iMaxEntry) //Adding not more than m_iMaxEntry.
 			break;
 
 		const auto fDevice = wstr.starts_with(L"\\\\");
+		const auto uIndexMenu = iIndex + 1;
 		const auto wstrMenu = std::vformat(fDevice ? L"{} Device: {}" : L"{} {}",
-			std::make_wformat_args(uIndex + 1, wstr));
-		const auto iMenuID = m_iIDMenuFirst + uIndex;
+			std::make_wformat_args(uIndexMenu, wstr));
+		const auto iMenuID = m_iIDMenuFirst + iIndex;
 		AppendMenuW(m_hMenu, MF_STRING, iMenuID, wstrMenu.data());
 
 		if (fDevice) {
@@ -141,7 +142,7 @@ void CAppSettingsRFL::RebuildRFLMenu()
 			SetMenuItemInfoW(m_hMenu, iMenuID, FALSE, &mii);
 		}
 
-		++uIndex;
+		++iIndex;
 	}
 }
 

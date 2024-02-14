@@ -102,7 +102,7 @@ void CDlgNewFile::OnOK()
 	}
 
 	m_stEditSize.GetWindowTextW(str);
-	if (const auto opt = stn::StrToULL(str.GetString()); opt) {
+	if (const auto opt = stn::StrToUInt64(str.GetString()); opt) {
 		if (*opt == 0) {
 			MessageBoxW(L"File size can not be zero.", L"Size is zero", MB_ICONEXCLAMATION);
 			return;

@@ -190,7 +190,7 @@ auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<P
 
 		VARIANT varSize;
 		pStorage->Get(L"Size", 0, &varSize, nullptr, nullptr);
-		if (const auto opt = stn::StrToULL(varSize.bstrVal); opt) {
+		if (const auto opt = stn::StrToUInt64(varSize.bstrVal); opt) {
 			stDisk.ullSize = *opt;
 		}
 
@@ -394,7 +394,7 @@ auto CDlgOpenVolume::GetVolumes(IWbemServices *pWbemServices)->std::vector<VOLUM
 		VARIANT varSize;
 		pStorage->Get(L"Size", 0, &varSize, nullptr, nullptr);
 		stDisk.ullSize = varSize.ullVal;
-		if (const auto opt = stn::StrToULL(varSize.bstrVal); opt) {
+		if (const auto opt = stn::StrToUInt64(varSize.bstrVal); opt) {
 			stDisk.ullSize = *opt;
 		}
 
