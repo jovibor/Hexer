@@ -40,13 +40,13 @@ public:
 	[[nodiscard]] auto GetPropValueRGB(std::uint8_t ui8Name)const->COLORREF;
 	[[nodiscard]] auto GetPropValueWCHAR(std::uint8_t ui8Name)const->wchar_t;
 	[[nodiscard]] auto GetPropValueWSTR(std::uint8_t ui8Name)const->std::wstring_view;
-	void SetPropOptValueByData(std::uint8_t ui8Name, DWORD_PTR dwData); //Value according to inner user dwData.
-	void SetPropValueDWORD(std::uint8_t ui8Name, DWORD dwValue);
-	void SetPropValueFLOAT(std::uint8_t ui8Name, float flValue);
-	void SetPropValueLOGFONT(std::uint8_t ui8Name, const LOGFONTW& lf);
-	void SetPropValueRGB(std::uint8_t ui8Name, COLORREF clrValue);
-	void SetPropValueWCHAR(std::uint8_t ui8Name, wchar_t wchValue);
-	void SetPropValueWSTR(std::uint8_t ui8Name, LPCWSTR pwstr);
+	void SetPropOptValueByData(std::uint8_t ui8Name, DWORD_PTR dwData)const; //Value according to inner user dwData.
+	void SetPropValueDWORD(std::uint8_t ui8Name, DWORD dwValue)const;
+	void SetPropValueFLOAT(std::uint8_t ui8Name, float flValue)const;
+	void SetPropValueLOGFONT(std::uint8_t ui8Name, const LOGFONTW& lf)const;
+	void SetPropValueRGB(std::uint8_t ui8Name, COLORREF clrValue)const;
+	void SetPropValueWCHAR(std::uint8_t ui8Name, wchar_t wchValue)const;
+	void SetPropValueWSTR(std::uint8_t ui8Name, LPCWSTR pwstr)const;
 private:
 	[[nodiscard]] virtual auto GetGridVec()const->const std::vector<GRIDDATA> & = 0;
 };
@@ -106,37 +106,37 @@ auto IPropsHelper::GetPropValueWSTR(std::uint8_t ui8Name)const->std::wstring_vie
 	return GetProperty(ui8Name)->GetValue().bstrVal;
 }
 
-void IPropsHelper::SetPropOptValueByData(std::uint8_t ui8Name, DWORD_PTR dwData)
+void IPropsHelper::SetPropOptValueByData(std::uint8_t ui8Name, DWORD_PTR dwData)const
 {
 	static_cast<CHexerPropGridProp*>(GetProperty(ui8Name))->SetValueFromData(dwData);
 }
 
-void IPropsHelper::SetPropValueDWORD(std::uint8_t ui8Name, DWORD dwValue)
+void IPropsHelper::SetPropValueDWORD(std::uint8_t ui8Name, DWORD dwValue)const
 {
 	GetProperty(ui8Name)->SetValue(static_cast<_variant_t>(dwValue));
 }
 
-void IPropsHelper::SetPropValueFLOAT(std::uint8_t ui8Name, float flValue)
+void IPropsHelper::SetPropValueFLOAT(std::uint8_t ui8Name, float flValue)const
 {
 	GetProperty(ui8Name)->SetValue(static_cast<_variant_t>(flValue));
 }
 
-void IPropsHelper::SetPropValueLOGFONT(std::uint8_t ui8Name, const LOGFONTW& lf)
+void IPropsHelper::SetPropValueLOGFONT(std::uint8_t ui8Name, const LOGFONTW& lf)const
 {
 	*GetPropValuePLOGFONT(ui8Name) = lf;
 }
 
-void IPropsHelper::SetPropValueRGB(std::uint8_t ui8Name, COLORREF clrValue)
+void IPropsHelper::SetPropValueRGB(std::uint8_t ui8Name, COLORREF clrValue)const
 {
 	static_cast<CMFCPropertyGridColorProperty*>(GetProperty(ui8Name))->SetColor(clrValue);
 }
 
-void IPropsHelper::SetPropValueWCHAR(std::uint8_t ui8Name, wchar_t wchValue)
+void IPropsHelper::SetPropValueWCHAR(std::uint8_t ui8Name, wchar_t wchValue)const
 {
 	GetProperty(ui8Name)->SetValue(static_cast<_variant_t>(std::format(L"{}", wchValue).data()));
 }
 
-void IPropsHelper::SetPropValueWSTR(std::uint8_t ui8Name, LPCWSTR pwstr)
+void IPropsHelper::SetPropValueWSTR(std::uint8_t ui8Name, LPCWSTR pwstr)const
 {
 	GetProperty(ui8Name)->SetValue(pwstr);
 }
@@ -150,7 +150,7 @@ public:
 	void SaveSettings();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
-	auto GetGridVec()const->const std::vector<GRIDDATA> & override;
+	[[nodiscard]] auto GetGridVec()const->const std::vector<GRIDDATA> & override;
 	void OnCancel()override;
 	BOOL OnInitDialog()override;
 	enum class EGroup : std::uint8_t;
@@ -288,7 +288,7 @@ private:
 	enum class EGroup : std::uint8_t;
 	enum class EName : std::uint8_t;
 	void DoDataExchange(CDataExchange* pDX)override;
-	auto GetGridVec()const->const std::vector<GRIDDATA> & override;
+	[[nodiscard]] auto GetGridVec()const->const std::vector<GRIDDATA> & override;
 	void OnCancel()override;
 	BOOL OnInitDialog()override;
 	DECLARE_MESSAGE_MAP();
@@ -304,8 +304,8 @@ enum class CDlgSettingsHexCtrl::EGroup : std::uint8_t {
 };
 
 enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
-	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, wstrDateFormat, wstrScrollLines, flScrollRatio,
-	wstrInfoBar, wstrOffsetHex, dwCharsExtraSpace, stLogFont,
+	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, wchDateSepar, wstrDateFormat, wstrScrollLines,
+	flScrollRatio, wstrInfoBar, wstrOffsetHex, dwCharsExtraSpace, stLogFont,
 	clrFontHex, clrFontText, clrFontSel, clrFontDataInterp, clrFontCaption, clrFontInfoParam, clrFontInfoData,
 	clrFontCaret, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel
 };
@@ -332,12 +332,13 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueDWORD(std::to_underlying(dwCharsExtraSpace), refDefs.dwCharsExtraSpace);
 	SetPropValueFLOAT(std::to_underlying(flScrollRatio), refDefs.flScrollRatio);
 	SetPropValueWCHAR(std::to_underlying(wchUnprintable), refDefs.wchUnprintable);
-	SetPropOptValueByData(std::to_underlying(wstrDateFormat), 0xFFFFFFFFUL); //User default.
-	SetPropOptValueByData(std::to_underlying(wstrScrollLines), 1UL);
-	SetPropOptValueByData(std::to_underlying(wstrInfoBar), 1UL);
-	SetPropOptValueByData(std::to_underlying(wstrOffsetHex), 1UL);
+	SetPropOptValueByData(std::to_underlying(wchDateSepar), refDefs.wchDateSepar);
+	SetPropOptValueByData(std::to_underlying(wstrDateFormat), refDefs.dwDateFormat);
+	SetPropOptValueByData(std::to_underlying(wstrScrollLines), refDefs.fScrollLines);
+	SetPropOptValueByData(std::to_underlying(wstrInfoBar), refDefs.fInfoBar);
+	SetPropOptValueByData(std::to_underlying(wstrOffsetHex), refDefs.fOffsetHex);
 	SetPropValueLOGFONT(std::to_underlying(stLogFont), refDefs.stLogFont);
-	const auto & refClrs = refDefs.stClrs;
+	const auto& refClrs = refDefs.stClrs;
 	SetPropValueRGB(std::to_underlying(clrFontHex), refClrs.clrFontHex);
 	SetPropValueRGB(std::to_underlying(clrFontText), refClrs.clrFontText);
 	SetPropValueRGB(std::to_underlying(clrFontSel), refClrs.clrFontSel);
@@ -365,10 +366,10 @@ void CDlgSettingsHexCtrl::SaveSettings()
 	refSett.dwGroupSize = GetPropValueDWORD(std::to_underlying(dwGroupSize));
 	refSett.dwPageSize = GetPropValueDWORD(std::to_underlying(dwPageSize));
 	refSett.dwCharsExtraSpace = GetPropValueDWORD(std::to_underlying(dwCharsExtraSpace));
+	refSett.wchDateSepar = GetPropValueWCHAR(std::to_underlying(wchDateSepar));
 	refSett.dwDateFormat = GetPropOptDataDWORD(std::to_underlying(wstrDateFormat));
 	refSett.flScrollRatio = GetPropValueFLOAT(std::to_underlying(flScrollRatio));
-	const auto wchUnprint = GetPropValueWCHAR(std::to_underlying(wchUnprintable));
-	refSett.wchUnprintable = wchUnprint == 0 ? L' ' : wchUnprint;
+	refSett.wchUnprintable = GetPropValueWCHAR(std::to_underlying(wchUnprintable));
 	refSett.fScrollLines = GetPropOptDataDWORD(std::to_underlying(wstrScrollLines));
 	refSett.fInfoBar = GetPropOptDataDWORD(std::to_underlying(wstrInfoBar));
 	refSett.fOffsetHex = GetPropOptDataDWORD(std::to_underlying(wstrOffsetHex));
@@ -451,13 +452,19 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 		std::to_underlying(GROUP_GENERAL), std::to_underlying(wchUnprintable));
 	refUnprint.pProp->AllowEdit(TRUE);
 
+	const auto& refDateSepar = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Date Separator:",
+		static_cast<_variant_t>(std::format(L"{}", refSett.wchDateSepar).data()), nullptr, 0, L"*", L"_"),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(wchDateSepar));
+	const auto pPropDateSepar = static_cast<CHexerPropGridProp*>(refDateSepar.pProp);
+	pPropDateSepar->AllowEdit(TRUE);
+
 	const auto& refDate = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Date Format:", L""), std::to_underlying(GROUP_GENERAL),
 		std::to_underlying(wstrDateFormat));
 	const auto pPropDate = static_cast<CHexerPropGridProp*>(refDate.pProp);
 	pPropDate->AddOptionEx(L"User default", 0xFFFFFFFFUL);
-	pPropDate->AddOptionEx(L"MM/DD/YYYY", 0UL);
-	pPropDate->AddOptionEx(L"DD/MM/YYYY", 1UL);
-	pPropDate->AddOptionEx(L"YYYY/MM/DD", 2UL);
+	pPropDate->AddOptionEx(std::format(L"MM{0}DD{0}YYYY", refSett.wchDateSepar).data(), 0UL);
+	pPropDate->AddOptionEx(std::format(L"DD{0}MM{0}YYYY", refSett.wchDateSepar).data(), 1UL);
+	pPropDate->AddOptionEx(std::format(L"YYYY{0}MM{0}DD", refSett.wchDateSepar).data(), 2UL);
 	pPropDate->SetValueFromData(refSett.dwDateFormat);
 	pPropDate->AllowEdit(FALSE);
 
