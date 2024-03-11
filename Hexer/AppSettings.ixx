@@ -356,13 +356,13 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		//PaneData.
 		QWORD ullPaneDataBkmMgr { };
 		regSettings.QueryQWORDValue(L"PaneDataBkmMgr", ullPaneDataBkmMgr);
-		SetPaneData(IDC_PANE_BKMMGR, ullPaneDataBkmMgr | HEXCTRL::HEXCTRL_FLAG_NOESC);
+		SetPaneData(IDC_PANE_BKMMGR, ullPaneDataBkmMgr);
 		QWORD ullPaneDataDataInterp { };
 		regSettings.QueryQWORDValue(L"PaneDataDataInterp", ullPaneDataDataInterp);
-		SetPaneData(IDC_PANE_DATAINTERP, ullPaneDataDataInterp | HEXCTRL::HEXCTRL_FLAG_NOESC);
+		SetPaneData(IDC_PANE_DATAINTERP, ullPaneDataDataInterp);
 		QWORD ullPaneDataTemplMgr { };
 		regSettings.QueryQWORDValue(L"PaneDataTemplMgr", ullPaneDataTemplMgr);
-		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr | HEXCTRL::HEXCTRL_FLAG_NOESC);
+		SetPaneData(IDC_PANE_TEMPLMGR, ullPaneDataTemplMgr);
 
 		//General settings.
 		auto& refGeneral = GetGeneralSettings();

@@ -50,11 +50,14 @@ auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 {
 	//If Pane with HexCtrl's dialog inside.
 	if (const auto optDlg = Ut::GetEHexWndFromPaneID(uPaneID); optDlg) {
+		const auto hWnd = GetHexCtrl()->GetWndHandle(*optDlg);
 		if (!IsPaneAlreadyLaunch(uPaneID)) {
 			SetPaneAlreadyLaunch(uPaneID);
-			return GetHexCtrl()->SetDlgData(*optDlg, theApp.GetAppSettings().GetPaneData(uPaneID));
+			UpdateHexCtrlDlgData(uPaneID);
+			GetHexCtrl()->SetDlgData(*optDlg, HEXCTRL::HEXCTRL_FLAG_NOESC);
 		}
-		return GetHexCtrl()->GetWndHandle(*optDlg);
+
+		return hWnd;
 	}
 
 	return { };
@@ -223,6 +226,110 @@ void CHexerView::SetPaneAlreadyLaunch(UINT uPaneID)
 		break;
 	case IDC_PANE_TEMPLMGR:
 		m_fIsAlreadyLaunchDlgTemplMgr = true;
+		break;
+	default:
+		break;
+	}
+}
+
+void CHexerView::UpdateDlgBkmMgr()const
+{
+	using enum HEXCTRL::EHexWnd;
+	using enum HEXCTRL::EHexDlgItem;
+	const auto pHex = GetHexCtrl();
+	const auto u64Data = theApp.GetAppSettings().GetPaneData(IDC_PANE_BKMMGR);
+
+	const auto hWnd = pHex->GetDlgItemHandle(DLG_BKMMGR, BKMMGR_CHK_HEX);
+	const auto pBtn = static_cast<CButton*>(CWnd::FromHandle(hWnd));
+	if (const auto iCheck = pBtn->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_BKMMGR_HEX) > 0) {
+		pBtn->SendMessageW(BM_CLICK);
+	}
+}
+
+void CHexerView::UpdateDlgDataInterp()const
+{
+	using enum HEXCTRL::EHexWnd;
+	using enum HEXCTRL::EHexDlgItem;
+	const auto pHex = GetHexCtrl();
+	const auto u64Data = theApp.GetAppSettings().GetPaneData(IDC_PANE_DATAINTERP);
+
+	const auto hWndHex = pHex->GetDlgItemHandle(DLG_DATAINTERP, DATAINTERP_CHK_HEX);
+	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
+	if (const auto iCheck = pBtnHex->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_DATAINTERP_HEX) > 0) {
+		pBtnHex->SendMessageW(BM_CLICK);
+	}
+
+	const auto hWndBE = pHex->GetDlgItemHandle(DLG_DATAINTERP, DATAINTERP_CHK_BE);
+	const auto pBtnBE = static_cast<CButton*>(CWnd::FromHandle(hWndBE));
+	if (const auto iCheck = pBtnBE->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_DATAINTERP_BE) > 0) {
+		pBtnBE->SendMessageW(BM_CLICK);
+	}
+}
+
+void CHexerView::UpdateDlgModify()const
+{
+}
+
+void CHexerView::UpdateDlgSearch()const
+{
+}
+
+void CHexerView::UpdateDlgTemplMgr()const
+{
+	using enum HEXCTRL::EHexWnd;
+	using enum HEXCTRL::EHexDlgItem;
+	const auto pHex = GetHexCtrl();
+	const auto u64Data = theApp.GetAppSettings().GetPaneData(IDC_PANE_TEMPLMGR);
+
+	const auto hWndMin = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_MIN);
+	const auto pBtnMin = static_cast<CButton*>(CWnd::FromHandle(hWndMin));
+	if (pBtnMin->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_MIN) > 0) {
+		pBtnMin->SendMessageW(BM_CLICK);
+	}
+
+	const auto hWndHex = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_HEX);
+	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
+	if (const auto iCheck = pBtnHex->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_HEX) > 0) {
+		pBtnHex->SendMessageW(BM_CLICK);
+	}
+
+	const auto hWndTT = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_TT);
+	const auto pBtnTT = static_cast<CButton*>(CWnd::FromHandle(hWndTT));
+	if (const auto iCheck = pBtnTT->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_TT) > 0) {
+		pBtnTT->SendMessageW(BM_CLICK);
+	}
+
+	const auto hWndHgl = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_HGL);
+	const auto pBtnHgl = static_cast<CButton*>(CWnd::FromHandle(hWndHgl));
+	if (const auto iCheck = pBtnHgl->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_HGL) > 0) {
+		pBtnHgl->SendMessageW(BM_CLICK);
+	}
+
+	const auto hWndSwap = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_SWAP);
+	const auto pBtnSwap = static_cast<CButton*>(CWnd::FromHandle(hWndSwap));
+	if (const auto iCheck = pBtnSwap->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_SWAP) > 0) {
+		pBtnSwap->SendMessageW(BM_CLICK);
+	}
+}
+
+void CHexerView::UpdateHexCtrlDlgData(UINT uPaneID)const
+{
+	using enum HEXCTRL::EHexWnd;
+	switch (*Ut::GetEHexWndFromPaneID(uPaneID)) {
+	case DLG_BKMMGR:
+		UpdateDlgBkmMgr();
+		break;
+	case DLG_DATAINTERP:
+		UpdateDlgDataInterp();
+		break;
+	case DLG_MODIFY:
+		UpdateDlgModify();
+		break;
+	case DLG_SEARCH:
+		UpdateDlgSearch();
+		break;
+	case DLG_TEMPLMGR:
+		UpdateDlgTemplMgr();
 		break;
 	default:
 		break;

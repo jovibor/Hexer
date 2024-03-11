@@ -119,6 +119,105 @@ void CMainFrame::UpdatePaneFileInfo()
 	m_dlgFileInfo.SetGridData(GetHexerView()->GetFileInfo());
 }
 
+auto CMainFrame::GetDlgDataBkmMgr()->std::uint64_t
+{
+	using enum HEXCTRL::EHexWnd;
+	using enum HEXCTRL::EHexDlgItem;
+
+	const auto pHex = GetHexCtrl();
+	if (pHex->GetWndHandle(DLG_BKMMGR, false) == nullptr)
+		return { };
+
+	std::uint64_t ullData { };
+	const auto hWndHex = pHex->GetDlgItemHandle(DLG_BKMMGR, BKMMGR_CHK_HEX);
+	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
+	if (pBtnHex->GetCheck()) {
+		ullData |= Ut::HEXCTRL_FLAG_BKMMGR_HEX;
+	}
+
+	return ullData;
+}
+
+auto CMainFrame::GetDlgDataDataInterp()->std::uint64_t
+{
+	using enum HEXCTRL::EHexWnd;
+	using enum HEXCTRL::EHexDlgItem;
+
+	const auto pHex = GetHexCtrl();
+	if (pHex->GetWndHandle(DLG_DATAINTERP, false) == nullptr)
+		return { };
+
+	std::uint64_t ullData { };
+
+	const auto hWndHex = pHex->GetDlgItemHandle(DLG_DATAINTERP, DATAINTERP_CHK_HEX);
+	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
+	if (pBtnHex->GetCheck()) {
+		ullData |= Ut::HEXCTRL_FLAG_DATAINTERP_HEX;
+	}
+
+	const auto hWndBE = pHex->GetDlgItemHandle(DLG_DATAINTERP, DATAINTERP_CHK_BE);
+	const auto pBtnBE = static_cast<CButton*>(CWnd::FromHandle(hWndBE));
+	if (pBtnBE->GetCheck()) {
+		ullData |= Ut::HEXCTRL_FLAG_DATAINTERP_BE;
+	}
+
+	return ullData;
+}
+
+auto CMainFrame::GetDlgDataModify()->std::uint64_t
+{
+	return { };
+}
+
+auto CMainFrame::GetDlgDataSearch()->std::uint64_t
+{
+	return { };
+}
+
+auto CMainFrame::GetDlgDataTemplMgr()->std::uint64_t
+{
+	using enum HEXCTRL::EHexWnd;
+	using enum HEXCTRL::EHexDlgItem;
+
+	const auto pHex = GetHexCtrl();
+	if (pHex->GetWndHandle(DLG_TEMPLMGR, false) == nullptr)
+		return { };
+
+	std::uint64_t ullData { };
+
+	const auto hWndMin = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_MIN);
+	const auto pBtnMin = static_cast<CButton*>(CWnd::FromHandle(hWndMin));
+	if (pBtnMin->GetCheck()) {
+		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_MIN;
+	}
+
+	const auto hWndHex = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_HEX);
+	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
+	if (pBtnHex->GetCheck()) {
+		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_HEX;
+	}
+
+	const auto hWndTT = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_TT);
+	const auto pBtnTT = static_cast<CButton*>(CWnd::FromHandle(hWndTT));
+	if (pBtnTT->GetCheck()) {
+		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_TT;
+	}
+
+	const auto hWndHgl = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_HGL);
+	const auto pBtnHgl = static_cast<CButton*>(CWnd::FromHandle(hWndHgl));
+	if (pBtnHgl->GetCheck()) {
+		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_HGL;
+	}
+
+	const auto hWndSwap = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_SWAP);
+	const auto pBtnSwap = static_cast<CButton*>(CWnd::FromHandle(hWndSwap));
+	if (pBtnSwap->GetCheck()) {
+		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_SWAP;
+	}
+
+	return ullData;
+}
+
 
 //Private methods.
 
@@ -129,6 +228,25 @@ auto CMainFrame::GetHexCtrl()->HEXCTRL::IHexCtrl*
 	}
 
 	return { };
+}
+
+auto CMainFrame::GetHexCtrlDlgData(HEXCTRL::EHexWnd eWnd)->std::uint64_t
+{
+	using enum HEXCTRL::EHexWnd;
+	switch (eWnd) {
+	case DLG_BKMMGR:
+		return GetDlgDataBkmMgr();
+	case DLG_DATAINTERP:
+		return GetDlgDataDataInterp();
+	case DLG_MODIFY:
+		return GetDlgDataModify();
+	case DLG_SEARCH:
+		return GetDlgDataSearch();
+	case DLG_TEMPLMGR:
+		return GetDlgDataTemplMgr();
+	default:
+		return { };
+	}
 }
 
 auto CMainFrame::GetHexerView()->CHexerView*
@@ -481,7 +599,7 @@ void CMainFrame::SaveHexCtrlSettings()
 void CMainFrame::SavePaneData(UINT uPaneID)
 {
 	if (const auto optDlg = Ut::GetEHexWndFromPaneID(uPaneID); optDlg) {
-		theApp.GetAppSettings().SetPaneData(uPaneID, GetHexCtrl()->GetDlgData(*optDlg));
+		theApp.GetAppSettings().SetPaneData(uPaneID, GetHexCtrlDlgData(*optDlg));
 	}
 }
 

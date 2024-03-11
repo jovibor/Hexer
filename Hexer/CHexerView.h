@@ -26,6 +26,12 @@ private:
 	void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)override;
 	afx_msg void OnUpdateEditEditMode(CCmdUI* pCmdUI);
 	void SetPaneAlreadyLaunch(UINT uPaneID);
+	void UpdateDlgBkmMgr()const;
+	void UpdateDlgDataInterp()const;
+	void UpdateDlgModify()const;
+	void UpdateDlgSearch()const;
+	void UpdateDlgTemplMgr()const;
+	void UpdateHexCtrlDlgData(UINT uPaneID)const;
 	DECLARE_DYNCREATE(CHexerView);
 	DECLARE_MESSAGE_MAP();
 private:

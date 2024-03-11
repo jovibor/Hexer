@@ -32,7 +32,13 @@ public:
 	void ShowPane(UINT uPaneID, bool fShow, bool fActivate);
 	void UpdatePaneFileInfo();
 protected:
+	[[nodiscard]] auto GetDlgDataBkmMgr() -> std::uint64_t;
+	[[nodiscard]] auto GetDlgDataDataInterp() -> std::uint64_t;
+	[[nodiscard]] auto GetDlgDataModify() -> std::uint64_t;
+	[[nodiscard]] auto GetDlgDataSearch() -> std::uint64_t;
+	[[nodiscard]] auto GetDlgDataTemplMgr() -> std::uint64_t;
 	[[nodiscard]] auto GetHexCtrl() -> HEXCTRL::IHexCtrl*;
+	[[nodiscard]] auto GetHexCtrlDlgData(HEXCTRL::EHexWnd eWnd) -> std::uint64_t;
 	[[nodiscard]] auto GetHexerView() -> CHexerView*;
 	[[nodiscard]] auto GetHWNDForPane(UINT uPaneID) -> HWND;
 	[[nodiscard]] auto GetPanesMap() -> const std::unordered_map<UINT, CHexerDockablePane*>&;
