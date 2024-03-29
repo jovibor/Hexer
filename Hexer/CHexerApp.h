@@ -15,10 +15,10 @@ public:
 	afx_msg void OnFileOpen();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
 	[[nodiscard]] auto GetClassName()const->LPCWSTR;
+	auto OpenDocumentFile(Ut::FILEOPEN& fos) -> CDocument*;
 private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;
-	auto OpenDocumentFile(Ut::FILEOPEN& fos) -> CDocument*;
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileNew();
 	afx_msg void OnFileOpenDevice();

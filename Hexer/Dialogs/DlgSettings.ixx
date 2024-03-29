@@ -168,7 +168,7 @@ enum class CDlgSettingsGeneral::EGroup : std::uint8_t {
 };
 
 enum class CDlgSettingsGeneral::EName : std::uint8_t {
-	dwInstances, dwRFLSize, eStartup
+	fMultipleInst, dwRFLSize, eStartup, fWindowsMenu
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsGeneral, CDialogEx)
@@ -187,9 +187,10 @@ void CDlgSettingsGeneral::ResetToDefaults()
 	using enum EName;
 	m_grid.SetRedraw(FALSE);
 	const auto& refDefs = CAppSettings::GetGeneralDefs();
-	SetPropOptValueByData(std::to_underlying(dwInstances), refDefs.dwInstances);
+	SetPropOptValueByData(std::to_underlying(fMultipleInst), refDefs.fMultipleInst);
 	SetPropValueDWORD(std::to_underlying(dwRFLSize), refDefs.dwRFLSize);
 	SetPropOptValueByData(std::to_underlying(eStartup), std::to_underlying(refDefs.eStartup));
+	SetPropOptValueByData(std::to_underlying(fWindowsMenu), refDefs.fWindowsMenu);
 	m_grid.SetRedraw(TRUE);
 	m_grid.RedrawWindow();
 }
@@ -198,9 +199,10 @@ void CDlgSettingsGeneral::SaveSettings()
 {
 	using enum EName;
 	auto& refSett = m_pAppSettings->GetGeneralSettings();
-	refSett.dwInstances = GetPropOptDataDWORD(std::to_underlying(dwInstances));
+	refSett.fMultipleInst = GetPropOptDataDWORD(std::to_underlying(fMultipleInst));
 	refSett.dwRFLSize = GetPropValueDWORD(std::to_underlying(dwRFLSize));
 	refSett.eStartup = static_cast<CAppSettings::EStartup>(GetPropOptDataDWORD(std::to_underlying(eStartup)));
+	refSett.fWindowsMenu = GetPropOptDataDWORD(std::to_underlying(fWindowsMenu));
 }
 
 
@@ -228,7 +230,7 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 
 	m_grid.MarkModifiedProperties(1, 0);
 	m_grid.EnableHeaderCtrl(TRUE, L"Property", L"Value");
-	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 150 };
+	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 190 };
 	m_grid.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
 
 	//Set new bigger font to the property.
@@ -244,11 +246,11 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 
 	using enum EGroup; using enum EName;
 	const auto& refInst = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Allowed App Instances:", L""),
-		std::to_underlying(GROUP_GENERAL), std::to_underlying(dwInstances));
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(fMultipleInst));
 	const auto pPropInst = static_cast<CHexerPropGridProp*>(refInst.pProp);
 	pPropInst->AddOptionEx(L"Single", 0UL);
 	pPropInst->AddOptionEx(L"Multiple", 1UL);
-	pPropInst->SetValueFromData(refSett.dwInstances);
+	pPropInst->SetValueFromData(refSett.fMultipleInst);
 	pPropInst->AllowEdit(FALSE);
 
 	const auto& refStartup = m_vecGrid.emplace_back(new CHexerPropGridProp(L"On Startup:", L""),
@@ -265,6 +267,14 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 		std::to_underlying(dwRFLSize));
 	refRFLSize.pProp->EnableSpinControl(TRUE, 1, 20);
 	refRFLSize.pProp->AllowEdit(TRUE);
+
+	const auto& refWinMenu = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Show in Windows Context Menu:", L""),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(fWindowsMenu));
+	const auto pPropWindowsMenu = static_cast<CHexerPropGridProp*>(refWinMenu.pProp);
+	pPropWindowsMenu->AddOptionEx(L"Yes", 1UL);
+	pPropWindowsMenu->AddOptionEx(L"No", 0UL);
+	pPropWindowsMenu->SetValueFromData(refSett.fWindowsMenu);
+	pPropWindowsMenu->AllowEdit(FALSE);
 
 	const auto pAppear = new CMFCPropertyGridProperty(L"General:");
 	for (const auto& it : m_vecGrid) {
@@ -304,8 +314,8 @@ enum class CDlgSettingsHexCtrl::EGroup : std::uint8_t {
 };
 
 enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
-	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, wchDateSepar, wstrDateFormat, wstrScrollLines,
-	flScrollRatio, wstrInfoBar, wstrOffsetHex, dwCharsExtraSpace, stLogFont,
+	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, wchDateSepar, wstrDateFormat, fScrollLines,
+	flScrollRatio, fInfoBar, fOffsetHex, dwCharsExtraSpace, stLogFont,
 	clrFontHex, clrFontText, clrFontSel, clrFontDataInterp, clrFontCaption, clrFontInfoParam, clrFontInfoData,
 	clrFontCaret, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel
 };
@@ -334,9 +344,9 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueWCHAR(std::to_underlying(wchUnprintable), refDefs.wchUnprintable);
 	SetPropOptValueByData(std::to_underlying(wchDateSepar), refDefs.wchDateSepar);
 	SetPropOptValueByData(std::to_underlying(wstrDateFormat), refDefs.dwDateFormat);
-	SetPropOptValueByData(std::to_underlying(wstrScrollLines), refDefs.fScrollLines);
-	SetPropOptValueByData(std::to_underlying(wstrInfoBar), refDefs.fInfoBar);
-	SetPropOptValueByData(std::to_underlying(wstrOffsetHex), refDefs.fOffsetHex);
+	SetPropOptValueByData(std::to_underlying(fScrollLines), refDefs.fScrollLines);
+	SetPropOptValueByData(std::to_underlying(fInfoBar), refDefs.fInfoBar);
+	SetPropOptValueByData(std::to_underlying(fOffsetHex), refDefs.fOffsetHex);
 	SetPropValueLOGFONT(std::to_underlying(stLogFont), refDefs.stLogFont);
 	const auto& refClrs = refDefs.stClrs;
 	SetPropValueRGB(std::to_underlying(clrFontHex), refClrs.clrFontHex);
@@ -370,9 +380,9 @@ void CDlgSettingsHexCtrl::SaveSettings()
 	refSett.dwDateFormat = GetPropOptDataDWORD(std::to_underlying(wstrDateFormat));
 	refSett.flScrollRatio = GetPropValueFLOAT(std::to_underlying(flScrollRatio));
 	refSett.wchUnprintable = GetPropValueWCHAR(std::to_underlying(wchUnprintable));
-	refSett.fScrollLines = GetPropOptDataDWORD(std::to_underlying(wstrScrollLines));
-	refSett.fInfoBar = GetPropOptDataDWORD(std::to_underlying(wstrInfoBar));
-	refSett.fOffsetHex = GetPropOptDataDWORD(std::to_underlying(wstrOffsetHex));
+	refSett.fScrollLines = GetPropOptDataDWORD(std::to_underlying(fScrollLines));
+	refSett.fInfoBar = GetPropOptDataDWORD(std::to_underlying(fInfoBar));
+	refSett.fOffsetHex = GetPropOptDataDWORD(std::to_underlying(fOffsetHex));
 	auto& refClrs = refSett.stClrs;
 	refClrs.clrFontHex = GetPropValueRGB(std::to_underlying(clrFontHex));
 	refClrs.clrFontText = GetPropValueRGB(std::to_underlying(clrFontText));
@@ -469,7 +479,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	pPropDate->AllowEdit(FALSE);
 
 	const auto& refScroll = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Scroll Lines or Ratio:", L""),
-		std::to_underlying(GROUP_GENERAL), std::to_underlying(wstrScrollLines));
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(fScrollLines));
 	const auto pPropScroll = static_cast<CHexerPropGridProp*>(refScroll.pProp);
 	pPropScroll->AddOptionEx(L"Lines", 1UL);
 	pPropScroll->AddOptionEx(L"Ratio", 0UL);
@@ -482,7 +492,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	refScrollSize.pProp->AllowEdit(TRUE);
 
 	const auto& refInfoBar = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Show Info Bar:", L""), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(wstrInfoBar));
+		std::to_underlying(fInfoBar));
 	const auto pPropInfoBar = static_cast<CHexerPropGridProp*>(refInfoBar.pProp);
 	pPropInfoBar->AddOptionEx(L"Show", 1UL);
 	pPropInfoBar->AddOptionEx(L"Hide", 0UL);
@@ -490,7 +500,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	pPropInfoBar->AllowEdit(FALSE);
 
 	const auto& refOffsetMode = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Offset Mode:", L""), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(wstrOffsetHex));
+		std::to_underlying(fOffsetHex));
 	const auto pPropOffsetMode = static_cast<CHexerPropGridProp*>(refOffsetMode.pProp);
 	pPropOffsetMode->AddOptionEx(L"Hex", 1UL);
 	pPropOffsetMode->AddOptionEx(L"Decimal", 0UL);

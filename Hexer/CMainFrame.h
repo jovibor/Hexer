@@ -48,6 +48,7 @@ protected:
 	afx_msg auto OnAddLogEntry(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg void OnClose();
 	BOOL OnCloseDockingPane(CDockablePane* pPane)override;
+	afx_msg BOOL OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS);
 	afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
 	afx_msg BOOL OnEraseMDIClientBackground(CDC* pDC)override;

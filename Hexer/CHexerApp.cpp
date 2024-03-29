@@ -262,6 +262,12 @@ void CHexerApp::OnFileOpen()
 	while (!lmbFOD()) { }; //If no file has been opened (in multiple selection) show the "Open File Dialog" again.
 }
 
+auto CHexerApp::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
+{
+	ENSURE_VALID(m_pDocManager);
+	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentFile(fos);
+}
+
 
 //CHexerApp private methods.
 
@@ -269,13 +275,35 @@ BOOL CHexerApp::InitInstance()
 {
 	CWinAppEx::InitInstance();
 
+	CCommandLineInfo cmdInfo;
+	ParseCommandLine(cmdInfo);
+	if (cmdInfo.m_nShellCommand == CCommandLineInfo::FileNew) {
+		cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
+	}
+
+	//If a file is being opened by dropping on the App's shortcut, or through Windows context menu.
+	const auto fHDROP = cmdInfo.m_nShellCommand == CCommandLineInfo::FileOpen;
+	HANDLE hMutex { };
+
 	GetAppSettings().LoadSettings(Ut::GetAppName());
 
-	//Check for the already running app instance.
-	if (GetAppSettings().GetGeneralSettings().dwInstances == 0) { //Single.
+	if (!GetAppSettings().GetGeneralSettings().fMultipleInst) { //Single.
+		//Check for the already running app instance.
+		if (hMutex = CreateMutexW(nullptr, TRUE, GetClassName()); GetLastError() == ERROR_ALREADY_EXISTS) {
+			WaitForSingleObject(hMutex, 2000); //Wait maximum for two sec (more than enough).
+		}
+
 		if (const auto hWnd = FindWindowExW(nullptr, nullptr, GetClassName(), nullptr); hWnd != nullptr) {
 			ShowWindow(hWnd, SW_SHOWNORMAL);
 			SetForegroundWindow(hWnd);
+
+			if (fHDROP) {
+				const COPYDATASTRUCT cds { .dwData { 1 }, //Just a random ID. It's checked in the CMainFrame::OnCopyData.
+					.cbData { cmdInfo.m_strFileName.GetLength() * 2 + sizeof(wchar_t) }, //Size with nullterminator.
+					.lpData { reinterpret_cast<PVOID>(const_cast<wchar_t*>(cmdInfo.m_strFileName.GetString())) } };
+				SendMessageW(hWnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds));
+			}
+
 			return FALSE;
 		}
 	}
@@ -319,15 +347,6 @@ BOOL CHexerApp::InitInstance()
 	ChangeWindowMessageFilter(0x0049, MSGFLT_ADD);
 	DragAcceptFiles(m_pMainWnd->m_hWnd, TRUE);
 
-	CCommandLineInfo cmdInfo;
-	ParseCommandLine(cmdInfo);
-	if (cmdInfo.m_nShellCommand == CCommandLineInfo::FileNew) {
-		cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
-	}
-
-	//If it was a file drop on a shortcut.
-	const auto fHDROP = cmdInfo.m_nShellCommand == CCommandLineInfo::FileOpen;
-
 	//First we process App's startup options, only then ProcessShellCommand.
 	//So that if we restore Last Opened Files and at the same time it was a file drop
 	//on a shortcut, the file dropped will de opened in the last tab.
@@ -354,6 +373,10 @@ BOOL CHexerApp::InitInstance()
 		return FALSE;
 	}
 
+	if (hMutex) {
+		::ReleaseMutex(hMutex);
+	}
+
 	return TRUE;
 }
 
@@ -362,12 +385,6 @@ int CHexerApp::ExitInstance()
 	GetAppSettings().SaveSettings(Ut::GetAppName());
 
 	return CWinAppEx::ExitInstance();
-}
-
-auto CHexerApp::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
-{
-	ENSURE_VALID(m_pDocManager);
-	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentFile(fos);
 }
 
 void CHexerApp::OnAppAbout()
@@ -408,6 +425,8 @@ void CHexerApp::OnToolsSettings()
 			pDocTempl->GetNextDoc(posDoc)->UpdateAllViews(nullptr, Ut::WM_APP_SETTINGS_CHANGED);
 		}
 	}
+
+	m_stAppSettings.OnSettingsChanged();
 }
 
 void CHexerApp::OnFileRFL(UINT uID)

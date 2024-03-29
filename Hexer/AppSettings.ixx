@@ -28,7 +28,7 @@ class CAppSettingsRFL final //Recent File List.
 {
 public:
 	CAppSettingsRFL() = default;
-	void Initialize(HMENU hMenu, int iMenuFirstID, HBITMAP hBMPDisk, int iMaxEntry);
+	void Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry);
 	void AddToRFL(std::wstring_view wsvPath, bool fBeginning);
 	void RemoveFromRFL(std::wstring_view wsvPath);
 	void ClearRFL();
@@ -170,9 +170,10 @@ public:
 		DO_NOTHING, RESTORE_LAST_OPENED, SHOW_FOD
 	};
 	struct GENERALSETTINGS {
-		DWORD dwInstances { }; //0-Single, 1-Multiple.
+		bool fMultipleInst { }; //0-Single, 1-Multiple.
 		DWORD dwRFLSize { };
 		EStartup eStartup { };
+		bool fWindowsMenu { }; //1-Show, 0-Don't show.
 	};
 	struct HEXCTRLSETTINGS {
 		LOGFONTW stLogFont { };
@@ -202,24 +203,26 @@ public:
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const->std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const->PANESTATUS;
 	void LoadSettings(std::wstring_view wsvKeyName);
+	void OnSettingsChanged();
 	void RemoveFromLastOpened(std::wstring_view wsvPath);
 	void RFLAddToList(std::wstring_view wsvPath, bool fBeginning = true);
 	void RFLClear();
 	[[nodiscard]] auto RFLGetPathFromID(UINT uID)const->std::wstring;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry = 20);
 	void RFLRemoveFromList(std::wstring_view wsvPath);
+	void SaveSettings(std::wstring_view wsvKeyName);
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
 	void SetPaneStatus(UINT uPaneID, bool fShow, bool fActive);
-	void SaveSettings(std::wstring_view wsvKeyName);
-	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 	[[nodiscard]] static auto GetGeneralDefs() -> const GENERALSETTINGS&;
 	[[nodiscard]] static auto GetHexCtrlDefs() -> const HEXCTRLSETTINGS&;
-	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
 	[[nodiscard]] auto GetPanesSettings() -> PANESETTINGS&;
 	[[nodiscard]] auto GetPanesSettings()const->const PANESETTINGS&;
 	void LoadHexCtrlTemplates();
 	[[nodiscard]] auto RFLGetData()const->const std::vector<std::wstring>&;
+	void ShowInWindowsContextMenu(bool fShow);
+	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
+	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
 	CAppSettingsRFL m_stRFL;
 	PANESETTINGS m_stPaneSettings;   //"Panes" settings data.
@@ -366,11 +369,16 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 
 		//General settings.
 		auto& refGeneral = GetGeneralSettings();
-		regSettings.QueryDWORDValue(L"GeneralInstances", refGeneral.dwInstances);
+		DWORD dwMultipleInst { };
+		regSettings.QueryDWORDValue(L"GeneralInstances", dwMultipleInst);
+		refGeneral.fMultipleInst = dwMultipleInst;
 		regSettings.QueryDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
 		DWORD dwStartup { };
 		regSettings.QueryDWORDValue(L"GeneralStartup", dwStartup);
 		refGeneral.eStartup = static_cast<EStartup>(dwStartup);
+		DWORD dwWindowsMenu { };
+		regSettings.QueryDWORDValue(L"GeneralWindowsMenu", dwWindowsMenu);
+		refGeneral.fWindowsMenu = dwWindowsMenu;
 
 		//HexCtrl settings.
 		const std::wstring wstrKeyHexCtrl = wstrKeySettings + L"\\HexCtrl";
@@ -454,6 +462,11 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 	LoadHexCtrlTemplates();
 
 	m_fLoaded = true;
+}
+
+void CAppSettings::OnSettingsChanged()
+{
+	ShowInWindowsContextMenu(m_stGeneralData.fWindowsMenu);
 }
 
 void CAppSettings::RemoveFromLastOpened(std::wstring_view wsvPath)
@@ -568,9 +581,10 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 
 	//General settings.
 	const auto& refGeneral = GetGeneralSettings();
-	regSettings.SetDWORDValue(L"GeneralInstances", refGeneral.dwInstances);
+	regSettings.SetDWORDValue(L"GeneralInstances", refGeneral.fMultipleInst);
 	regSettings.SetDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
 	regSettings.SetDWORDValue(L"GeneralStartup", std::to_underlying(refGeneral.eStartup));
+	regSettings.SetDWORDValue(L"GeneralWindowsMenu", refGeneral.fWindowsMenu);
 
 	//HexCtrl settings.
 	CRegKey regHexCtrl;
@@ -669,6 +683,7 @@ void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
 }
 
 
+
 //CAppSettings Private methods.
 
 auto CAppSettings::GetPanesSettings()->PANESETTINGS&
@@ -706,6 +721,33 @@ auto CAppSettings::RFLGetData()const->const std::vector<std::wstring>&
 	return m_stRFL.GetRFL();
 }
 
+void CAppSettings::ShowInWindowsContextMenu(bool fShow)
+{
+	wchar_t buffPath[MAX_PATH];
+	GetModuleFileNameW(nullptr, buffPath, MAX_PATH);
+	const std::wstring wstrAppKey = L"*\\shell\\The Hexer";
+
+	CRegKey regCR;
+	if (const auto fOpen = regCR.Open(HKEY_CLASSES_ROOT, wstrAppKey.data()) == ERROR_SUCCESS; fOpen == fShow)
+		return;
+
+	if (fShow) {
+		regCR.Create(HKEY_CLASSES_ROOT, wstrAppKey.data());
+		regCR.SetStringValue(nullptr, L"Open in Hexer");
+		regCR.SetStringValue(L"Icon", buffPath);
+		const auto wstrCommand = wstrAppKey + L"\\command";
+		regCR.Create(HKEY_CLASSES_ROOT, wstrCommand.data());
+		const auto wstrPath = std::format(L"\"{}\" \"%1\"", buffPath);
+		regCR.SetStringValue(nullptr, wstrPath.data());
+	}
+	else {
+		regCR.Close();
+		CRegKey regShell;
+		regShell.Open(HKEY_CLASSES_ROOT, L"*\\shell");
+		regShell.RecurseDeleteKey(L"The Hexer");
+	}
+}
+
 auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 {
 	const std::bitset<32> bsPS(dw);
@@ -714,7 +756,8 @@ auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 
 auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
 {
-	static const GENERALSETTINGS defs { .dwInstances { 0 }, .dwRFLSize { 20 }, .eStartup { EStartup::DO_NOTHING } };
+	static const GENERALSETTINGS defs { .fMultipleInst { 0 }, .dwRFLSize { 20 }, .eStartup { EStartup::DO_NOTHING },
+		.fWindowsMenu { false } };
 	return defs;
 }
 

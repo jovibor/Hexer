@@ -20,10 +20,11 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWndEx)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
 	ON_COMMAND_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnViewRangePanes)
-	ON_MESSAGE(Ut::WM_ADD_LOG_ENTRY, OnAddLogEntry)
+	ON_MESSAGE(Ut::WM_ADD_LOG_ENTRY, &CMainFrame::OnAddLogEntry)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnUpdateRangePanes)
 	ON_WM_CLOSE()
 	ON_WM_CREATE()
+	ON_WM_COPYDATA()
 END_MESSAGE_MAP()
 
 void CMainFrame::AddLogEntry(const Ut::Log::LOGINFO& stData)
@@ -319,6 +320,16 @@ auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 {
 	AddLogEntry(*reinterpret_cast<Ut::Log::LOGINFO*>(lParam));
 	return S_OK;
+}
+
+BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS)
+{
+	if (pCDS->dwData == 1) {
+		Ut::FILEOPEN fos { .wstrFilePath { reinterpret_cast<wchar_t*>(pCDS->lpData) }, .fNewFile { false } };
+		theApp.OpenDocumentFile(fos);
+	}
+
+	return CMDIFrameWndEx::OnCopyData(pWnd, pCDS);
 }
 
 void CMainFrame::OnClose()

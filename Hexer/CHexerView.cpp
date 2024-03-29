@@ -54,7 +54,7 @@ auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 		if (!IsPaneAlreadyLaunch(uPaneID)) {
 			SetPaneAlreadyLaunch(uPaneID);
 			UpdateHexCtrlDlgData(uPaneID);
-			GetHexCtrl()->SetDlgData(*optDlg, HEXCTRL::HEXCTRL_FLAG_NOESC);
+			GetHexCtrl()->SetDlgProperties(*optDlg, HEXCTRL::HEXCTRL_FLAG_DLG_NOESC);
 		}
 
 		return hWnd;
@@ -241,7 +241,7 @@ void CHexerView::UpdateDlgBkmMgr()const
 
 	const auto hWnd = pHex->GetDlgItemHandle(DLG_BKMMGR, BKMMGR_CHK_HEX);
 	const auto pBtn = static_cast<CButton*>(CWnd::FromHandle(hWnd));
-	if (const auto iCheck = pBtn->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_BKMMGR_HEX) > 0) {
+	if (pBtn->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_BKMMGR_HEX) > 0) {
 		pBtn->SendMessageW(BM_CLICK);
 	}
 }
@@ -255,13 +255,13 @@ void CHexerView::UpdateDlgDataInterp()const
 
 	const auto hWndHex = pHex->GetDlgItemHandle(DLG_DATAINTERP, DATAINTERP_CHK_HEX);
 	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
-	if (const auto iCheck = pBtnHex->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_DATAINTERP_HEX) > 0) {
+	if (pBtnHex->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_DATAINTERP_HEX) > 0) {
 		pBtnHex->SendMessageW(BM_CLICK);
 	}
 
 	const auto hWndBE = pHex->GetDlgItemHandle(DLG_DATAINTERP, DATAINTERP_CHK_BE);
 	const auto pBtnBE = static_cast<CButton*>(CWnd::FromHandle(hWndBE));
-	if (const auto iCheck = pBtnBE->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_DATAINTERP_BE) > 0) {
+	if (pBtnBE->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_DATAINTERP_BE) > 0) {
 		pBtnBE->SendMessageW(BM_CLICK);
 	}
 }
@@ -289,25 +289,25 @@ void CHexerView::UpdateDlgTemplMgr()const
 
 	const auto hWndHex = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_HEX);
 	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
-	if (const auto iCheck = pBtnHex->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_HEX) > 0) {
+	if (pBtnHex->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_HEX) > 0) {
 		pBtnHex->SendMessageW(BM_CLICK);
 	}
 
 	const auto hWndTT = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_TT);
 	const auto pBtnTT = static_cast<CButton*>(CWnd::FromHandle(hWndTT));
-	if (const auto iCheck = pBtnTT->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_TT) > 0) {
+	if (pBtnTT->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_TT) > 0) {
 		pBtnTT->SendMessageW(BM_CLICK);
 	}
 
 	const auto hWndHgl = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_HGL);
 	const auto pBtnHgl = static_cast<CButton*>(CWnd::FromHandle(hWndHgl));
-	if (const auto iCheck = pBtnHgl->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_HGL) > 0) {
+	if (pBtnHgl->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_HGL) > 0) {
 		pBtnHgl->SendMessageW(BM_CLICK);
 	}
 
 	const auto hWndSwap = pHex->GetDlgItemHandle(DLG_TEMPLMGR, TEMPLMGR_CHK_SWAP);
 	const auto pBtnSwap = static_cast<CButton*>(CWnd::FromHandle(hWndSwap));
-	if (const auto iCheck = pBtnSwap->GetCheck(); iCheck != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_SWAP) > 0) {
+	if (pBtnSwap->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_SWAP) > 0) {
 		pBtnSwap->SendMessageW(BM_CLICK);
 	}
 }
