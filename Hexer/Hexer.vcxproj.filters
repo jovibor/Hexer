@@ -137,7 +137,7 @@
     <ClCompile Include="AppSettings.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="FileLoader.ixx">
+    <ClCompile Include="DataLoader.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="Dialogs\HexerDockablePane.ixx">
@@ -165,6 +165,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="Dialogs\HexerPropGridCtrl.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialogs\DlgOpenProcess.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
   </ItemGroup>

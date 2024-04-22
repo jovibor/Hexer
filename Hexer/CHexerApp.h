@@ -22,6 +22,7 @@ private:
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileNew();
 	afx_msg void OnFileOpenDevice();
+	afx_msg void OnFileOpenProcess();
 	afx_msg void OnToolsSettings();
 	afx_msg void OnFileRFL(UINT uID);
 	afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);

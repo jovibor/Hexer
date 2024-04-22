@@ -23,8 +23,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_MESSAGE(Ut::WM_ADD_LOG_ENTRY, &CMainFrame::OnAddLogEntry)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnUpdateRangePanes)
 	ON_WM_CLOSE()
-	ON_WM_CREATE()
 	ON_WM_COPYDATA()
+	ON_WM_CREATE()
 END_MESSAGE_MAP()
 
 void CMainFrame::AddLogEntry(const Ut::Log::LOGINFO& stData)
@@ -325,7 +325,7 @@ auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS)
 {
 	if (pCDS->dwData == 1) {
-		Ut::FILEOPEN fos { .wstrFilePath { reinterpret_cast<wchar_t*>(pCDS->lpData) }, .fNewFile { false } };
+		Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { reinterpret_cast<wchar_t*>(pCDS->lpData) } };
 		theApp.OpenDocumentFile(fos);
 	}
 

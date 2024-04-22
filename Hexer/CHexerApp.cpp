@@ -14,6 +14,7 @@
 #include <afxdialogex.h>
 #include <format>
 import DlgOpenDevice;
+import DlgOpenProcess;
 import DlgNewFile;
 import DlgSettings;
 import Utility;
@@ -93,7 +94,7 @@ auto CHexerMDTemplate::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
 		pFrame->DestroyWindow();
 		return nullptr;
 	}
-	pDocument->SetPathName(fos.wstrFilePath.data(), FALSE);
+	pDocument->SetPathName(fos.wstrFullPath.data(), FALSE);
 	pDocument->OnDocumentEvent(CDocument::onAfterOpenDocument);
 
 	InitialUpdateFrame(pFrame, pDocument, TRUE);
@@ -115,7 +116,7 @@ auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL /*bAddToMRU*/)->C
 {
 	//This method also takes a part in a HDROP.
 
-	Ut::FILEOPEN fos { .wstrFilePath { lpszFileName } };
+	Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { lpszFileName } };
 	return OpenDocumentFile(fos);
 }
 
@@ -141,8 +142,8 @@ auto CHexerDocMgr::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
 
 		return wstrPath;
 		};
-	if (!fos.fNewFile) {
-		fos.wstrFilePath = lmbResolveLNK(fos.wstrFilePath.data());
+	if (fos.eMode != Ut::EOpenMode::NEW_FILE) {
+		fos.wstrFullPath = lmbResolveLNK(fos.wstrFullPath.data());
 	}
 
 	//This code below is copy-pasted from the original CDocManager::OpenDocumentFile.
@@ -162,7 +163,7 @@ auto CHexerDocMgr::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
 
 		CDocTemplate::Confidence match;
 		ASSERT(pOpenDocument == nullptr);
-		match = pTemplate->MatchDocType(fos.wstrFilePath.data(), pOpenDocument);
+		match = pTemplate->MatchDocType(fos.wstrFullPath.data(), pOpenDocument);
 		if (match > bestMatch) {
 			bestMatch = match;
 			pBestTemplate = pTemplate;
@@ -214,6 +215,7 @@ BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
 	ON_COMMAND(ID_FILE_OPEN, &CHexerApp::OnFileOpen)
 	ON_COMMAND(ID_APP_ABOUT, &CHexerApp::OnAppAbout)
 	ON_COMMAND(IDM_FILE_OPENDEVICE, &CHexerApp::OnFileOpenDevice)
+	ON_COMMAND(IDM_FILE_OPENPROCESS, &CHexerApp::OnFileOpenProcess)
 	ON_COMMAND(IDM_TOOLS_SETTINGS, &CHexerApp::OnToolsSettings)
 	ON_COMMAND_RANGE(IDM_FILE_RFL00, IDM_FILE_RFL19, &CHexerApp::OnFileRFL)
 	ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CHexerApp::OnUpdateFileNew)
@@ -250,7 +252,7 @@ void CHexerApp::OnFileOpen()
 				pResults->GetItemAt(i, &pItem);
 				CComHeapPtr<wchar_t> pwstrPath;
 				pItem->GetDisplayName(SIGDN_FILESYSPATH, &pwstrPath);
-				Ut::FILEOPEN fos { .wstrFilePath { pwstrPath }, .fNewFile { false } };
+				Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { pwstrPath } };
 				const auto pDoc = OpenDocumentFile(fos);
 				fOpened = !fOpened ? pDoc != nullptr : true;
 			}
@@ -274,6 +276,15 @@ auto CHexerApp::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
 BOOL CHexerApp::InitInstance()
 {
 	CWinAppEx::InitInstance();
+
+	//Adjusting current process privileges to SE_DEBUG_NAME level,
+	//to be able to open Processes that's blocked otherwise.
+	TOKEN_PRIVILEGES tkp { .PrivilegeCount { 1 } };
+	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	LookupPrivilegeValueW(nullptr, SE_DEBUG_NAME, &tkp.Privileges[0].Luid);
+	HANDLE hToken { };
+	OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
+	AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, nullptr, nullptr);
 
 	CCommandLineInfo cmdInfo;
 	ParseCommandLine(cmdInfo);
@@ -336,7 +347,7 @@ BOOL CHexerApp::InitInstance()
 	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPDisk } };
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
 	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Setting the icon for the "Open Device..." menu.
-	const auto pRFSubMenu = pFileMenu->GetSubMenu(3); //"Recent Files" sub-menu.
+	const auto pRFSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files" sub-menu.
 	GetAppSettings().RFLInitialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk, GetAppSettings().GetGeneralSettings().dwRFLSize);
 	DrawMenuBar(pMainFrame->m_hWnd);
 
@@ -361,7 +372,7 @@ BOOL CHexerApp::InitInstance()
 		break;
 	case CAppSettings::EStartup::RESTORE_LAST_OPENED:
 		for (const auto& wstr : GetAppSettings().GetLastOpenedFromReg()) {
-			Ut::FILEOPEN fos { .wstrFilePath { wstr }, .fNewFile { false } };
+			Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { wstr } };
 			OpenDocumentFile(fos);
 		}
 		break;
@@ -405,7 +416,18 @@ void CHexerApp::OnFileOpenDevice()
 {
 	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& wstrPath : dlg.GetPaths()) {
-			Ut::FILEOPEN fos { .wstrFilePath { wstrPath }, .fNewFile { false } };
+			Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_DEVICE }, .wstrFullPath { wstrPath } };
+			OpenDocumentFile(fos);
+		}
+	}
+}
+
+void CHexerApp::OnFileOpenProcess()
+{
+	if (CDlgOpenProcess dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
+		for (const auto& ref : dlg.GetProcesses()) {
+			Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_PROC }, .wstrFullPath { ref.wstrProcName },
+				.dwProcID { ref.dwProcID } };
 			OpenDocumentFile(fos);
 		}
 	}
@@ -431,7 +453,7 @@ void CHexerApp::OnToolsSettings()
 
 void CHexerApp::OnFileRFL(UINT uID)
 {
-	Ut::FILEOPEN fos { .wstrFilePath { GetAppSettings().RFLGetPathFromID(uID) }, .fNewFile { false } };
+	Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { GetAppSettings().RFLGetPathFromID(uID) } };
 	OpenDocumentFile(fos);
 }
 

@@ -161,7 +161,7 @@ void CHexerView::OnInitialUpdate()
 		.fInfoBar { refHexSet.fInfoBar }, .fOffsetHex { refHexSet.fOffsetHex } });
 	pHex->SetCharsExtraSpace(refHexSet.dwCharsExtraSpace);
 	pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
-	pHex->SetPageSize(refHexSet.dwPageSize);
+	pHex->SetPageSize(pDoc->IsProcess() ? pDoc->GetMemPageSize() : refHexSet.dwPageSize);
 	pHex->SetUnprintableChar(refHexSet.wchUnprintable);
 	for (const auto& p : theApp.GetAppSettings().GetHexCtrlTemplates()) {
 		pHex->GetTemplates()->AddTemplate(*p);

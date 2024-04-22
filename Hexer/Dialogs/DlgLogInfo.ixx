@@ -129,7 +129,6 @@ void CDlgLogInfo::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	const auto pDI = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	const auto pItem = &pDI->item;
-
 	if ((pItem->mask & LVIF_TEXT) == 0)
 		return;
 

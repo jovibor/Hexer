@@ -56,10 +56,15 @@ export namespace Ut {
 		float flDPIScale { };
 	};
 
+	enum class EOpenMode : std::uint8_t {
+		OPEN_FILE, OPEN_DEVICE, OPEN_PROC, NEW_FILE
+	};
+
 	struct FILEOPEN {
-		std::wstring  wstrFilePath;
-		std::uint64_t ullFileSize { };
-		bool          fNewFile { };
+		EOpenMode     eMode { EOpenMode::OPEN_FILE };
+		std::wstring  wstrFullPath;
+		std::uint64_t ullNewFileSize { };
+		DWORD         dwProcID { };
 	};
 
 	struct FILEINFO {

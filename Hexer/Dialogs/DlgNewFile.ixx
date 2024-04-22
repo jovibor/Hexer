@@ -91,10 +91,10 @@ void CDlgNewFile::OnChangeEditPath()
 
 void CDlgNewFile::OnOK()
 {
-	m_stFOS.fNewFile = true;
+	m_stFOS.eMode = Ut::EOpenMode::NEW_FILE;
 	CStringW str;
 	m_stEditPath.GetWindowTextW(str);
-	m_stFOS.wstrFilePath = str;
+	m_stFOS.wstrFullPath = str;
 
 	if (m_stEditSize.GetWindowTextLengthW() == 0) {
 		MessageBoxW(L"Enter the file size.", L"Size is empty", MB_ICONEXCLAMATION);
@@ -108,7 +108,7 @@ void CDlgNewFile::OnOK()
 			return;
 		}
 
-		m_stFOS.ullFileSize = *opt * m_stComboMeasure.GetItemData(m_stComboMeasure.GetCurSel());
+		m_stFOS.ullNewFileSize = *opt * m_stComboMeasure.GetItemData(m_stComboMeasure.GetCurSel());
 	}
 
 	CDialogEx::OnOK();

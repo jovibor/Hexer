@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <string>
 #include "HexCtrl.h"
-import FileLoader;
+import DataLoader;
 
 class CHexerDoc final : public CDocument {
 public:
@@ -17,8 +17,10 @@ public:
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetFilePath()const->const std::wstring&;
 	[[nodiscard]] auto GetFileSize()const->std::uint64_t;
+	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsFileMutable()const;
+	[[nodiscard]] bool IsProcess()const;
 	[[nodiscard]] bool OnOpenDocument(const Ut::FILEOPEN& fos);
 	void SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU = TRUE)override;
 private:
@@ -27,7 +29,7 @@ private:
 	DECLARE_DYNCREATE(CHexerDoc);
 	DECLARE_MESSAGE_MAP();
 private:
-	CFileLoader m_stFileLoader;
+	CDataLoader m_stDataLoader;
 	std::wstring m_wstrFilePath;
 	std::wstring m_wstrFileName;
 };
