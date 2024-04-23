@@ -304,9 +304,9 @@ void CDlgOpenProcess::OnListProcsGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/
 
 void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
 {
-	static constexpr auto iResAreaHalfWidth = 15;       //Area where cursor turns into resizable (IDC_SIZEWE).
-	static constexpr auto iWidthBetweenTreeAndList = 1; //Width between tree and list after resizing.
-	static constexpr auto iMinTreeWidth = 100;          //Tree control minimum allowed width.
+	static constexpr auto iResAreaHalfWidth = 15;  //Area where cursor turns into resizable (IDC_SIZEWE).
+	static constexpr auto iWidthBetweenLists = 1;  //Width between tree and list after resizing.
+	static constexpr auto iMinLeftListWidth = 100; //Left list minimum allowed width.
 
 	CRect rcList;
 	m_pListModules->GetWindowRect(rcList);
@@ -316,10 +316,10 @@ void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
 		CRect rcTree;
 		m_pListProcs->GetWindowRect(rcTree);
 		ScreenToClient(rcTree);
-		rcTree.right = point.x - iWidthBetweenTreeAndList;
+		rcTree.right = point.x - iWidthBetweenLists;
 		rcList.left = point.x;
-		if (rcTree.Width() >= iMinTreeWidth) {
-			auto hdwp = BeginDeferWindowPos(2); //Simultaneously resizing list and tree.
+		if (rcTree.Width() >= iMinLeftListWidth) {
+			auto hdwp = BeginDeferWindowPos(2); //Simultaneously resizing lists.
 			hdwp = DeferWindowPos(hdwp, m_pListProcs->m_hWnd, nullptr, rcTree.left, rcTree.top,
 				rcTree.Width(), rcTree.Height(), SWP_NOACTIVATE | SWP_NOZORDER);
 			hdwp = DeferWindowPos(hdwp, m_pListModules->m_hWnd, nullptr, rcList.left, rcList.top,

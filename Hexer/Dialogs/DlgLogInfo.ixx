@@ -103,7 +103,7 @@ BOOL CDlgLogInfo::OnInitDialog()
 	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
 	m_pList->InsertColumn(0, L"№", 0, 30);
 	m_pList->InsertColumn(1, L"Time", 0, 70);
-	m_pList->InsertColumn(2, L"Event", 0, 450);
+	m_pList->InsertColumn(2, L"Event", 0, 750);
 
 	m_menuList.CreatePopupMenu();
 	m_menuList.AppendMenuW(MF_STRING, static_cast<UINT_PTR>(EMenuID::IDM_LIST_CLEARALL), L"Clear All");

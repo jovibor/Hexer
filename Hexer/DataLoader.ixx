@@ -22,7 +22,7 @@ public:
 	CDataLoader();
 	~CDataLoader();
 	void Close();
-	[[nodiscard]] auto GetCacheSize()const->DWORD;
+	[[nodiscard]] auto GetCacheSize()const->DWORD; //Cache size that is reported to the outside, for IHexCtrl.
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
 	[[nodiscard]] auto GetFileData()const->std::byte*;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
@@ -31,7 +31,7 @@ public:
 	[[nodiscard]] bool IsProcess()const;
 	[[nodiscard]] bool Open(const Ut::FILEOPEN& fos);
 private:
-	void FlushFileData();
+	[[nodiscard]] auto GetInternalCacheSize()const->DWORD; //The real cache size used internally.
 	[[nodiscard]] bool IsModified()const;
 	[[nodiscard]] bool IsVirtual()const;
 	void OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)override;
@@ -42,8 +42,10 @@ private:
 	void PrintLastError(std::wstring_view wsvSource)const;
 	[[nodiscard]] auto ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
 	[[nodiscard]] auto ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
+	void WriteFileData();
+	void WriteProcData(const HEXCTRL::HEXDATAINFO& hdi);
 private:
-	static constexpr auto m_dwCacheSize { 1024UL * 512UL }; //512KB cache size.
+	static constexpr auto m_dwCacheSize { 1024UL * 1024UL }; //1MB cache size.
 	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
 	std::wstring m_wstrFileName; //File name without path.
 	std::wstring m_wstrFilePath; //Data path to open.
@@ -76,8 +78,8 @@ CDataLoader::~CDataLoader()
 void CDataLoader::Close()
 {
 	if (m_hHandle != nullptr) {
-		if (IsVirtual()) {
-			FlushFileData();
+		if (IsVirtual() && !IsProcess()) {
+			WriteFileData();
 		}
 
 		FlushViewOfFile(m_lpMapBase, 0);
@@ -103,7 +105,7 @@ void CDataLoader::Close()
 
 auto CDataLoader::GetCacheSize()const->DWORD
 {
-	return m_dwCacheSize;
+	return m_dwCacheSize / 2;
 }
 
 auto CDataLoader::GetDataSize()const->std::uint64_t
@@ -153,18 +155,12 @@ bool CDataLoader::Open(const Ut::FILEOPEN& fos)
 
 //Private methods.
 
-void CDataLoader::FlushFileData()
+auto CDataLoader::GetInternalCacheSize()const->DWORD
 {
-	if (!IsModified())
-		return;
-
-	OVERLAPPED ol { .Offset { LODWORD(m_ullOffsetCurr) }, .OffsetHigh { HIDWORD(m_ullOffsetCurr) } };
-	DWORD dwBytesWritten { };
-	if (WriteFile(m_hHandle, m_pCache.get(), static_cast<DWORD>(m_ullSizeCurr), &dwBytesWritten, &ol) == FALSE) {
-		PrintLastError(L"WriteFile");
-	}
-
-	m_fModified = false;
+	//Internal working cache size is two times bigger than the size reported to the IHexCtrl.
+	//This will ensure that the size returned after OnHexGetData will be not less than the size requested.
+	//Even after offset and size aligning, either during File or Process data reading.
+	return m_dwCacheSize;
 }
 
 bool CDataLoader::IsModified()const
@@ -187,12 +183,16 @@ void CDataLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
 	}
 }
 
-void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& /*hdi*/)
+void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 {
 	m_fModified = true;
+
+	if (IsProcess()) {
+		WriteProcData(hdi); //Writing to the process address space immediately.
+	}
 }
 
-bool CDataLoader::OpenFile(const Ut::FILEOPEN & fos)
+bool CDataLoader::OpenFile(const Ut::FILEOPEN& fos)
 {
 	m_wstrFilePath = fos.wstrFullPath;
 	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1);
@@ -280,7 +280,7 @@ bool CDataLoader::OpenFileVirtual()
 	}
 
 	m_stDataSize.QuadPart = stLengthInfo.Length.QuadPart;
-	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetCacheSize(), m_dwAlignment))); //Initialize the data cache.
+	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), m_dwAlignment))); //Initialize the data cache.
 
 	return true;
 }
@@ -296,13 +296,13 @@ bool CDataLoader::OpenProcess(const Ut::FILEOPEN& fos)
 
 	PROCESS_MEMORY_COUNTERS_EX pmc { .cb { sizeof(PROCESS_MEMORY_COUNTERS_EX) } };
 	K32GetProcessMemoryInfo(m_hHandle, reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(PROCESS_MEMORY_COUNTERS_EX));
-	m_stDataSize.QuadPart = pmc.PrivateUsage;
+	m_stDataSize.QuadPart = pmc.WorkingSetSize;
 
-	m_dwAlignment = 32;
-	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetCacheSize(), m_dwAlignment)));
+	m_dwAlignment = 64;
+	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), m_dwAlignment)));
 	m_fVirtual = true;
 	m_fProcess = true;
-	m_fMutable = false;
+	m_fMutable = true;
 
 	return true;
 }
@@ -318,8 +318,9 @@ void CDataLoader::PrintLastError(std::wstring_view wsvSource)const
 
 auto CDataLoader::ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXCTRL::SpanByte
 {
-	assert(ullOffset + ullSize <= static_cast<std::uint64_t>(m_stDataSize.QuadPart));
-	if (ullOffset + ullSize > static_cast<std::uint64_t>(m_stDataSize.QuadPart)) { //Overflow check.
+	assert(ullOffset + ullSize <= GetDataSize());
+	assert(ullSize <= GetCacheSize());
+	if (ullOffset + ullSize > GetDataSize()) { //Overflow check.
 		return { };
 	}
 
@@ -327,18 +328,24 @@ auto CDataLoader::ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 		return { m_pCache.get() + (ullOffset - m_ullOffsetCurr), ullSize };
 	}
 
-	FlushFileData(); //Flush current cache data if it was modified, before the ReadFile.
+	WriteFileData(); //Flush current cache data if it was modified, before the ReadFile.
 
 	const auto ullOffsetRemainder = ullOffset % m_dwAlignment;
 	const auto ullOffsetAligned = ullOffset - ullOffsetRemainder;
-	const auto ullSizeAligned = (ullOffsetAligned + GetCacheSize()) <= static_cast<std::uint64_t>(m_stDataSize.QuadPart) ?
-		GetCacheSize() : m_stDataSize.QuadPart - ullOffsetAligned; //Size at the end of a file can be not aligned.
+	const auto ullSizeAligned = (ullOffsetAligned + GetInternalCacheSize()) <= GetDataSize() ?
+		GetInternalCacheSize() : GetDataSize() - ullOffsetAligned; //Size at the end of a file might be non aligned.
 	assert(ullSizeAligned >= ullSize);
+	assert((ullSizeAligned - ullOffsetRemainder) >= ullSize);
 
-	OVERLAPPED ol { .Offset { LODWORD(ullOffsetAligned) }, .OffsetHigh { HIDWORD(ullOffsetAligned) } };
-	DWORD dwBytesRead { };
-	if (ReadFile(m_hHandle, m_pCache.get(), static_cast<DWORD>(ullSizeAligned), &dwBytesRead, &ol) == FALSE) {
+	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(ullOffsetAligned) } }, nullptr, FILE_BEGIN) == FALSE) {
+		PrintLastError(L"SetFilePointerEx");
+		assert(false);
+		return { };
+	}
+
+	if (ReadFile(m_hHandle, m_pCache.get(), static_cast<DWORD>(ullSizeAligned), nullptr, nullptr) == FALSE) {
 		PrintLastError(L"ReadFile");
+		assert(false);
 		return { };
 	}
 
@@ -350,8 +357,9 @@ auto CDataLoader::ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 
 auto CDataLoader::ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXCTRL::SpanByte
 {
-	assert(ullOffset + ullSize <= static_cast<std::uint64_t>(GetDataSize()));
-	if (ullOffset + ullSize > static_cast<std::uint64_t>(GetDataSize())) { //Overflow check.
+	assert(ullOffset + ullSize <= GetDataSize());
+	assert(ullSize <= GetCacheSize());
+	if (ullOffset + ullSize > GetDataSize()) { //Overflow check.
 		return { };
 	}
 
@@ -360,11 +368,16 @@ auto CDataLoader::ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 	}
 
 	const std::byte* pMemCurr { nullptr };
-	const std::uint64_t u64SizeCached = (ullOffset + GetCacheSize()) <= GetDataSize() ? GetCacheSize()
-		: GetDataSize() - ullOffset;
-	std::uint64_t u64SizeRemain { u64SizeCached };
+	const auto ullOffsetRemainder = ullOffset % GetMemPageSize();
+	const auto ullOffsetAligned = ullOffset - ullOffsetRemainder;
+	const auto ullSizeAligned = (ullOffsetAligned + GetInternalCacheSize()) <= GetDataSize() ? GetInternalCacheSize()
+		: GetDataSize() - ullOffsetAligned;
+	assert(ullSizeAligned >= ullSize);
+	assert((ullSizeAligned - ullOffsetRemainder) >= ullSize);
+
+	std::uint64_t u64SizeRemain { ullSizeAligned };
 	std::uint64_t u64CacheOffset { 0ULL };   //Offset in the cache to write data to.
-	std::uint64_t u64RegsTotalSize { 0ULL }; //Total size of the commited pages.
+	std::uint64_t u64RegsTotalSize { 0ULL }; //Total size of the commited regions of pages.
 	bool fVestige { false }; //Is there any remainder memory to acquire?
 
 	while (true) {
@@ -376,19 +389,20 @@ auto CDataLoader::ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 
 		constexpr auto dwFlags = PAGE_NOACCESS | PAGE_GUARD;
 		if (mbi.State == MEM_COMMIT && !(mbi.AllocationProtect & dwFlags) && !(mbi.Protect & dwFlags)) {
+			u64RegsTotalSize += mbi.RegionSize;
 			std::byte* pAddrToRead { };
 			std::uint64_t u64SizeToRead { };
 
 			if (fVestige) {
-				const auto u64AvailMemToRead = mbi.RegionSize;
-				u64SizeToRead = u64AvailMemToRead >= u64SizeRemain ? u64SizeRemain : u64AvailMemToRead;
+				const auto u64AvailSizeInRegion = mbi.RegionSize;
+				u64SizeToRead = u64AvailSizeInRegion >= u64SizeRemain ? u64SizeRemain : u64AvailSizeInRegion;
 				pAddrToRead = reinterpret_cast<std::byte*>(mbi.BaseAddress);
 			}
-			else if (ullOffset >= u64RegsTotalSize && ullOffset < (u64RegsTotalSize + mbi.RegionSize)) {
-				const auto u64OffsetFromRangeBegin = ullOffset - u64RegsTotalSize;
-				const auto u64AvailMemToRead = mbi.RegionSize - u64OffsetFromRangeBegin;
-				u64SizeToRead = u64AvailMemToRead >= u64SizeRemain ? u64SizeRemain : u64AvailMemToRead;
-				pAddrToRead = reinterpret_cast<std::byte*>(mbi.BaseAddress) + u64OffsetFromRangeBegin;
+			else if (ullOffsetAligned < u64RegsTotalSize) {
+				const auto u64OffsetFromRegionBegin = ullOffsetAligned - (u64RegsTotalSize - mbi.RegionSize);
+				const auto u64AvailSizeInRegion = mbi.RegionSize - u64OffsetFromRegionBegin;
+				u64SizeToRead = u64AvailSizeInRegion >= u64SizeRemain ? u64SizeRemain : u64AvailSizeInRegion;
+				pAddrToRead = reinterpret_cast<std::byte*>(mbi.BaseAddress) + u64OffsetFromRegionBegin;
 			}
 
 			if (u64SizeToRead > 0) {
@@ -397,20 +411,95 @@ auto CDataLoader::ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 					PrintLastError(L"ReadProcessMemory");
 					return { };
 				}
-			}
-			if (u64SizeToRead == u64SizeRemain) { //We got required size.
-				break;
-			}
 
-			fVestige = true;
-			u64SizeRemain -= u64SizeToRead;
-			u64CacheOffset += u64SizeToRead;
-			u64RegsTotalSize += mbi.RegionSize;
+				if (u64SizeToRead == u64SizeRemain) { //We got required size.
+					break;
+				}
+
+				fVestige = true;
+				u64SizeRemain -= u64SizeToRead;
+				u64CacheOffset += u64SizeToRead;
+			}
 		}
 	}
 
-	m_ullOffsetCurr = ullOffset;
-	m_ullSizeCurr = u64SizeCached;
+	m_ullOffsetCurr = ullOffsetAligned;
+	m_ullSizeCurr = ullSizeAligned;
 
-	return { m_pCache.get(), m_ullSizeCurr };
+	return { m_pCache.get() + ullOffsetRemainder, ullSizeAligned - ullOffsetRemainder };
+}
+
+void CDataLoader::WriteFileData()
+{
+	if (!IsModified())
+		return;
+
+	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(m_ullOffsetCurr) } }, nullptr, FILE_BEGIN) == FALSE) {
+		PrintLastError(L"SetFilePointerEx");
+		assert(false);
+		return;
+	}
+
+	if (WriteFile(m_hHandle, m_pCache.get(), static_cast<DWORD>(m_ullSizeCurr), nullptr, nullptr) == FALSE) {
+		PrintLastError(L"WriteFile");
+	}
+
+	m_fModified = false;
+}
+
+void CDataLoader::WriteProcData(const HEXCTRL::HEXDATAINFO& hdi)
+{
+	const std::byte* pMemCurr { nullptr };
+	const auto pData = hdi.spnData.data();
+	const auto ullOffset = hdi.stHexSpan.ullOffset;
+	std::uint64_t u64SizeRemain { hdi.stHexSpan.ullSize };
+	assert(ullOffset >= m_ullOffsetCurr);
+	assert(u64SizeRemain <= m_ullSizeCurr);
+
+	std::uint64_t u64CacheOffset { 0ULL };   //Offset in the pData to get data from.
+	std::uint64_t u64RegsTotalSize { 0ULL }; //Total size of the commited regions of pages.
+	bool fVestige { false }; //Is there any remainder data to write?
+
+	while (true) {
+		MEMORY_BASIC_INFORMATION mbi;
+		if (VirtualQueryEx(m_hHandle, pMemCurr, &mbi, sizeof(mbi)) == 0) {
+			break;
+		}
+		pMemCurr = reinterpret_cast<const std::byte*>(mbi.BaseAddress) + mbi.RegionSize;
+
+		constexpr auto dwFlags = PAGE_NOACCESS | PAGE_GUARD;
+		if (mbi.State == MEM_COMMIT && !(mbi.AllocationProtect & dwFlags) && !(mbi.Protect & dwFlags)) {
+			u64RegsTotalSize += mbi.RegionSize;
+			std::byte* pAddrToWrite { };
+			std::uint64_t u64SizeToWrite { };
+
+			if (fVestige) {
+				const auto u64AvailSizeInRegion = mbi.RegionSize;
+				u64SizeToWrite = u64AvailSizeInRegion >= u64SizeRemain ? u64SizeRemain : u64AvailSizeInRegion;
+				pAddrToWrite = reinterpret_cast<std::byte*>(mbi.BaseAddress);
+			}
+			else if (ullOffset < u64RegsTotalSize) {
+				const auto u64OffsetFromRegionBegin = ullOffset - (u64RegsTotalSize - mbi.RegionSize);
+				const auto u64AvailSizeInRegion = mbi.RegionSize - u64OffsetFromRegionBegin;
+				u64SizeToWrite = u64AvailSizeInRegion >= u64SizeRemain ? u64SizeRemain : u64AvailSizeInRegion;
+				pAddrToWrite = reinterpret_cast<std::byte*>(mbi.BaseAddress) + u64OffsetFromRegionBegin;
+			}
+
+			if (u64SizeToWrite > 0) {
+				if (WriteProcessMemory(m_hHandle, pAddrToWrite, pData + u64CacheOffset, u64SizeToWrite, nullptr) == FALSE) {
+					PrintLastError(L"WriteProcessMemory");
+					return;
+				}
+
+				if (u64SizeToWrite == u64SizeRemain) { //We have written required size.
+					m_fModified = false;
+					break;
+				}
+
+				fVestige = true;
+				u64SizeRemain -= u64SizeToWrite;
+				u64CacheOffset += u64SizeToWrite;
+			}
+		}
+	}
 }
