@@ -31,6 +31,7 @@ private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	void EnableDynamicLayoutHelper(bool fEnable);
 	afx_msg void OnBnClickedRefresh();
+	afx_msg auto OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor) -> HBRUSH;
 	BOOL OnInitDialog()override;
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
@@ -44,6 +45,7 @@ private:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
 	void OnOK()override;
+	void OnProcReady(bool fReady);
 	void RefreshProcs();
 	DECLARE_MESSAGE_MAP();
 private:
@@ -53,10 +55,13 @@ private:
 	std::vector<PROCS> m_vecProcsToOpen;
 	std::vector<MODULES> m_vecModules;
 	std::locale m_locale;
+	CButton m_btnOpen;
+	CButton m_statInfo;
 	HCURSOR m_hCurResize;
 	HCURSOR m_hCurArrow;
 	bool m_fCurInSplitter { }; //Indicates that mouse cursor is in the splitter area.
 	bool m_fLMDownResize { };  //Left mouse pressed in the splitter area to resize.
+	bool m_fProcReady { false };
 };
 
 struct CDlgOpenProcess::PROCS {
@@ -77,6 +82,7 @@ BEGIN_MESSAGE_MAP(CDlgOpenProcess, CDialogEx)
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_OPENPROCESS_LIST_PROCS, &CDlgOpenProcess::OnListProcsGetDispInfo)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPENPROCESS_LIST_PROCS, &CDlgOpenProcess::OnListProcsDblClick)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENPROCESS_LIST_PROCS, &CDlgOpenProcess::OnListProcsItemChanged)
+	ON_WM_CTLCOLOR()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEMOVE()
@@ -90,6 +96,8 @@ auto CDlgOpenProcess::GetProcesses()->std::vector<PROCS>&
 void CDlgOpenProcess::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDOK, m_btnOpen);
+	DDX_Control(pDX, IDC_OPENPROCESS_STAT_INFO, m_statInfo);
 }
 
 void CDlgOpenProcess::EnableDynamicLayoutHelper(bool fEnable)
@@ -109,6 +117,8 @@ void CDlgOpenProcess::EnableDynamicLayoutHelper(bool fEnable)
 			CMFCDynamicLayout::SizeHorizontalAndVertical(50, 100));
 		pLayout->AddItem(IDC_OPENPROCESS_BTN_REFRESH, CMFCDynamicLayout::MoveVertical(100),
 			CMFCDynamicLayout::SizeNone());
+		pLayout->AddItem(IDC_OPENPROCESS_STAT_INFO, CMFCDynamicLayout::MoveVertical(100),
+			CMFCDynamicLayout::SizeHorizontal(100));
 		pLayout->AddItem(IDOK, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100),
 			CMFCDynamicLayout::SizeNone());
 		pLayout->AddItem(IDCANCEL, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100),
@@ -121,12 +131,27 @@ void CDlgOpenProcess::OnBnClickedRefresh()
 	RefreshProcs();
 }
 
+auto CDlgOpenProcess::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH
+{
+	const auto hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
+
+	if (pWnd == &m_statInfo) {
+		if (m_fProcReady) {
+			pDC->SetTextColor(RGB(0, 250, 0));
+		}
+		else {
+			pDC->SetTextColor(RGB(250, 0, 0));
+		}
+	}
+
+	return hbr;
+}
+
 BOOL CDlgOpenProcess::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
 	m_locale = std::locale("en_US.UTF-8");
-
 	m_pListProcs->CreateDialogCtrl(IDC_OPENPROCESS_LIST_PROCS, this);
 	m_pListProcs->SetSortable(true);
 	m_pListProcs->InsertColumn(0, L"№", 0, 40);
@@ -134,19 +159,16 @@ BOOL CDlgOpenProcess::OnInitDialog()
 	m_pListProcs->InsertColumn(1, L"Process Name", 0, 200);
 	m_pListProcs->InsertColumn(2, L"Process ID", 0, 70);
 	m_pListProcs->InsertColumn(3, L"Working Set", 0, 90);
-
 	m_pListModules->CreateDialogCtrl(IDC_OPENPROCESS_LIST_MODULES, this);
 	m_pListModules->SetSortable(true);
 	m_pListModules->InsertColumn(0, L"Module Name", 0, 150);
 	m_pListModules->InsertColumn(1, L"Working Set", 0, 90);
-
 	m_hCurResize = static_cast<HCURSOR>(LoadImageW(nullptr, IDC_SIZEWE, IMAGE_CURSOR, 0, 0, LR_SHARED));
 	m_hCurArrow = static_cast<HCURSOR>(LoadImageW(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_SHARED));
-
 	const auto hIcon = AfxGetApp()->LoadIconW(IDR_HEXER_FRAME);
 	SetIcon(hIcon, TRUE);
 	SetIcon(hIcon, FALSE);
-
+	m_btnOpen.EnableWindow(FALSE);
 	RefreshProcs();
 	EnableDynamicLayoutHelper(true);
 
@@ -237,6 +259,7 @@ void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/
 	const auto iItemID = pNMI->iItem;
 	const auto hProc = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_vecProcs[iItemID].dwProcID);
 	if (hProc == nullptr) {
+		OnProcReady(false);
 		m_pListModules->SetItemCountEx(0);
 		m_pListModules->RedrawWindow();
 		m_vecModules.clear();
@@ -263,6 +286,7 @@ void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/
 	CloseHandle(hProc);
 	m_pListModules->SetItemCountEx(static_cast<int>(m_vecModules.size()));
 	m_pListModules->RedrawWindow();
+	OnProcReady(true);
 }
 
 void CDlgOpenProcess::OnListProcsDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
@@ -360,6 +384,9 @@ BOOL CDlgOpenProcess::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 
 void CDlgOpenProcess::OnOK()
 {
+	if (!m_fProcReady)
+		return;
+
 	m_vecProcsToOpen.clear();
 	int nItem { -1 };
 	for (auto i { 0UL }; i < m_pListProcs->GetSelectedCount(); ++i) {
@@ -370,6 +397,24 @@ void CDlgOpenProcess::OnOK()
 	}
 
 	CDialogEx::OnOK();
+}
+
+void CDlgOpenProcess::OnProcReady(bool fReady)
+{
+	std::wstring wstr;
+	if (fReady) {
+		wstr = L"Process ready to be opened";
+	}
+	else {
+		wchar_t buffErr[MAX_PATH];
+		FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, GetLastError(),
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, nullptr);
+		(wstr += L"Process can't be opened: ") += buffErr;
+	}
+
+	m_fProcReady = fReady;
+	m_btnOpen.EnableWindow(fReady);
+	m_statInfo.SetWindowTextW(wstr.data());
 }
 
 void CDlgOpenProcess::RefreshProcs()

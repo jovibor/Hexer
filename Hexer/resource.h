@@ -45,6 +45,7 @@
 #define IDC_OPENPROCESS_LIST_PROCS      324
 #define IDC_OPENPROCESS_LIST_MODULES    325
 #define IDC_OPENPROCESS_BTN_REFRESH     326
+#define IDC_OPENPROCESS_STAT_INFO       327
 #define IDM_FILE_RFL00                  32770
 #define IDM_FILE_RFL01                  32771
 #define IDM_FILE_RFL02                  32772
@@ -83,7 +84,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        327
 #define _APS_NEXT_COMMAND_VALUE         32801
-#define _APS_NEXT_CONTROL_VALUE         327
+#define _APS_NEXT_CONTROL_VALUE         328
 #define _APS_NEXT_SYMED_VALUE           327
 #endif
 #endif
