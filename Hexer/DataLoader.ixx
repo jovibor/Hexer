@@ -47,7 +47,7 @@ private:
 private:
 	static constexpr auto m_dwCacheSize { 1024UL * 1024UL }; //1MB cache size.
 	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
-	std::wstring m_wstrFileName; //File name without path.
+	std::wstring m_wstrFileName; //File name without path, or Process name.
 	std::wstring m_wstrFilePath; //Data path to open.
 	HANDLE m_hHandle { };        //Handle of a file or process.
 	HANDLE m_hMapObject { };     //Returned by CreateFileMappingW.
@@ -175,7 +175,7 @@ bool CDataLoader::IsVirtual()const
 
 void CDataLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
 {
-	if (m_fProcess) {
+	if (IsProcess()) {
 		hdi.spnData = ReadProcData(hdi.stHexSpan.ullOffset, hdi.stHexSpan.ullSize);
 	}
 	else {
@@ -194,10 +194,10 @@ void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 
 bool CDataLoader::OpenFile(const Ut::FILEOPEN& fos)
 {
-	m_wstrFilePath = fos.wstrFullPath;
+	m_wstrFilePath = fos.wstrFilePath;
 	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1);
 
-	if (fos.eMode == Ut::EOpenMode::OPEN_DEVICE && m_wstrFilePath.starts_with(L"\\\\")) { //Special path.
+	if (fos.eMode == Ut::EOpenMode::OPEN_DEVICE || m_wstrFilePath.starts_with(L"\\\\")) { //Special path.
 		m_fVirtual = true;
 	}
 
@@ -287,7 +287,7 @@ bool CDataLoader::OpenFileVirtual()
 
 bool CDataLoader::OpenProcess(const Ut::FILEOPEN& fos)
 {
-	m_wstrFileName = fos.wstrFullPath; //Process name.
+	m_wstrFileName = fos.wstrFilePath; //Process name.
 	m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, fos.dwProcID);
 	if (m_hHandle == nullptr) {
 		PrintLastError(L"OpenProcess");

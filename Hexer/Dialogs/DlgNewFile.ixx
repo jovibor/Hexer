@@ -94,7 +94,7 @@ void CDlgNewFile::OnOK()
 	m_stFOS.eMode = Ut::EOpenMode::NEW_FILE;
 	CStringW str;
 	m_stEditPath.GetWindowTextW(str);
-	m_stFOS.wstrFullPath = str;
+	m_stFOS.wstrFilePath = str;
 
 	if (m_stEditSize.GetWindowTextLengthW() == 0) {
 		MessageBoxW(L"Enter the file size.", L"Size is empty", MB_ICONEXCLAMATION);

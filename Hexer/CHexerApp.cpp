@@ -94,9 +94,8 @@ auto CHexerMDTemplate::OpenDocumentFile(const Ut::FILEOPEN& fos)->CDocument*
 		pFrame->DestroyWindow();
 		return nullptr;
 	}
-	pDocument->SetPathName(fos.wstrFullPath.data(), FALSE);
-	pDocument->OnDocumentEvent(CDocument::onAfterOpenDocument);
 
+	pDocument->OnDocumentEvent(CDocument::onAfterOpenDocument);
 	InitialUpdateFrame(pFrame, pDocument, TRUE);
 	return pDocument;
 }
@@ -116,7 +115,7 @@ auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL /*bAddToMRU*/)->C
 {
 	//This method also takes a part in a HDROP.
 
-	Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { lpszFileName } };
+	Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFilePath { lpszFileName } };
 	return OpenDocumentFile(fos);
 }
 
@@ -142,8 +141,8 @@ auto CHexerDocMgr::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
 
 		return wstrPath;
 		};
-	if (fos.eMode != Ut::EOpenMode::NEW_FILE) {
-		fos.wstrFullPath = lmbResolveLNK(fos.wstrFullPath.data());
+	if (fos.eMode != Ut::EOpenMode::NEW_FILE && fos.eMode != Ut::EOpenMode::OPEN_PROC) {
+		fos.wstrFilePath = lmbResolveLNK(fos.wstrFilePath.data());
 	}
 
 	//This code below is copy-pasted from the original CDocManager::OpenDocumentFile.
@@ -163,7 +162,8 @@ auto CHexerDocMgr::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
 
 		CDocTemplate::Confidence match;
 		ASSERT(pOpenDocument == nullptr);
-		match = pTemplate->MatchDocType(fos.wstrFullPath.data(), pOpenDocument);
+		const auto wstrUniqueDocName = CHexerDoc::GetUniqueDocName(fos);
+		match = pTemplate->MatchDocType(wstrUniqueDocName.data(), pOpenDocument);
 		if (match > bestMatch) {
 			bestMatch = match;
 			pBestTemplate = pTemplate;
@@ -252,7 +252,7 @@ void CHexerApp::OnFileOpen()
 				pResults->GetItemAt(i, &pItem);
 				CComHeapPtr<wchar_t> pwstrPath;
 				pItem->GetDisplayName(SIGDN_FILESYSPATH, &pwstrPath);
-				Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { pwstrPath } };
+				Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFilePath { pwstrPath } };
 				const auto pDoc = OpenDocumentFile(fos);
 				fOpened = !fOpened ? pDoc != nullptr : true;
 			}
@@ -372,7 +372,7 @@ BOOL CHexerApp::InitInstance()
 		break;
 	case CAppSettings::EStartup::RESTORE_LAST_OPENED:
 		for (const auto& wstr : GetAppSettings().GetLastOpenedFromReg()) {
-			Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { wstr } };
+			Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFilePath { wstr } };
 			OpenDocumentFile(fos);
 		}
 		break;
@@ -416,7 +416,7 @@ void CHexerApp::OnFileOpenDevice()
 {
 	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& wstrPath : dlg.GetPaths()) {
-			Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_DEVICE }, .wstrFullPath { wstrPath } };
+			Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_DEVICE }, .wstrFilePath { wstrPath } };
 			OpenDocumentFile(fos);
 		}
 	}
@@ -426,7 +426,7 @@ void CHexerApp::OnFileOpenProcess()
 {
 	if (CDlgOpenProcess dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& ref : dlg.GetProcesses()) {
-			Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_PROC }, .wstrFullPath { ref.wstrProcName },
+			Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_PROC }, .wstrFilePath { ref.wstrProcName },
 				.dwProcID { ref.dwProcID } };
 			OpenDocumentFile(fos);
 		}
@@ -453,7 +453,7 @@ void CHexerApp::OnToolsSettings()
 
 void CHexerApp::OnFileRFL(UINT uID)
 {
-	Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { GetAppSettings().RFLGetPathFromID(uID) } };
+	Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFilePath { GetAppSettings().RFLGetPathFromID(uID) } };
 	OpenDocumentFile(fos);
 }
 

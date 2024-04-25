@@ -62,7 +62,7 @@ export namespace Ut {
 
 	struct FILEOPEN {
 		EOpenMode     eMode { EOpenMode::OPEN_FILE };
-		std::wstring  wstrFullPath;
+		std::wstring  wstrFilePath; //Or Process name.
 		std::uint64_t ullNewFileSize { };
 		DWORD         dwProcID { };
 	};

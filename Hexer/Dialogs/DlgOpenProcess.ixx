@@ -424,7 +424,7 @@ void CDlgOpenProcess::RefreshProcs()
 	WTS_PROCESS_INFO_EXW* pWPI { };
 	DWORD dwCount { };
 	if (WTSEnumerateProcessesExW(WTS_CURRENT_SERVER_HANDLE, &dwLevel, WTS_ANY_SESSION,
-		reinterpret_cast<LPWSTR*>(&pWPI), &dwCount) == 0) {
+		reinterpret_cast<LPWSTR*>(&pWPI), &dwCount) == FALSE) {
 		MessageBoxW(L"Process enumeration failed", L"Error", MB_ICONERROR);
 		return;
 	}

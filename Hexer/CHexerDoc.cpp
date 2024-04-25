@@ -9,7 +9,6 @@
 #include "CMainFrame.h"
 #include "CChildFrame.h"
 #include "CHexerDoc.h"
-import Utility;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -67,28 +66,36 @@ bool CHexerDoc::IsProcess()const
 
 bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 {
-	m_wstrFilePath = fos.wstrFullPath;
+	m_wstrFilePath = fos.wstrFilePath;
 	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
+	std::wstring wstrUniqueDocName = GetUniqueDocName(fos);
+	std::wstring wstrTitle;
 
 	if (fos.eMode == Ut::EOpenMode::OPEN_PROC) {
 		if (!m_stDataLoader.Open(fos)) {
-			Ut::Log::AddLogEntryError(L"Process open failed: " + m_wstrFileName);
+			Ut::Log::AddLogEntryError(L"Process open failed: " + GetFileName());
 			return false;
 		}
 
-		Ut::Log::AddLogEntryInfo(L"Process opened: " + m_wstrFileName + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" });
+		wstrTitle = wstrUniqueDocName;
+		Ut::Log::AddLogEntryInfo(L"Process opened: " + GetFileName() + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" });
 	}
 	else {
 		if (!m_stDataLoader.Open(fos)) {
-			theApp.GetAppSettings().RFLRemoveFromList(m_wstrFilePath);
-			Ut::Log::AddLogEntryError(L"File open failed: " + m_wstrFileName);
+			theApp.GetAppSettings().RFLRemoveFromList(GetFilePath());
+			Ut::Log::AddLogEntryError(L"File open failed: " + GetFileName());
 			return false;
 		}
 
-		theApp.GetAppSettings().AddToLastOpened(m_wstrFilePath);
-		theApp.GetAppSettings().RFLAddToList(m_wstrFilePath);
-		Ut::Log::AddLogEntryInfo(L"File opened: " + m_wstrFileName + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" });
+		wstrTitle = GetFileName();
+		theApp.GetAppSettings().AddToLastOpened(GetFilePath());
+		theApp.GetAppSettings().RFLAddToList(GetFilePath());
+		Ut::Log::AddLogEntryInfo(L"File opened: " + GetFileName() + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" });
 	}
+
+	m_strPathName = wstrUniqueDocName.data();
+	m_bEmbedded = FALSE;
+	SetTitle(wstrTitle.data());
 
 	return true;
 }
@@ -98,30 +105,25 @@ bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 
 BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 {
-	return OnOpenDocument(Ut::FILEOPEN { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFullPath { lpszPathName } });
+	return OnOpenDocument(Ut::FILEOPEN { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFilePath { lpszPathName } });
 }
 
 void CHexerDoc::OnCloseDocument()
 {
-	Ut::Log::AddLogEntryInfo(L"File closed: " + m_wstrFileName);
+	Ut::Log::AddLogEntryInfo(L"File closed: " + GetFileName());
 	if (!static_cast<CMainFrame*>(AfxGetMainWnd())->IsAppClosing()) {
-		theApp.GetAppSettings().RemoveFromLastOpened(m_wstrFilePath);
+		theApp.GetAppSettings().RemoveFromLastOpened(GetFilePath());
 	}
 
 	CDocument::OnCloseDocument();
 }
 
-void CHexerDoc::SetPathName(LPCTSTR lpszPathName, BOOL /*bAddToMRU*/)
+auto CHexerDoc::GetUniqueDocName(const Ut::FILEOPEN& fos)->std::wstring
 {
-	//This code is copy-pasted from the original CDocument::SetPathName.
-	//We need to override this method to remove calls to AfxFullPath and AfxGetFileTitle functions
-	//from the original method, because these functions can't handle paths like "\\?\PhysicalDisk".
-	//Also the AfxGetApp()->AddToRecentFileList call is removed since we manage the Recent File List manually.
-
-	m_strPathName = lpszPathName;
-	ASSERT(!m_strPathName.IsEmpty()); // must be set to something
-	m_bEmbedded = FALSE;
-	ASSERT_VALID(this);
-	SetTitle(GetFileName().data());
-	ASSERT_VALID(this);
+	if (fos.eMode == Ut::EOpenMode::OPEN_PROC) {
+		return std::format(L"Process: {} (ID: {})", fos.wstrFilePath, fos.dwProcID);
+	}
+	else {
+		return fos.wstrFilePath;
+	}
 }

@@ -9,6 +9,7 @@
 #include <string>
 #include "HexCtrl.h"
 import DataLoader;
+import Utility;
 
 class CHexerDoc final : public CDocument {
 public:
@@ -22,7 +23,7 @@ public:
 	[[nodiscard]] bool IsFileMutable()const;
 	[[nodiscard]] bool IsProcess()const;
 	[[nodiscard]] bool OnOpenDocument(const Ut::FILEOPEN& fos);
-	void SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU = TRUE)override;
+	static auto GetUniqueDocName(const Ut::FILEOPEN& fos) -> std::wstring;
 private:
 	BOOL OnOpenDocument(LPCTSTR lpszPathName)override;
 	void OnCloseDocument()override;
