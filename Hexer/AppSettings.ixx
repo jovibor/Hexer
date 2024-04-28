@@ -457,7 +457,10 @@ void CAppSettings::LoadSettings(std::wstring_view wsvKeyName)
 		}
 		else { GetHexCtrlSettings() = GetHexCtrlDefs(); }
 	}
-	else { GetGeneralSettings() = GetGeneralDefs(); }
+	else {
+		GetGeneralSettings() = GetGeneralDefs();
+		GetHexCtrlSettings() = GetHexCtrlDefs();
+	}
 
 	LoadHexCtrlTemplates();
 

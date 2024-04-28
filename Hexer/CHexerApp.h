@@ -12,7 +12,7 @@ import AppSettings;
 
 class CHexerApp final : public CWinAppEx {
 public:
-	afx_msg void OnFileOpen();
+	afx_msg void OnFileOpenFile();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
 	[[nodiscard]] auto GetClassName()const->LPCWSTR;
 	auto OpenDocumentFile(Ut::FILEOPEN& fos) -> CDocument*;
@@ -20,14 +20,11 @@ private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;
 	afx_msg void OnAppAbout();
-	afx_msg void OnFileNew();
+	afx_msg void OnFileNewFile();
 	afx_msg void OnFileOpenDevice();
 	afx_msg void OnFileOpenProcess();
 	afx_msg void OnToolsSettings();
 	afx_msg void OnFileRFL(UINT uID);
-	afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateFileRFL(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateToolsSettings(CCmdUI* pCmdUI);
 	DECLARE_MESSAGE_MAP();
 private:
 	CAppSettings m_stAppSettings;

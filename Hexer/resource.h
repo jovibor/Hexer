@@ -66,24 +66,26 @@
 #define IDM_FILE_RFL17                  32787
 #define IDM_FILE_RFL18                  32788
 #define IDM_FILE_RFL19                  32789
-#define IDM_VIEW_FILEPROPS              32790
-#define IDM_VIEW_BKMMGR                 32791
-#define IDM_VIEW_DATAINTERP             32792
-#define IDM_VIEW_TEMPLMGR               32793
-#define IDM_VIEW_LOGINFO                32794
-#define IDM_FILE_OPENDEVICE             32795
-#define IDM_EDIT_EDITMODE               32796
-#define IDM_TOOLS_SETTINGS              32797
-#define IDM_TOOLBAR_CUSTOMIZE           32798
-#define ID_FILE_OPENPROCESS             32799
-#define IDM_FILE_OPENPROCESS            32800
+#define IDM_FILE_NEWFILE                32790
+#define IDM_FILE_OPENFILE               32791
+#define IDM_FILE_OPENDEVICE             32792
+#define IDM_FILE_OPENPROCESS            32793
+#define IDM_EDIT_EDITMODE               32794
+#define IDM_VIEW_FILEPROPS              32795
+#define IDM_VIEW_BKMMGR                 32796
+#define IDM_VIEW_DATAINTERP             32797
+#define IDM_VIEW_TEMPLMGR               32798
+#define IDM_VIEW_LOGINFO                32799
+#define IDM_TOOLS_SETTINGS              32800
+#define IDM_TOOLBAR_CUSTOMIZE           32801
+#define IDM_FILE_PRINT                  32802
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        327
-#define _APS_NEXT_COMMAND_VALUE         32801
+#define _APS_NEXT_COMMAND_VALUE         32803
 #define _APS_NEXT_CONTROL_VALUE         328
 #define _APS_NEXT_SYMED_VALUE           327
 #endif

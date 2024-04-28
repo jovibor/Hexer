@@ -658,7 +658,7 @@ auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		MDIClientSize(hWnd, wParam, lParam);
 		break;
 	case WM_LBUTTONDBLCLK:
-		theApp.OnFileOpen();
+		theApp.OnFileOpenFile();
 		break;
 	default:
 		break;

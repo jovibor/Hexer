@@ -272,12 +272,11 @@ void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/
 	if (K32EnumProcessModules(hProc, arrHModules, sizeof(arrHModules), &dwCbNeeded)) {
 		const DWORD dwModsCount = dwCbNeeded / sizeof(HMODULE); //How many modules the hProc has.
 		for (auto i { 0UL }; i < dwModsCount; ++i) {
-			wchar_t arrModName[MAX_PATH];
-			if (K32GetModuleFileNameExW(hProc, arrHModules[i], arrModName, MAX_PATH)) {
-				std::wstring_view wsvModPath { arrModName };
-				const auto wsvModName = wsvModPath.substr(wsvModPath.find_last_of(L'\\') + 1);
+			if (wchar_t arrModName[MAX_PATH]; K32GetModuleFileNameExW(hProc, arrHModules[i], arrModName, MAX_PATH)) {
 				MODULEINFO mi;
 				K32GetModuleInformation(hProc, arrHModules[i], &mi, sizeof(MODULEINFO));
+				std::wstring_view wsvModPath { arrModName };
+				const auto wsvModName = wsvModPath.substr(wsvModPath.find_last_of(L'\\') + 1);
 				m_vecModules.emplace_back(wsvModName.data(), mi.SizeOfImage);
 			}
 		}

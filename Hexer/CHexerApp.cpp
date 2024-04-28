@@ -211,16 +211,13 @@ auto CHexerDocMgr::OpenDocumentFile(Ut::FILEOPEN& fos)->CDocument*
 
 //CHexerApp.
 BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
-	ON_COMMAND(ID_FILE_NEW, &CHexerApp::OnFileNew)
-	ON_COMMAND(ID_FILE_OPEN, &CHexerApp::OnFileOpen)
-	ON_COMMAND(ID_APP_ABOUT, &CHexerApp::OnAppAbout)
+	ON_COMMAND(IDM_FILE_NEWFILE, &CHexerApp::OnFileNewFile)
+	ON_COMMAND(IDM_FILE_OPENFILE, &CHexerApp::OnFileOpenFile)
 	ON_COMMAND(IDM_FILE_OPENDEVICE, &CHexerApp::OnFileOpenDevice)
 	ON_COMMAND(IDM_FILE_OPENPROCESS, &CHexerApp::OnFileOpenProcess)
 	ON_COMMAND(IDM_TOOLS_SETTINGS, &CHexerApp::OnToolsSettings)
+	ON_COMMAND(ID_APP_ABOUT, &CHexerApp::OnAppAbout)
 	ON_COMMAND_RANGE(IDM_FILE_RFL00, IDM_FILE_RFL19, &CHexerApp::OnFileRFL)
-	ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CHexerApp::OnUpdateFileNew)
-	ON_UPDATE_COMMAND_UI(IDM_TOOLS_SETTINGS, &CHexerApp::OnUpdateToolsSettings)
-	ON_UPDATE_COMMAND_UI_RANGE(IDM_FILE_RFL00, IDM_FILE_RFL19, &CHexerApp::OnUpdateFileRFL)
 END_MESSAGE_MAP()
 
 auto CHexerApp::GetAppSettings()->CAppSettings&
@@ -234,7 +231,7 @@ auto CHexerApp::GetClassName()const->LPCWSTR
 	return L"HexerClassUnique{78306c63-7865}";
 }
 
-void CHexerApp::OnFileOpen()
+void CHexerApp::OnFileOpenFile()
 {
 	const auto lmbFOD = [this]()->bool {
 		CFileDialog fd(TRUE, nullptr, nullptr, OFN_OVERWRITEPROMPT | OFN_EXPLORER | OFN_ALLOWMULTISELECT |
@@ -367,7 +364,7 @@ BOOL CHexerApp::InitInstance()
 		break;
 	case CAppSettings::EStartup::SHOW_FOD:
 		if (!fHDROP) { //Not showing dialog if it was a drop.
-			OnFileOpen();
+			OnFileOpenFile();
 		}
 		break;
 	case CAppSettings::EStartup::RESTORE_LAST_OPENED:
@@ -388,6 +385,8 @@ BOOL CHexerApp::InitInstance()
 		::ReleaseMutex(hMutex);
 	}
 
+	m_pMainWnd->ShowWindow(SW_SHOW);
+
 	return TRUE;
 }
 
@@ -404,7 +403,7 @@ void CHexerApp::OnAppAbout()
 	aboutDlg.DoModal();
 }
 
-void CHexerApp::OnFileNew()
+void CHexerApp::OnFileNewFile()
 {
 	if (CDlgNewFile dlg; dlg.DoModal() == IDOK) {
 		auto fos = dlg.GetNewFileInfo();
@@ -455,19 +454,4 @@ void CHexerApp::OnFileRFL(UINT uID)
 {
 	Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFilePath { GetAppSettings().RFLGetPathFromID(uID) } };
 	OpenDocumentFile(fos);
-}
-
-void CHexerApp::OnUpdateFileNew(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(TRUE);
-}
-
-void CHexerApp::OnUpdateFileRFL(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(TRUE);
-}
-
-void CHexerApp::OnUpdateToolsSettings(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable(TRUE);
 }

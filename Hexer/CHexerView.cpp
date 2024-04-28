@@ -21,9 +21,7 @@ import Utility;
 IMPLEMENT_DYNCREATE(CHexerView, CView)
 
 BEGIN_MESSAGE_MAP(CHexerView, CView)
-	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
-	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
-	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CHexerView::OnFilePrintPreview)
+	ON_COMMAND(IDM_FILE_PRINT, &CHexerView::OnFilePrint)
 	ON_COMMAND(IDM_EDIT_EDITMODE, &CHexerView::OnEditEditMode)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGBKMMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
@@ -114,11 +112,9 @@ void CHexerView::OnEditEditMode()
 	Ut::Log::AddLogEntryInfo(L"File access changed: " + pDoc->GetFileName() + std::wstring { fNewAccess ? L" (RW)" : L" (RO)" });
 }
 
-void CHexerView::OnFilePrintPreview()
+void CHexerView::OnFilePrint()
 {
-#ifndef SHARED_HANDLERS
-	AFXPrintPreview(this);
-#endif
+	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_PRINT_DLG);
 }
 
 void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
