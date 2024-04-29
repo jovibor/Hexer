@@ -28,6 +28,11 @@ void CHexerPaneDivider::OnMouseMove(UINT nFlags, CPoint pt)
 {
 	CPaneDivider::OnMouseMove(nFlags, pt);
 
+	//For some reason cursor doesn't turn into resizable on Windows 11. This is to circumvent.
+	static const auto hCurHorz { static_cast<HCURSOR>(LoadImageW(nullptr, IDC_SIZEWE, IMAGE_CURSOR, 0, 0, LR_SHARED)) };
+	static const auto hCurVert { static_cast<HCURSOR>(LoadImageW(nullptr, IDC_SIZENS, IMAGE_CURSOR, 0, 0, LR_SHARED)) };
+	SetCursor(IsHorizontal() ? hCurVert : hCurHorz);
+
 	//"Dirty" hack to enable dynamic pane resizing while dragging the divider.
 	if (m_bCaptured) {
 		StopTracking(TRUE);

@@ -117,7 +117,9 @@ void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 
 void CMainFrame::UpdatePaneFileInfo()
 {
-	m_dlgFileInfo.SetGridData(GetHexerView()->GetFileInfo());
+	if (const auto pHex = GetHexerView(); pHex != nullptr) {
+		m_dlgFileInfo.SetGridData(GetHexerView()->GetFileInfo());
+	}
 }
 
 auto CMainFrame::GetDlgDataBkmMgr()->std::uint64_t
@@ -506,10 +508,9 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 
 	//Replacing MFC internal Window Class Name with our own, to easily finding it in the CHexerApp::InitInstance.
 	if (WNDCLASSEX wc { .cbSize { sizeof(WNDCLASSEX) } }; ::GetClassInfoExW(AfxGetInstanceHandle(),
-		theApp.GetClassName(), &wc) == FALSE) { //Check first that our class is not already registered.
-		GetClassInfoExW(AfxGetInstanceHandle(), cs.lpszClass, &wc); //Get class info of the MFC provided class name.
+		theApp.GetClassName(), &wc) == FALSE) { //Check that our class is not already registered.
+		::GetClassInfoExW(AfxGetInstanceHandle(), cs.lpszClass, &wc); //Get class info of the MFC provided class name.
 		wc.lpszClassName = theApp.GetClassName();
-		wc.hIcon = ::LoadIconW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDR_HEXER_FRAME));
 		wc.hIcon = static_cast<HICON>(LoadImageW(AfxGetInstanceHandle(),
 			MAKEINTRESOURCEW(IDR_HEXER_FRAME), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 		if (!::RegisterClassExW(&wc)) {

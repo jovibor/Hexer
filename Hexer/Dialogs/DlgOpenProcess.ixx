@@ -57,8 +57,6 @@ private:
 	std::locale m_locale;
 	CButton m_btnOpen;
 	CButton m_statInfo;
-	HCURSOR m_hCurResize;
-	HCURSOR m_hCurArrow;
 	bool m_fCurInSplitter { }; //Indicates that mouse cursor is in the splitter area.
 	bool m_fLMDownResize { };  //Left mouse pressed in the splitter area to resize.
 	bool m_fProcReady { false };
@@ -163,8 +161,6 @@ BOOL CDlgOpenProcess::OnInitDialog()
 	m_pListModules->SetSortable(true);
 	m_pListModules->InsertColumn(0, L"Module Name", 0, 150);
 	m_pListModules->InsertColumn(1, L"Working Set", 0, 90);
-	m_hCurResize = static_cast<HCURSOR>(LoadImageW(nullptr, IDC_SIZEWE, IMAGE_CURSOR, 0, 0, LR_SHARED));
-	m_hCurArrow = static_cast<HCURSOR>(LoadImageW(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_SHARED));
 	const auto hIcon = AfxGetApp()->LoadIconW(IDR_HEXER_FRAME);
 	SetIcon(hIcon, TRUE);
 	SetIcon(hIcon, FALSE);
@@ -330,6 +326,8 @@ void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
 	static constexpr auto iResAreaHalfWidth = 15;  //Area where cursor turns into resizable (IDC_SIZEWE).
 	static constexpr auto iWidthBetweenLists = 1;  //Width between tree and list after resizing.
 	static constexpr auto iMinLeftListWidth = 100; //Left list minimum allowed width.
+	static const auto hCurResize = static_cast<HCURSOR>(LoadImageW(nullptr, IDC_SIZEWE, IMAGE_CURSOR, 0, 0, LR_SHARED));
+	static const auto hCurArrow = static_cast<HCURSOR>(LoadImageW(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_SHARED));
 
 	CRect rcList;
 	m_pListModules->GetWindowRect(rcList);
@@ -354,12 +352,12 @@ void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
 		if (const CRect rcSplitter(rcList.left - iResAreaHalfWidth, rcList.top, rcList.left + iResAreaHalfWidth, rcList.bottom);
 			rcSplitter.PtInRect(point)) {
 			m_fCurInSplitter = true;
-			SetCursor(m_hCurResize);
+			SetCursor(hCurResize);
 			SetCapture();
 		}
 		else {
 			m_fCurInSplitter = false;
-			SetCursor(m_hCurArrow);
+			SetCursor(hCurArrow);
 			ReleaseCapture();
 		}
 	}
