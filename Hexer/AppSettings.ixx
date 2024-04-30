@@ -24,20 +24,24 @@ import Utility;
 
 
 //CAppSettingsRFL.
-class CAppSettingsRFL final //Recent File List.
+class CAppSettingsRFL final //Recent Files List.
 {
 public:
+	struct RFLDATA {
+		std::wstring wstrDataPath;
+		Ut::EOpenMode eMode { Ut::EOpenMode::OPEN_FILE };
+	};
 	CAppSettingsRFL() = default;
 	void Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry);
 	void AddToRFL(std::wstring_view wsvPath, bool fBeginning);
 	void RemoveFromRFL(std::wstring_view wsvPath);
 	void ClearRFL();
-	[[nodiscard]] auto GetPathFromRFL(UINT uID)const->std::wstring;
-	[[nodiscard]] auto GetRFL()const->const std::vector<std::wstring>&;
+	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const->RFLDATA;
+	[[nodiscard]] auto GetRFL()const->const std::vector<RFLDATA>&;
 private:
 	void RebuildRFLMenu();
 private:
-	std::vector<std::wstring> m_vecRFL; //Recent File List data.
+	std::vector<RFLDATA> m_vecRFL; //Recent Files List data.
 	HMENU m_hMenu { };
 	HBITMAP m_hBMPDisk { }; //Bitmap for disk icon.
 	int m_iMaxEntry { };
@@ -63,13 +67,17 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk
 
 void CAppSettingsRFL::AddToRFL(std::wstring_view wsvPath, bool fBeginning)
 {
-	std::erase(m_vecRFL, wsvPath); //Remove any duplicates.
+	//Remove any duplicates.
+	std::erase_if(m_vecRFL, [wsvPath](const RFLDATA& refData) { return refData.wstrDataPath == wsvPath; });
+
+	using enum Ut::EOpenMode;
+	const auto eMode = wsvPath.starts_with(L"\\\\") ? OPEN_DEVICE : OPEN_FILE;
 
 	if (fBeginning) {
-		m_vecRFL.emplace(m_vecRFL.begin(), wsvPath);
+		m_vecRFL.emplace(m_vecRFL.begin(), std::wstring { wsvPath }, eMode);
 	}
 	else {
-		m_vecRFL.emplace_back(wsvPath);
+		m_vecRFL.emplace_back(std::wstring { wsvPath }, eMode);
 	}
 
 	if (m_vecRFL.size() > m_iMaxEntry) {
@@ -85,7 +93,7 @@ void CAppSettingsRFL::RemoveFromRFL(std::wstring_view wsvPath)
 	if (!m_fInit)
 		return;
 
-	std::erase(m_vecRFL, wsvPath);
+	std::erase_if(m_vecRFL, [wsvPath](const RFLDATA& refData) { return refData.wstrDataPath == wsvPath; });
 	RebuildRFLMenu();
 }
 
@@ -94,7 +102,7 @@ void CAppSettingsRFL::ClearRFL()
 	m_vecRFL.clear();
 }
 
-auto CAppSettingsRFL::GetPathFromRFL(UINT uID)const->std::wstring
+auto CAppSettingsRFL::GetDataFromMenuID(UINT uID)const->RFLDATA
 {
 	assert(m_fInit);
 	if (!m_fInit)
@@ -104,16 +112,16 @@ auto CAppSettingsRFL::GetPathFromRFL(UINT uID)const->std::wstring
 	if (uIndex >= m_vecRFL.size())
 		return { };
 
-	return m_vecRFL.at(uIndex);
+	return m_vecRFL[uIndex];
 }
 
-auto CAppSettingsRFL::GetRFL()const->const std::vector<std::wstring>&
+auto CAppSettingsRFL::GetRFL()const->const std::vector<RFLDATA>&
 {
 	return m_vecRFL;
 }
 
 
-//CAppSettingsRFL Private methods.
+//CAppSettingsRFL private methods.
 
 void CAppSettingsRFL::RebuildRFLMenu()
 {
@@ -126,14 +134,14 @@ void CAppSettingsRFL::RebuildRFLMenu()
 	}
 
 	auto iIndex { 0 };
-	for (const auto& wstr : m_vecRFL) {
+	for (const auto& refData : m_vecRFL) {
 		if (iIndex >= m_iMaxEntry) //Adding not more than m_iMaxEntry.
 			break;
 
-		const auto fDevice = wstr.starts_with(L"\\\\");
+		const auto fDevice = refData.eMode == Ut::EOpenMode::OPEN_DEVICE;
 		const auto uIndexMenu = iIndex + 1;
 		const auto wstrMenu = std::vformat(fDevice ? L"{} Device: {}" : L"{} {}",
-			std::make_wformat_args(uIndexMenu, wstr));
+			std::make_wformat_args(uIndexMenu, refData.wstrDataPath));
 		const auto iMenuID = m_iIDMenuFirst + iIndex;
 		AppendMenuW(m_hMenu, MF_STRING, iMenuID, wstrMenu.data());
 
@@ -207,7 +215,7 @@ public:
 	void RemoveFromLastOpened(std::wstring_view wsvPath);
 	void RFLAddToList(std::wstring_view wsvPath, bool fBeginning = true);
 	void RFLClear();
-	[[nodiscard]] auto RFLGetPathFromID(UINT uID)const->std::wstring;
+	[[nodiscard]] auto RFLGetDataFromMenuID(UINT uID)const->CAppSettingsRFL::RFLDATA;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry = 20);
 	void RFLRemoveFromList(std::wstring_view wsvPath);
 	void SaveSettings(std::wstring_view wsvKeyName);
@@ -219,7 +227,7 @@ private:
 	[[nodiscard]] auto GetPanesSettings() -> PANESETTINGS&;
 	[[nodiscard]] auto GetPanesSettings()const->const PANESETTINGS&;
 	void LoadHexCtrlTemplates();
-	[[nodiscard]] auto RFLGetData()const->const std::vector<std::wstring>&;
+	[[nodiscard]] auto RFLGetData()const->const std::vector<CAppSettingsRFL::RFLDATA>&;
 	void ShowInWindowsContextMenu(bool fShow);
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
@@ -295,7 +303,7 @@ auto CAppSettings::GetPaneData(UINT uPaneID)const->std::uint64_t
 
 	const auto& refPanes = GetPanesSettings();
 	switch (uPaneID) {
-	case IDC_PANE_FILEINFO:
+	case IDC_PANE_DATAINFO:
 		return refPanes.ullPaneDataFileInfo;
 	case IDC_PANE_BKMMGR:
 		return refPanes.ullPaneDataBkmMgr;
@@ -316,7 +324,7 @@ auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 
 	const auto& refPanes = GetPanesSettings();
 	switch (uPaneID) {
-	case IDC_PANE_FILEINFO:
+	case IDC_PANE_DATAINFO:
 		return refPanes.stPSFileInfo;
 	case IDC_PANE_BKMMGR:
 		return refPanes.stPSBkmMgr;
@@ -324,7 +332,7 @@ auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 		return refPanes.stPSDataInterp;
 	case IDC_PANE_TEMPLMGR:
 		return refPanes.stPSTemplMgr;
-	case IDC_PANE_LOGINFO:
+	case IDC_PANE_LOGGER:
 		return refPanes.stPSLogInfo;
 	default:
 		return { };
@@ -491,13 +499,13 @@ void CAppSettings::RFLClear()
 	m_stRFL.ClearRFL();
 }
 
-auto CAppSettings::RFLGetPathFromID(UINT uID)const->std::wstring
+auto CAppSettings::RFLGetDataFromMenuID(UINT uID)const->CAppSettingsRFL::RFLDATA
 {
 	assert(m_fLoaded);
 	if (!m_fLoaded)
 		return { };
 
-	return m_stRFL.GetPathFromRFL(uID);
+	return m_stRFL.GetDataFromMenuID(uID);
 }
 
 void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry)
@@ -508,8 +516,8 @@ void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk
 
 	m_stRFL.Initialize(hMenu, iIDMenuFirst, hBMPDisk, iMaxEntry);
 
-	//Recent File List.
-	const std::wstring wstrKeyRFL = std::wstring { L"SOFTWARE\\" } + m_wstrKeyName + L"\\Recent File List";
+	//Recent Files List.
+	const std::wstring wstrKeyRFL = std::wstring { L"SOFTWARE\\" } + m_wstrKeyName + L"\\Recent Files List";
 	if (CRegKey regRFL; regRFL.Open(HKEY_CURRENT_USER, wstrKeyRFL.data()) == ERROR_SUCCESS) {
 		int iCode { };
 		wchar_t buffName[32];
@@ -543,14 +551,14 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 {
 	const std::wstring wstrAppKey = std::wstring { L"SOFTWARE\\" } + std::wstring { wsvKeyName };
 
-	//Recent File List.
+	//Recent Files List.
 	CRegKey regRFL;
 	regRFL.Open(HKEY_CURRENT_USER, wstrAppKey.data());
-	regRFL.RecurseDeleteKey(L"Recent File List"); //Remove all data to set it below.
-	const std::wstring wstrKeyRFL = wstrAppKey + L"\\Recent File List";
+	regRFL.RecurseDeleteKey(L"Recent Files List"); //Remove all data to set it below.
+	const std::wstring wstrKeyRFL = wstrAppKey + L"\\Recent Files List";
 	regRFL.Create(HKEY_CURRENT_USER, wstrKeyRFL.data());
-	for (const auto [idx, wstr] : RFLGetData() | std::views::enumerate) {
-		regRFL.SetStringValue(std::format(L"File{:02d}", idx).data(), wstr.data());
+	for (const auto [idx, refData] : RFLGetData() | std::views::enumerate) {
+		regRFL.SetStringValue(std::format(L"File{:02d}", idx).data(), refData.wstrDataPath.data());
 	}
 
 	//Last Opened List.
@@ -571,11 +579,11 @@ void CAppSettings::SaveSettings(std::wstring_view wsvKeyName)
 	}
 
 	//PaneStatus.
-	regSettings.SetDWORDValue(L"PaneStatusFileInfo", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_FILEINFO)));
+	regSettings.SetDWORDValue(L"PaneStatusFileInfo", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_DATAINFO)));
 	regSettings.SetDWORDValue(L"PaneStatusBkmMgr", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_BKMMGR)));
 	regSettings.SetDWORDValue(L"PaneStatusDataInterp", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_DATAINTERP)));
 	regSettings.SetDWORDValue(L"PaneStatusTemplMgr", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_TEMPLMGR)));
-	regSettings.SetDWORDValue(L"PaneStatusLogInfo", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_LOGINFO)));
+	regSettings.SetDWORDValue(L"PaneStatusLogInfo", PaneStatus2DWORD(GetPaneStatus(IDC_PANE_LOGGER)));
 
 	//SetPaneData
 	regSettings.SetQWORDValue(L"PaneDataBkmMgr", GetPaneData(IDC_PANE_BKMMGR));
@@ -644,7 +652,7 @@ void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
 {
 	auto& refPanes = GetPanesSettings();
 	switch (uPaneID) {
-	case IDC_PANE_FILEINFO:
+	case IDC_PANE_DATAINFO:
 		refPanes.ullPaneDataFileInfo = ullData;
 		break;
 	case IDC_PANE_BKMMGR:
@@ -665,7 +673,7 @@ void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
 {
 	auto& refPanes = GetPanesSettings();
 	switch (uPaneID) {
-	case IDC_PANE_FILEINFO:
+	case IDC_PANE_DATAINFO:
 		refPanes.stPSFileInfo = { fShow, fActive };
 		break;
 	case IDC_PANE_BKMMGR:
@@ -677,7 +685,7 @@ void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
 	case IDC_PANE_TEMPLMGR:
 		refPanes.stPSTemplMgr = { fShow, fActive };
 		break;
-	case IDC_PANE_LOGINFO:
+	case IDC_PANE_LOGGER:
 		refPanes.stPSLogInfo = { fShow, fActive };
 		break;
 	default:
@@ -719,7 +727,7 @@ void CAppSettings::LoadHexCtrlTemplates()
 	}
 }
 
-auto CAppSettings::RFLGetData()const->const std::vector<std::wstring>&
+auto CAppSettings::RFLGetData()const->const std::vector<CAppSettingsRFL::RFLDATA>&
 {
 	return m_stRFL.GetRFL();
 }

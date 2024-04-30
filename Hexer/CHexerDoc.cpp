@@ -24,9 +24,9 @@ auto CHexerDoc::GetCacheSize()const->DWORD
 	return m_stDataLoader.GetCacheSize();
 }
 
-auto CHexerDoc::GetFileData()const->std::byte*
+auto CHexerDoc::GetFileMapData()const->std::byte*
 {
-	return m_stDataLoader.GetFileData();
+	return m_stDataLoader.GetFileMapData();
 }
 
 auto CHexerDoc::GetFileName()const->const std::wstring&
@@ -34,12 +34,12 @@ auto CHexerDoc::GetFileName()const->const std::wstring&
 	return m_wstrFileName;
 }
 
-auto CHexerDoc::GetFilePath()const->const std::wstring&
+auto CHexerDoc::GetDataPath()const->const std::wstring&
 {
-	return m_wstrFilePath;
+	return m_wstrDataPath;
 }
 
-auto CHexerDoc::GetFileSize()const->std::uint64_t
+auto CHexerDoc::GetDataSize()const->std::uint64_t
 {
 	return m_stDataLoader.GetDataSize();
 }
@@ -47,6 +47,11 @@ auto CHexerDoc::GetFileSize()const->std::uint64_t
 auto CHexerDoc::GetMemPageSize()const->DWORD
 {
 	return m_stDataLoader.GetMemPageSize();
+}
+
+auto CHexerDoc::GetOpenMode()const->Ut::EOpenMode
+{
+	return m_eOpenMode;
 }
 
 auto CHexerDoc::GetVirtualInterface()->HEXCTRL::IHexVirtData*
@@ -64,38 +69,30 @@ bool CHexerDoc::IsProcess()const
 	return m_stDataLoader.IsProcess();
 }
 
-bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
+bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 {
-	m_wstrFilePath = fos.wstrFilePath;
-	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1); //Doc name with the .extension.
-	std::wstring wstrUniqueDocName = GetUniqueDocName(fos);
-	std::wstring wstrTitle;
+	m_eOpenMode = dos.eMode;
+	m_wstrDataPath = ResolveLNK(dos);
+	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 
-	if (fos.eMode == Ut::EOpenMode::OPEN_PROC) {
-		if (!m_stDataLoader.Open(fos)) {
-			Ut::Log::AddLogEntryError(L"Process open failed: " + GetFileName());
-			return false;
-		}
-
-		wstrTitle = wstrUniqueDocName;
-		Ut::Log::AddLogEntryInfo(L"Process opened: " + GetFileName() + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" });
-	}
-	else {
-		if (!m_stDataLoader.Open(fos)) {
-			theApp.GetAppSettings().RFLRemoveFromList(GetFilePath());
-			Ut::Log::AddLogEntryError(L"File open failed: " + GetFileName());
-			return false;
-		}
-
-		wstrTitle = GetFileName();
-		theApp.GetAppSettings().AddToLastOpened(GetFilePath());
-		theApp.GetAppSettings().RFLAddToList(GetFilePath());
-		Ut::Log::AddLogEntryInfo(L"File opened: " + GetFileName() + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" });
+	if (!m_stDataLoader.Open(dos)) {
+		const auto wstrLogError = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" open failed: " + GetFileName();
+		theApp.GetAppSettings().RFLRemoveFromList(GetDataPath());
+		Ut::Log::AddLogEntryError(wstrLogError);
+		return false;
 	}
 
-	m_strPathName = wstrUniqueDocName.data();
+	if (dos.eMode != Ut::EOpenMode::OPEN_PROC) {
+		theApp.GetAppSettings().AddToLastOpened(GetDataPath());
+		theApp.GetAppSettings().RFLAddToList(GetDataPath());
+	}
+
+	const auto wstrLogInfo = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" opened: "
+		+ GetFileName() + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" };
+	Ut::Log::AddLogEntryInfo(wstrLogInfo);
+	m_strPathName = GetUniqueDocName(dos).data();
 	m_bEmbedded = FALSE;
-	SetTitle(wstrTitle.data());
+	SetTitle(GetDocTitle(dos).data());
 
 	return true;
 }
@@ -105,25 +102,41 @@ bool CHexerDoc::OnOpenDocument(const Ut::FILEOPEN& fos)
 
 BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 {
-	return OnOpenDocument(Ut::FILEOPEN { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFilePath { lpszPathName } });
+	return OnOpenDocument({ .wstrDataPath { lpszPathName }, .eMode { Ut::EOpenMode::OPEN_FILE } });
 }
 
 void CHexerDoc::OnCloseDocument()
 {
-	Ut::Log::AddLogEntryInfo(L"File closed: " + GetFileName());
+	const auto wstrLogInfo = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" closed: " + GetFileName();
+	Ut::Log::AddLogEntryInfo(wstrLogInfo);
 	if (!static_cast<CMainFrame*>(AfxGetMainWnd())->IsAppClosing()) {
-		theApp.GetAppSettings().RemoveFromLastOpened(GetFilePath());
+		theApp.GetAppSettings().RemoveFromLastOpened(GetDataPath());
 	}
 
 	CDocument::OnCloseDocument();
 }
 
-auto CHexerDoc::GetUniqueDocName(const Ut::FILEOPEN& fos)->std::wstring
+auto CHexerDoc::GetUniqueDocName(const Ut::DATAOPEN& dos)->std::wstring
 {
-	if (fos.eMode == Ut::EOpenMode::OPEN_PROC) {
-		return std::format(L"Process: {} (ID: {})", fos.wstrFilePath, fos.dwProcID);
+	if (dos.eMode == Ut::EOpenMode::OPEN_PROC) {
+		return std::format(L"Process: {} (ID: {})", dos.wstrDataPath, dos.dwProcID);
 	}
 	else {
-		return fos.wstrFilePath;
+		return ResolveLNK(dos);
+	}
+}
+
+auto CHexerDoc::GetDocTitle(const Ut::DATAOPEN& dos)->std::wstring
+{
+	if (dos.eMode == Ut::EOpenMode::OPEN_PROC) {
+		return GetUniqueDocName(dos);
+	}
+	else {
+		if (dos.fResolveLNK) {
+			auto wstrPath = Ut::ResolveLNK(dos);
+			return wstrPath.substr(wstrPath.find_last_of(L'\\') + 1);
+		}
+
+		return dos.wstrDataPath.substr(dos.wstrDataPath.find_last_of(L'\\') + 1);
 	}
 }

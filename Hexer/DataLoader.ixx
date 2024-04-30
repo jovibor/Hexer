@@ -24,12 +24,12 @@ public:
 	void Close();
 	[[nodiscard]] auto GetCacheSize()const->DWORD; //Cache size that is reported to the outside, for IHexCtrl.
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
-	[[nodiscard]] auto GetFileData()const->std::byte*;
+	[[nodiscard]] auto GetFileMapData()const->std::byte*;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsMutable()const;
 	[[nodiscard]] bool IsProcess()const;
-	[[nodiscard]] bool Open(const Ut::FILEOPEN& fos);
+	[[nodiscard]] bool Open(const Ut::DATAOPEN& dos);
 private:
 	[[nodiscard]] auto GetInternalCacheSize()const->DWORD; //The real cache size used internally.
 	[[nodiscard]] bool IsModified()const;
@@ -37,8 +37,8 @@ private:
 	void OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)override;
 	void OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)override;
 	[[nodiscard]] bool OpenFileVirtual();
-	[[nodiscard]] bool OpenFile(const Ut::FILEOPEN& fos);
-	[[nodiscard]] bool OpenProcess(const Ut::FILEOPEN& fos);
+	[[nodiscard]] bool OpenFile(const Ut::DATAOPEN& dos);
+	[[nodiscard]] bool OpenProcess(const Ut::DATAOPEN& dos);
 	void PrintLastError(std::wstring_view wsvSource)const;
 	[[nodiscard]] auto ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
 	[[nodiscard]] auto ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
@@ -47,8 +47,8 @@ private:
 private:
 	static constexpr auto m_dwCacheSize { 1024UL * 1024UL }; //1MB cache size.
 	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
+	std::wstring m_wstrDataPath; //Data path to open.
 	std::wstring m_wstrFileName; //File name without path, or Process name.
-	std::wstring m_wstrFilePath; //Data path to open.
 	HANDLE m_hHandle { };        //Handle of a file or process.
 	HANDLE m_hMapObject { };     //Returned by CreateFileMappingW.
 	LPVOID m_lpMapBase { };      //Returned by MapViewOfFile.
@@ -89,7 +89,7 @@ void CDataLoader::Close()
 	}
 
 	m_pCache.reset();
-	m_wstrFilePath.clear();
+	m_wstrDataPath.clear();
 	m_hHandle = nullptr;
 	m_hMapObject = nullptr;
 	m_lpMapBase = nullptr;
@@ -113,7 +113,7 @@ auto CDataLoader::GetDataSize()const->std::uint64_t
 	return static_cast<std::uint64_t>(m_stDataSize.QuadPart);
 }
 
-auto CDataLoader::GetFileData()const->std::byte*
+auto CDataLoader::GetFileMapData()const->std::byte*
 {
 	return IsVirtual() ? nullptr : static_cast<std::byte*>(m_lpMapBase);
 }
@@ -138,18 +138,18 @@ bool CDataLoader::IsProcess()const
 	return m_fProcess;
 }
 
-bool CDataLoader::Open(const Ut::FILEOPEN& fos)
+bool CDataLoader::Open(const Ut::DATAOPEN& dos)
 {
 	assert(m_hHandle == nullptr);
 	if (m_hHandle != nullptr) { //Already opened.
 		return false;
 	}
 
-	if (fos.eMode == Ut::EOpenMode::OPEN_PROC) {
-		return OpenProcess(fos);
+	if (dos.eMode == Ut::EOpenMode::OPEN_PROC) {
+		return OpenProcess(dos);
 	}
 
-	return OpenFile(fos);
+	return OpenFile(dos);
 }
 
 
@@ -192,21 +192,21 @@ void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 	}
 }
 
-bool CDataLoader::OpenFile(const Ut::FILEOPEN& fos)
+bool CDataLoader::OpenFile(const Ut::DATAOPEN& dos)
 {
-	m_wstrFilePath = fos.wstrFilePath;
-	m_wstrFileName = m_wstrFilePath.substr(m_wstrFilePath.find_last_of(L'\\') + 1);
+	m_wstrDataPath = Ut::ResolveLNK(dos);
+	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1);
 
-	if (fos.eMode == Ut::EOpenMode::OPEN_DEVICE || m_wstrFilePath.starts_with(L"\\\\")) { //Special path.
+	if (dos.eMode == Ut::EOpenMode::OPEN_DEVICE || m_wstrDataPath.starts_with(L"\\\\")) { //Special path.
 		m_fVirtual = true;
 	}
 
-	const auto fNewFile = fos.eMode == Ut::EOpenMode::NEW_FILE;
-	m_hHandle = CreateFileW(m_wstrFilePath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+	const auto fNewFile = dos.eMode == Ut::EOpenMode::NEW_FILE;
+	m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
 		fNewFile ? CREATE_ALWAYS : OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (fNewFile) { //Setting the size of the new file.
-		if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(fos.ullNewFileSize) } }, nullptr, FILE_BEGIN) == FALSE) {
+		if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(dos.ullNewFileSize) } }, nullptr, FILE_BEGIN) == FALSE) {
 			PrintLastError(L"SetFilePointerEx");
 			return false;
 		}
@@ -215,7 +215,7 @@ bool CDataLoader::OpenFile(const Ut::FILEOPEN& fos)
 
 	if (m_hHandle == INVALID_HANDLE_VALUE) {
 		if (!fNewFile) { //Trying to open in ReadOnly mode.
-			m_hHandle = CreateFileW(m_wstrFilePath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+			m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
 				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 		}
 
@@ -233,7 +233,7 @@ bool CDataLoader::OpenFile(const Ut::FILEOPEN& fos)
 	}
 
 	if (GetFileSizeEx(m_hHandle, &m_stDataSize); m_stDataSize.QuadPart == 0) { //Zero size.
-		MessageBoxW(nullptr, L"File is zero size.", m_wstrFilePath.data(), MB_ICONERROR);
+		MessageBoxW(nullptr, L"File is zero size.", m_wstrDataPath.data(), MB_ICONERROR);
 		return false;
 	}
 
@@ -285,10 +285,10 @@ bool CDataLoader::OpenFileVirtual()
 	return true;
 }
 
-bool CDataLoader::OpenProcess(const Ut::FILEOPEN& fos)
+bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
 {
-	m_wstrFileName = fos.wstrFilePath; //Process name.
-	m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, fos.dwProcID);
+	m_wstrFileName = dos.wstrDataPath; //Process name.
+	m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, dos.dwProcID);
 	if (m_hHandle == nullptr) {
 		PrintLastError(L"OpenProcess");
 		return false;

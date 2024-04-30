@@ -31,12 +31,11 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
-auto CHexerView::GetFileInfo()const->Ut::FILEINFO
+auto CHexerView::GetDataInfo()const->Ut::DATAINFO
 {
 	const auto pDoc = GetDocument();
-	return { .wsvFilePath = pDoc->GetFilePath(),
-		.wsvFileName = pDoc->GetFileName(), .ullFileSize = pDoc->GetFileSize(),
-		.dwPageSize = GetHexCtrl()->GetPageSize(), .fMutable = GetHexCtrl()->IsMutable() };
+	return { .wsvDataPath = pDoc->GetDataPath(), .wsvFileName = pDoc->GetFileName(), .ullDataSize = pDoc->GetDataSize(),
+		.dwPageSize = GetHexCtrl()->GetPageSize(), .eMode { pDoc->GetOpenMode() }, .fMutable = GetHexCtrl()->IsMutable() };
 }
 
 auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
@@ -162,7 +161,7 @@ void CHexerView::OnInitialUpdate()
 	for (const auto& p : theApp.GetAppSettings().GetHexCtrlTemplates()) {
 		pHex->GetTemplates()->AddTemplate(*p);
 	}
-	pHex->SetData({ .spnData { std::span<std::byte>{ pDoc->GetFileData(), pDoc->GetFileSize() } },
+	pHex->SetData({ .spnData { std::span<std::byte>{ pDoc->GetFileMapData(), pDoc->GetDataSize() } },
 		.pHexVirtData { pDoc->GetVirtualInterface() }, .dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }
 

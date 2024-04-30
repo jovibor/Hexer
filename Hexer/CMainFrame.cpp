@@ -19,9 +19,9 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWndEx)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
-	ON_COMMAND_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnViewRangePanes)
+	ON_COMMAND_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnViewRangePanes)
 	ON_MESSAGE(Ut::WM_ADD_LOG_ENTRY, &CMainFrame::OnAddLogEntry)
-	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_FILEPROPS, IDM_VIEW_LOGINFO, &CMainFrame::OnUpdateRangePanes)
+	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnUpdateRangePanes)
 	ON_WM_CLOSE()
 	ON_WM_COPYDATA()
 	ON_WM_CREATE()
@@ -107,7 +107,7 @@ void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 			}
 		}
 
-		if (uPaneID == IDC_PANE_FILEINFO) {
+		if (uPaneID == IDC_PANE_DATAINFO) {
 			UpdatePaneFileInfo();
 		}
 	}
@@ -118,7 +118,7 @@ void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 void CMainFrame::UpdatePaneFileInfo()
 {
 	if (const auto pHex = GetHexerView(); pHex != nullptr) {
-		m_dlgFileInfo.SetGridData(GetHexerView()->GetFileInfo());
+		m_dlgDataInfo.SetDataInfo(GetHexerView()->GetDataInfo());
 	}
 }
 
@@ -266,14 +266,14 @@ auto CMainFrame::GetHexerView()->CHexerView*
 auto CMainFrame::GetHWNDForPane(UINT uPaneID)->HWND
 {
 	switch (uPaneID) {
-	case IDC_PANE_FILEINFO:
-		if (!IsWindow(m_dlgFileInfo)) {
-			m_dlgFileInfo.Create(IDD_FILEINFO, this);
+	case IDC_PANE_DATAINFO:
+		if (!IsWindow(m_dlgDataInfo)) {
+			m_dlgDataInfo.Create(IDD_DATAINFO, this);
 		}
-		return m_dlgFileInfo;
-	case IDC_PANE_LOGINFO:
+		return m_dlgDataInfo;
+	case IDC_PANE_LOGGER:
 		if (!IsWindow(m_dlgLogInfo)) {
-			m_dlgLogInfo.Create(IDD_LOGINFO, this);
+			m_dlgLogInfo.Create(IDD_LOGGER, this);
 		}
 		return m_dlgLogInfo;
 	default: //HWND for HexCtrl's Panes.
@@ -289,9 +289,9 @@ auto CMainFrame::GetPanesMap()->const std::unordered_map<UINT, CHexerDockablePan
 {
 	//PaneID <-> CHexerDockablePane* correspondence.
 	static const std::unordered_map<UINT, CHexerDockablePane*> umapPanes {
-		{ IDC_PANE_FILEINFO, &m_paneFileInfo }, { IDC_PANE_BKMMGR, &m_paneBkmMgr },
+		{ IDC_PANE_DATAINFO, &m_paneFileInfo }, { IDC_PANE_BKMMGR, &m_paneBkmMgr },
 		{ IDC_PANE_DATAINTERP, &m_paneDataInterp }, { IDC_PANE_TEMPLMGR, &m_paneTemplMgr },
-		{ IDC_PANE_LOGINFO, &m_paneLogInfo }
+		{ IDC_PANE_LOGGER, &m_paneLogInfo }
 	};
 
 	return umapPanes;
@@ -327,8 +327,8 @@ auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS)
 {
 	if (pCDS->dwData == 1) {
-		Ut::FILEOPEN fos { .eMode { Ut::EOpenMode::OPEN_FILE }, .wstrFilePath { reinterpret_cast<wchar_t*>(pCDS->lpData) } };
-		theApp.OpenDocumentFile(fos);
+		theApp.OpenDocumentFile({ .wstrDataPath { reinterpret_cast<wchar_t*>(pCDS->lpData) },
+			.eMode { Ut::EOpenMode::OPEN_FILE } });
 	}
 
 	return CMDIFrameWndEx::OnCopyData(pWnd, pCDS);
@@ -406,8 +406,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 
 	//Pane "File Properties".
 	CStringW strStr;
-	strStr.LoadStringW(IDC_PANE_FILEINFO);
-	m_paneFileInfo.Create(strStr, this, CRect(0, 0, 200, 400), TRUE, IDC_PANE_FILEINFO,
+	strStr.LoadStringW(IDC_PANE_DATAINFO);
+	m_paneFileInfo.Create(strStr, this, CRect(0, 0, 200, 400), TRUE, IDC_PANE_DATAINFO,
 		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_RIGHT | CBRS_FLOAT_MULTI);
 	m_paneFileInfo.EnableDocking(CBRS_ALIGN_ANY);
 	DockPane(&m_paneFileInfo);
@@ -434,8 +434,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	DockPane(&m_paneTemplMgr);
 
 	//Pane "Log Information".
-	strStr.LoadStringW(IDC_PANE_LOGINFO);
-	m_paneLogInfo.Create(strStr, this, CRect(0, 0, 400, 200), TRUE, IDC_PANE_LOGINFO,
+	strStr.LoadStringW(IDC_PANE_LOGGER);
+	m_paneLogInfo.Create(strStr, this, CRect(0, 0, 400, 200), TRUE, IDC_PANE_LOGGER,
 		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_BOTTOM | CBRS_FLOAT_MULTI);
 	m_paneLogInfo.EnableDocking(CBRS_ALIGN_ANY);
 	DockPane(&m_paneLogInfo);

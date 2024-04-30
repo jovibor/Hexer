@@ -12,8 +12,8 @@
 #include <unordered_map>
 #include <vector>
 
-import DlgFileInfo;
-import DlgLogInfo;
+import DlgDataInfo;
+import DlgLogger;
 import HexerDockablePane;
 import Utility;
 
@@ -73,8 +73,8 @@ private:
 	CHexerDockablePane m_paneDataInterp;
 	CHexerDockablePane m_paneTemplMgr;
 	CHexerDockablePane m_paneLogInfo;
-	CDlgFileInfo m_dlgFileInfo;
-	CDlgLogInfo m_dlgLogInfo;
+	CDlgDataInfo m_dlgDataInfo;
+	CDlgLogger m_dlgLogInfo;
 	int m_iChildFrames { };    //Amount of active child frames.
 	bool m_fClosing { false }; //Indicates that the app is closing now.
 };

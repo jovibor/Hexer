@@ -13,12 +13,12 @@
 #include <format>
 #include <string>
 #include <vector>
-export module DlgLogInfo;
+export module DlgLogger;
 
 import Utility;
 namespace lex = HEXCTRL::LISTEX;
 
-export class CDlgLogInfo final : public CDialogEx {
+export class CDlgLogger final : public CDialogEx {
 public:
 	void AddLogEntry(const Ut::Log::LOGINFO& stData);
 private:
@@ -47,13 +47,13 @@ private:
 	CMenu m_menuList;
 };
 
-BEGIN_MESSAGE_MAP(CDlgLogInfo, CDialogEx)
-	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListGetDispInfo)
-	ON_NOTIFY(NM_RCLICK, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListRClick)
-	ON_NOTIFY(lex::LISTEX_MSG_GETICON, IDC_LOGINFO_LIST, &CDlgLogInfo::OnListGetIcon)
+BEGIN_MESSAGE_MAP(CDlgLogger, CDialogEx)
+	ON_NOTIFY(LVN_GETDISPINFOW, IDC_LOGINFO_LIST, &CDlgLogger::OnListGetDispInfo)
+	ON_NOTIFY(NM_RCLICK, IDC_LOGINFO_LIST, &CDlgLogger::OnListRClick)
+	ON_NOTIFY(lex::LISTEX_MSG_GETICON, IDC_LOGINFO_LIST, &CDlgLogger::OnListGetIcon)
 END_MESSAGE_MAP()
 
-void CDlgLogInfo::AddLogEntry(const Ut::Log::LOGINFO& li)
+void CDlgLogger::AddLogEntry(const Ut::Log::LOGINFO& li)
 {
 	m_vecData.emplace_back(li.tmloc, std::wstring { li.wsvMsg }, li.eType);
 
@@ -66,23 +66,23 @@ void CDlgLogInfo::AddLogEntry(const Ut::Log::LOGINFO& li)
 
 //Private methods.
 
-void CDlgLogInfo::ClearAll()
+void CDlgLogger::ClearAll()
 {
 	m_vecData.clear();
 	m_pList->SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOSCROLL);
 }
 
-void CDlgLogInfo::DoDataExchange(CDataExchange* pDX)
+void CDlgLogger::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 }
 
-void CDlgLogInfo::OnCancel()
+void CDlgLogger::OnCancel()
 {
 	//Just an empty handler, to not close Dialog on Escape key.
 }
 
-BOOL CDlgLogInfo::OnCommand(WPARAM wParam, LPARAM lParam)
+BOOL CDlgLogger::OnCommand(WPARAM wParam, LPARAM lParam)
 {
 	switch (static_cast<EMenuID>(LOWORD(wParam))) {
 	case EMenuID::IDM_LIST_CLEARALL:
@@ -95,7 +95,7 @@ BOOL CDlgLogInfo::OnCommand(WPARAM wParam, LPARAM lParam)
 	return CDialogEx::OnCommand(wParam, lParam);
 }
 
-BOOL CDlgLogInfo::OnInitDialog()
+BOOL CDlgLogger::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
@@ -109,9 +109,9 @@ BOOL CDlgLogInfo::OnInitDialog()
 	m_menuList.AppendMenuW(MF_STRING, static_cast<UINT_PTR>(EMenuID::IDM_LIST_CLEARALL), L"Clear All");
 
 	const auto iIconSize = static_cast<int>(16 * Ut::GetHiDPIInfo().flDPIScale);
-	m_stImgList.Create(iIconSize, iIconSize, ILC_COLOR | ILC_MASK, 2, 2);
+	m_stImgList.Create(iIconSize, iIconSize, ILC_COLOR32 | ILC_MASK, 3, 3);
 
-	//Icons added in exact order: "msg_error, msg_warning, Info" as the enum values in the EMsgType.
+	//Icons added in exact order: "msg_error, msg_warning, msg_info" as the enum values in the EMsgType.
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(nullptr, IDI_ERROR, IMAGE_ICON, 0, 0, LR_SHARED)));
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(nullptr, IDI_WARNING, IMAGE_ICON, 0, 0, LR_SHARED)));
 	m_stImgList.Add(static_cast<HICON>(LoadImageW(nullptr, IDI_INFORMATION, IMAGE_ICON, 0, 0, LR_SHARED)));
@@ -125,7 +125,7 @@ BOOL CDlgLogInfo::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgLogInfo::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+void CDlgLogger::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	const auto pDI = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	const auto pItem = &pDI->item;
@@ -152,24 +152,24 @@ void CDlgLogInfo::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CDlgLogInfo::OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult)
+void CDlgLogger::OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	const auto pLII = reinterpret_cast<lex::PLISTEXICONINFO>(pNMHDR);
 	if (pLII->iItem < 0 || pLII->iSubItem != 2) //Event field.
 		return;
 
-	pLII->iIconIndex = static_cast<int>(m_vecData[pLII->iItem].eType); //Icon index in list's image list.
+	pLII->iIconIndex = std::to_underlying(m_vecData[pLII->iItem].eType); //Icon index in list's image list.
 	*pResult = TRUE;
 }
 
-void CDlgLogInfo::OnListRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+void CDlgLogger::OnListRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
 	POINT pt;
 	GetCursorPos(&pt);
 	m_menuList.TrackPopupMenuEx(TPM_LEFTALIGN, pt.x, pt.y, this, nullptr);
 }
 
-void CDlgLogInfo::OnOK()
+void CDlgLogger::OnOK()
 {
 	//Just an empty handler, to not close Dialog on Enter key.
 }

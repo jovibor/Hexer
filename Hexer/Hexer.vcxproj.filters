@@ -149,7 +149,7 @@
     <ClCompile Include="Dialogs\DlgSettings.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="Dialogs\DlgFileInfo.ixx">
+    <ClCompile Include="Dialogs\DlgDataInfo.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexSelection.ixx">
@@ -161,7 +161,7 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexScroll.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="Dialogs\DlgLogInfo.ixx">
+    <ClCompile Include="Dialogs\DlgLogger.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="Dialogs\HexerPropGridCtrl.ixx">

@@ -8,22 +8,25 @@
 #include <cstddef>
 #include <string>
 #include "HexCtrl.h"
+
 import DataLoader;
 import Utility;
 
 class CHexerDoc final : public CDocument {
 public:
 	[[nodiscard]] auto GetCacheSize()const->DWORD;
-	[[nodiscard]] auto GetFileData()const->std::byte*;
+	[[nodiscard]] auto GetFileMapData()const->std::byte*;
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
-	[[nodiscard]] auto GetFilePath()const->const std::wstring&;
-	[[nodiscard]] auto GetFileSize()const->std::uint64_t;
+	[[nodiscard]] auto GetDataPath()const->const std::wstring&;
+	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
+	[[nodiscard]] auto GetOpenMode()const->Ut::EOpenMode;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsFileMutable()const;
 	[[nodiscard]] bool IsProcess()const;
-	[[nodiscard]] bool OnOpenDocument(const Ut::FILEOPEN& fos);
-	static auto GetUniqueDocName(const Ut::FILEOPEN& fos) -> std::wstring;
+	[[nodiscard]] bool OnOpenDocument(const Ut::DATAOPEN& dos);
+	static auto GetUniqueDocName(const Ut::DATAOPEN& dos) -> std::wstring;
+	static auto GetDocTitle(const Ut::DATAOPEN& dos) -> std::wstring;
 private:
 	BOOL OnOpenDocument(LPCTSTR lpszPathName)override;
 	void OnCloseDocument()override;
@@ -31,6 +34,7 @@ private:
 	DECLARE_MESSAGE_MAP();
 private:
 	CDataLoader m_stDataLoader;
-	std::wstring m_wstrFilePath;
+	std::wstring m_wstrDataPath;
 	std::wstring m_wstrFileName;
+	Ut::EOpenMode m_eOpenMode { }; //Document open mode.
 };

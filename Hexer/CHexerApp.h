@@ -7,6 +7,7 @@
 #pragma once
 #include "HexCtrl.h"
 #include <afxwin.h>
+
 import Utility;
 import AppSettings;
 
@@ -15,7 +16,7 @@ public:
 	afx_msg void OnFileOpenFile();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
 	[[nodiscard]] auto GetClassName()const->LPCWSTR;
-	auto OpenDocumentFile(Ut::FILEOPEN& fos) -> CDocument*;
+	auto OpenDocumentFile(const Ut::DATAOPEN& dos) -> CDocument*;
 private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;

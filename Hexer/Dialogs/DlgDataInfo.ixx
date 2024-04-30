@@ -13,15 +13,15 @@
 #include <format>
 #include <string>
 #include <vector>
-export module DlgFileInfo;
+export module DlgDataInfo;
 
 import Utility;
 import HexerPropGridCtrl;
 
-//CDlgFileInfo.
-export class CDlgFileInfo final : public CDialogEx {
+//CDlgDataInfo.
+export class CDlgDataInfo final : public CDialogEx {
 public:
-	void SetGridData(const Ut::FILEINFO& fis);
+	void SetDataInfo(const Ut::DATAINFO& dis);
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	BOOL OnInitDialog()override;
@@ -29,23 +29,23 @@ private:
 	DECLARE_MESSAGE_MAP();
 private:
 	enum class EPropName : std::uint8_t {
-		FILE_PATH = 0x1, FILE_NAME, FILE_SIZE, PAGE_SIZE, IS_MUTABLE
+		DATA_PATH = 0x1, FILE_NAME, DATA_SIZE, PAGE_SIZE, IS_MUTABLE
 	};
-	CHexerPropGridCtrl m_gridFileProps;
-	std::vector<CMFCPropertyGridProperty*> m_vecPropsFileProps;
+	CHexerPropGridCtrl m_gridDataInfo;
+	std::vector<CMFCPropertyGridProperty*> m_vecPropsDataProps;
 	CFont m_fntFilePropsGrid;
-	Ut::FILEINFO m_fis { };
+	Ut::DATAINFO m_dis { };
 };
 
-BEGIN_MESSAGE_MAP(CDlgFileInfo, CDialogEx)
+BEGIN_MESSAGE_MAP(CDlgDataInfo, CDialogEx)
 END_MESSAGE_MAP()
 
 
 //Private methods.
 
-void CDlgFileInfo::SetGridData(const Ut::FILEINFO& fis)
+void CDlgDataInfo::SetDataInfo(const Ut::DATAINFO& dis)
 {
-	m_fis = fis;
+	m_dis = dis;
 
 	if (IsWindow(m_hWnd)) {
 		UpdateGridData();
@@ -55,61 +55,61 @@ void CDlgFileInfo::SetGridData(const Ut::FILEINFO& fis)
 
 //Private methods.
 
-void CDlgFileInfo::DoDataExchange(CDataExchange* pDX)
+void CDlgDataInfo::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_FILEINFO_GRID, m_gridFileProps);
+	DDX_Control(pDX, IDC_FILEINFO_GRID, m_gridDataInfo);
 }
 
-BOOL CDlgFileInfo::OnInitDialog()
+BOOL CDlgDataInfo::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_gridFileProps.SetVSDotNetLook();
-	m_gridFileProps.EnableHeaderCtrl(TRUE, L"Property", L"Value");
-	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 80 };
-	m_gridFileProps.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
+	m_gridDataInfo.SetVSDotNetLook();
+	m_gridDataInfo.EnableHeaderCtrl(TRUE);
+	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 100 };
+	m_gridDataInfo.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
 
 	//Set new bigger font to the property.
-	const auto pFont = m_gridFileProps.GetFont();
+	const auto pFont = m_gridDataInfo.GetFont();
 	LOGFONTW lf { };
 	pFont->GetLogFont(&lf);
 	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Ut::GetHiDPIInfo().iLOGPIXELSY) + 2;
 	lf.lfHeight = -MulDiv(lFontSize, Ut::GetHiDPIInfo().iLOGPIXELSY, 72);
 	m_fntFilePropsGrid.CreateFontIndirectW(&lf);
-	m_gridFileProps.SetFont(&m_fntFilePropsGrid);
+	m_gridDataInfo.SetFont(&m_fntFilePropsGrid);
 
 	using enum EPropName;
 	const auto pFilePath = new CMFCPropertyGridProperty(L"File path:", L"");
-	pFilePath->SetData(static_cast<DWORD_PTR>(FILE_PATH));
+	pFilePath->SetData(static_cast<DWORD_PTR>(DATA_PATH));
 	pFilePath->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pFilePath);
-	m_gridFileProps.AddProperty(pFilePath);
+	m_vecPropsDataProps.emplace_back(pFilePath);
+	m_gridDataInfo.AddProperty(pFilePath);
 
 	const auto pFileName = new CMFCPropertyGridProperty(L"File name:", L"");
 	pFileName->SetData(static_cast<DWORD_PTR>(FILE_NAME));
 	pFileName->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pFileName);
-	m_gridFileProps.AddProperty(pFileName);
+	m_vecPropsDataProps.emplace_back(pFileName);
+	m_gridDataInfo.AddProperty(pFileName);
 
 	const auto pFileSize = new CMFCPropertyGridProperty(L"File size:", L"");
-	pFileSize->SetData(static_cast<DWORD_PTR>(FILE_SIZE));
+	pFileSize->SetData(static_cast<DWORD_PTR>(DATA_SIZE));
 	pFileSize->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pFileSize);
-	m_gridFileProps.AddProperty(pFileSize);
+	m_vecPropsDataProps.emplace_back(pFileSize);
+	m_gridDataInfo.AddProperty(pFileSize);
 
 	const auto pPageSize = new CMFCPropertyGridProperty(L"Page size:", L"");
 	pPageSize->SetData(static_cast<DWORD_PTR>(PAGE_SIZE));
 	pPageSize->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pPageSize);
-	m_gridFileProps.AddProperty(pPageSize);
+	m_vecPropsDataProps.emplace_back(pPageSize);
+	m_gridDataInfo.AddProperty(pPageSize);
 	pPageSize->Show(FALSE);
 
 	const auto pIsWritable = new CMFCPropertyGridProperty(L"Writable:", L"");
 	pIsWritable->SetData(static_cast<DWORD_PTR>(IS_MUTABLE));
 	pIsWritable->AllowEdit(FALSE);
-	m_vecPropsFileProps.emplace_back(pIsWritable);
-	m_gridFileProps.AddProperty(pIsWritable);
+	m_vecPropsDataProps.emplace_back(pIsWritable);
+	m_gridDataInfo.AddProperty(pIsWritable);
 
 	UpdateGridData();
 
@@ -120,33 +120,40 @@ BOOL CDlgFileInfo::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgFileInfo::UpdateGridData()
+void CDlgDataInfo::UpdateGridData()
 {
 	const auto lmbSetValue = [&](CMFCPropertyGridProperty* pProp) {
 		using enum EPropName;
+		auto wstr = std::wstring { GetNameFromEOpenMode(m_dis.eMode) };
 		switch (static_cast<EPropName>(pProp->GetData())) {
-		case FILE_PATH:
-			pProp->SetValue(m_fis.wsvFilePath.data());
+		case DATA_PATH:
+			wstr += L" path:";
+			pProp->SetName(wstr.data(), FALSE);
+			pProp->SetValue(m_dis.wsvDataPath.data());
 			break;
 		case FILE_NAME:
-			pProp->SetValue(m_fis.wsvFileName.data());
+			wstr += L" name:";
+			pProp->SetName(wstr.data(), FALSE);
+			pProp->SetValue(m_dis.wsvFileName.data());
 			break;
-		case FILE_SIZE:
-			pProp->SetValue(std::format(std::locale("en_US.UTF-8"), L"{:L} bytes", m_fis.ullFileSize).data());
+		case DATA_SIZE:
+			wstr += L" size:";
+			pProp->SetName(wstr.data(), FALSE);
+			pProp->SetValue(std::format(std::locale("en_US.UTF-8"), L"{:L} bytes", m_dis.ullDataSize).data());
 			break;
 		case PAGE_SIZE:
-			pProp->SetValue(std::format(L"{}", m_fis.dwPageSize).data());
+			pProp->SetValue(std::format(L"{}", m_dis.dwPageSize).data());
 			break;
 		case IS_MUTABLE:
-			pProp->SetValue(std::format(L"{}", m_fis.fMutable).data());
+			pProp->SetValue(std::format(L"{}", m_dis.fMutable).data());
 			break;
 		default:
 			break;
 		}
 		};
 
-	m_gridFileProps.SetRedraw(false);
-	std::ranges::for_each(m_vecPropsFileProps, lmbSetValue);
-	m_gridFileProps.SetRedraw(true);
-	m_gridFileProps.RedrawWindow();
+	m_gridDataInfo.SetRedraw(false);
+	std::ranges::for_each(m_vecPropsDataProps, lmbSetValue);
+	m_gridDataInfo.SetRedraw(true);
+	m_gridDataInfo.RedrawWindow();
 }

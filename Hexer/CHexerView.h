@@ -1,5 +1,6 @@
 #pragma once
 #include "HexCtrl.h"
+
 import Utility;
 
 class CMainFrame;
@@ -7,7 +8,7 @@ class CChildFrame;
 class CHexerDoc;
 class CHexerView final : public CView {
 public:
-	[[nodiscard]] auto GetFileInfo()const->Ut::FILEINFO;
+	[[nodiscard]] auto GetDataInfo()const->Ut::DATAINFO;
 	[[nodiscard]] auto GetHexCtrl()const->HEXCTRL::IHexCtrl*;
 	[[nodiscard]] auto GetHWNDForPane(UINT uPaneID) -> HWND;
 private:
