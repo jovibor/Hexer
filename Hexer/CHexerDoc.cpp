@@ -122,21 +122,17 @@ auto CHexerDoc::GetUniqueDocName(const Ut::DATAOPEN& dos)->std::wstring
 		return std::format(L"Process: {} (ID: {})", dos.wstrDataPath, dos.dwProcID);
 	}
 	else {
-		return ResolveLNK(dos);
+		return dos.fResolveLNK ? ResolveLNK(dos) : dos.wstrDataPath;
 	}
 }
 
 auto CHexerDoc::GetDocTitle(const Ut::DATAOPEN& dos)->std::wstring
 {
+	auto wstr = GetUniqueDocName(dos);
 	if (dos.eMode == Ut::EOpenMode::OPEN_PROC) {
-		return GetUniqueDocName(dos);
+		return wstr;
 	}
 	else {
-		if (dos.fResolveLNK) {
-			auto wstrPath = Ut::ResolveLNK(dos);
-			return wstrPath.substr(wstrPath.find_last_of(L'\\') + 1);
-		}
-
-		return dos.wstrDataPath.substr(dos.wstrDataPath.find_last_of(L'\\') + 1);
+		return wstr.substr(wstr.find_last_of(L'\\') + 1);
 	}
 }
