@@ -18,7 +18,6 @@ import DlgOpenDevice;
 import DlgOpenProcess;
 import DlgNewFile;
 import DlgSettings;
-import Utility;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -105,7 +104,7 @@ auto CHexerMDTemplate::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
 //CHexerDocMgr.
 class CHexerDocMgr final : public CDocManager {
 public:
-	auto OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU) -> CDocument* override;
+	auto OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU = FALSE) -> CDocument* override;
 	auto OpenDocumentFile(const Ut::DATAOPEN& dos) -> CDocument*;
 	DECLARE_DYNCREATE(CHexerDocMgr);
 };
@@ -116,7 +115,7 @@ auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL /*bAddToMRU*/)->C
 {
 	//This method also takes a part in the HDROP.
 
-	return OpenDocumentFile({ .wstrDataPath { lpszFileName }, .eMode { Ut::EOpenMode::OPEN_FILE } });
+	return OpenDocumentFile({ .wstrDataPath { Ut::ResolveLNK(lpszFileName) }, .eMode { Ut::EOpenMode::OPEN_FILE } });
 }
 
 auto CHexerDocMgr::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
@@ -225,7 +224,7 @@ void CHexerApp::OnFileOpenFile()
 				pResults->GetItemAt(i, &pItem);
 				CComHeapPtr<wchar_t> pwstrPath;
 				pItem->GetDisplayName(SIGDN_FILESYSPATH, &pwstrPath);
-				const auto pDoc = OpenDocumentFile({ .wstrDataPath { pwstrPath }, .eMode { Ut::EOpenMode::OPEN_FILE } });
+				const auto pDoc = OpenDocumentFile(pwstrPath);
 				fOpened = !fOpened ? pDoc != nullptr : true;
 			}
 			return fOpened;
@@ -242,21 +241,18 @@ auto CHexerApp::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
 	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentFile(dos);
 }
 
+auto CHexerApp::OpenDocumentFile(LPCWSTR pwszPath)->CDocument*
+{
+	ENSURE_VALID(m_pDocManager);
+	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentFile(pwszPath);
+}
+
 
 //CHexerApp private methods.
 
 BOOL CHexerApp::InitInstance()
 {
 	CWinAppEx::InitInstance();
-
-	//Adjusting current process privileges to SE_DEBUG_NAME level,
-	//to be able to open Processes that's blocked otherwise.
-	TOKEN_PRIVILEGES tkp { .PrivilegeCount { 1 } };
-	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-	LookupPrivilegeValueW(nullptr, SE_DEBUG_NAME, &tkp.Privileges[0].Luid);
-	HANDLE hToken { };
-	OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
-	AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, nullptr, nullptr);
 
 	CCommandLineInfo cmdInfo;
 	ParseCommandLine(cmdInfo);
@@ -291,6 +287,15 @@ BOOL CHexerApp::InitInstance()
 		}
 	}
 
+	//Adjusting current process privileges to SE_DEBUG_NAME level,
+	//to be able to open Processes that's blocked otherwise.
+	TOKEN_PRIVILEGES tkp { .PrivilegeCount { 1 } };
+	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	LookupPrivilegeValueW(nullptr, SE_DEBUG_NAME, &tkp.Privileges[0].Luid);
+	HANDLE hToken { };
+	OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
+	AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, nullptr, nullptr);
+
 	EnableTaskbarInteraction(FALSE);
 	SetRegistryKey(Ut::GetAppName().data());
 	InitTooltipManager();
@@ -319,8 +324,8 @@ BOOL CHexerApp::InitInstance()
 	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPDisk } };
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
 	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Setting the icon for the "Open Device..." menu.
-	const auto pRFSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files" sub-menu.
-	GetAppSettings().RFLInitialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk, GetAppSettings().GetGeneralSettings().dwRFLSize);
+	const auto pRFSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files List" sub-menu.
+	GetAppSettings().RFLInitialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk);
 	DrawMenuBar(pMainFrame->m_hWnd);
 
 	//For Drag'n Drop to work, even in elevated mode.
@@ -343,8 +348,8 @@ BOOL CHexerApp::InitInstance()
 		}
 		break;
 	case CAppSettings::EStartup::RESTORE_LAST_OPENED:
-		for (const auto& wstr : GetAppSettings().GetLastOpenedFromReg()) {
-			OpenDocumentFile({ .wstrDataPath { wstr }, .eMode { Ut::EOpenMode::OPEN_FILE } });
+		for (const auto& ref : GetAppSettings().GetLastOpenedList()) {
+			OpenDocumentFile(ref);
 		}
 		break;
 	default:
@@ -360,13 +365,16 @@ BOOL CHexerApp::InitInstance()
 	}
 
 	m_pMainWnd->ShowWindow(SW_SHOW);
+	m_fMainAppInSingleAppMode = true;
 
 	return TRUE;
 }
 
 int CHexerApp::ExitInstance()
 {
-	GetAppSettings().SaveSettings(Ut::GetAppName());
+	if (m_fMainAppInSingleAppMode) { //To make sure it's the main app, when in the Single App mode. 
+		GetAppSettings().SaveSettings();
+	}
 
 	return CWinAppEx::ExitInstance();
 }
@@ -423,6 +431,5 @@ void CHexerApp::OnToolsSettings()
 
 void CHexerApp::OnFileRFL(UINT uID)
 {
-	auto rflData = GetAppSettings().RFLGetDataFromMenuID(uID);
-	OpenDocumentFile({ .wstrDataPath { std::move(rflData.wstrDataPath) }, .eMode { rflData.eMode } });
+	OpenDocumentFile(GetAppSettings().RFLGetDataFromMenuID(uID));
 }

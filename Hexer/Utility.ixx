@@ -65,7 +65,9 @@ export namespace Ut {
 		std::uint64_t ullNewFileSize { };
 		DWORD         dwProcID { };
 		EOpenMode     eMode { EOpenMode::OPEN_FILE };
-		bool          fResolveLNK { true };
+		[[nodiscard]] bool operator==(const DATAOPEN& rhs)const {
+			return wstrDataPath == rhs.wstrDataPath && dwProcID == rhs.dwProcID;
+		};
 	};
 
 	struct DATAINFO { //Data for the CDlgLogger dialog.
@@ -80,15 +82,12 @@ export namespace Ut {
 	[[nodiscard]] auto GetNameFromEOpenMode(EOpenMode eMode) -> std::wstring_view {
 		using enum EOpenMode;
 		switch (eMode) {
-		case OPEN_FILE:
-		case NEW_FILE:
-			return L"File";
 		case OPEN_DEVICE:
 			return L"Device";
 		case OPEN_PROC:
 			return L"Process";
 		default:
-			return { };
+			return L"File";
 		};
 	}
 
@@ -112,13 +111,12 @@ export namespace Ut {
 		return wstrAppName;
 	}
 
-	[[nodiscard]] auto ResolveLNK(const Ut::DATAOPEN& dos) -> std::wstring {
-		if (!dos.fResolveLNK || dos.eMode == Ut::EOpenMode::NEW_FILE || dos.eMode == Ut::EOpenMode::OPEN_PROC
-			|| !dos.wstrDataPath.ends_with(L".lnk")) {
-			return dos.wstrDataPath;
+	[[nodiscard]] auto ResolveLNK(const wchar_t* pwszPath) -> std::wstring {
+		std::wstring_view wsv = pwszPath;
+		if (!wsv.ends_with(L".lnk") && !wsv.ends_with(L".LNK")) {
+			return pwszPath;
 		}
 
-		const auto pwszPath = dos.wstrDataPath.data();
 		CComPtr<IShellLinkW> pIShellLinkW;
 		pIShellLinkW.CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER);
 		CComPtr<IPersistFile> pIPersistFile;

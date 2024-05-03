@@ -26,6 +26,7 @@ public:
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
 	[[nodiscard]] auto GetFileMapData()const->std::byte*;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
+	[[nodiscard]] auto GetProcID()const->DWORD;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsMutable()const;
 	[[nodiscard]] bool IsProcess()const;
@@ -57,6 +58,7 @@ private:
 	std::uint64_t m_ullSizeCurr { };   //Size of the data that is currently in the cache.
 	DWORD m_dwPageSize { };      //System Virtual page size.
 	DWORD m_dwAlignment { };     //An alignment that the offset and the size must be aligned on, for the ReadFile.
+	DWORD m_dwProcID { };        //Process ID.
 	bool m_fMutable { false };   //Is data opened as RW or RO?
 	bool m_fVirtual { false };   //Is data opened in HexCtrl Virtual mode.
 	bool m_fProcess { false };   //Is it process or file?
@@ -121,6 +123,11 @@ auto CDataLoader::GetFileMapData()const->std::byte*
 auto CDataLoader::GetMemPageSize()const->DWORD
 {
 	return m_dwPageSize;
+}
+
+auto CDataLoader::GetProcID()const->DWORD
+{
+	return m_dwProcID;
 }
 
 auto CDataLoader::GetVirtualInterface()->HEXCTRL::IHexVirtData*
@@ -194,7 +201,7 @@ void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 
 bool CDataLoader::OpenFile(const Ut::DATAOPEN& dos)
 {
-	m_wstrDataPath = Ut::ResolveLNK(dos);
+	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1);
 
 	if (dos.eMode == Ut::EOpenMode::OPEN_DEVICE || m_wstrDataPath.starts_with(L"\\\\")) { //Special path.
@@ -288,6 +295,7 @@ bool CDataLoader::OpenFileVirtual()
 bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
 {
 	m_wstrFileName = dos.wstrDataPath; //Process name.
+	m_dwProcID = dos.dwProcID;
 	m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, dos.dwProcID);
 	if (m_hHandle == nullptr) {
 		PrintLastError(L"OpenProcess");

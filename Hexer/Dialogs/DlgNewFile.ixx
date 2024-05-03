@@ -18,7 +18,7 @@ import Utility;
 export class CDlgNewFile final : public CDialogEx {
 public:
 	CDlgNewFile(CWnd* pParent = nullptr) : CDialogEx(IDD_NEWFILE, pParent) { }
-	[[nodiscard]] auto GetNewFileInfo() -> Ut::DATAOPEN;
+	[[nodiscard]] auto GetNewFileInfo()const->const Ut::DATAOPEN&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	BOOL OnInitDialog()override;
@@ -38,7 +38,7 @@ BEGIN_MESSAGE_MAP(CDlgNewFile, CDialogEx)
 	ON_EN_CHANGE(IDC_NEWFILE_EDIT_PATH, &CDlgNewFile::OnChangeEditPath)
 END_MESSAGE_MAP()
 
-auto CDlgNewFile::GetNewFileInfo()->Ut::DATAOPEN
+auto CDlgNewFile::GetNewFileInfo()const->const Ut::DATAOPEN&
 {
 	return m_stDOS;
 }
@@ -92,17 +92,17 @@ void CDlgNewFile::OnChangeEditPath()
 void CDlgNewFile::OnOK()
 {
 	m_stDOS.eMode = Ut::EOpenMode::NEW_FILE;
-	CStringW str;
-	m_stEditPath.GetWindowTextW(str);
-	m_stDOS.wstrDataPath = str;
+	CStringW wstr;
+	m_stEditPath.GetWindowTextW(wstr);
+	m_stDOS.wstrDataPath = wstr;
 
 	if (m_stEditSize.GetWindowTextLengthW() == 0) {
 		MessageBoxW(L"Enter the file size.", L"Size is empty", MB_ICONEXCLAMATION);
 		return;
 	}
 
-	m_stEditSize.GetWindowTextW(str);
-	if (const auto opt = stn::StrToUInt64(str.GetString()); opt) {
+	m_stEditSize.GetWindowTextW(wstr);
+	if (const auto opt = stn::StrToUInt64(wstr.GetString()); opt) {
 		if (*opt == 0) {
 			MessageBoxW(L"File size can not be zero.", L"Size is zero", MB_ICONEXCLAMATION);
 			return;

@@ -17,6 +17,7 @@ public:
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
 	[[nodiscard]] auto GetClassName()const->LPCWSTR;
 	auto OpenDocumentFile(const Ut::DATAOPEN& dos) -> CDocument*;
+	auto OpenDocumentFile(LPCWSTR pwszPath) -> CDocument*;
 private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;
@@ -29,6 +30,7 @@ private:
 	DECLARE_MESSAGE_MAP();
 private:
 	CAppSettings m_stAppSettings;
+	bool m_fMainAppInSingleAppMode { false };
 };
 
 extern CHexerApp theApp;

@@ -327,8 +327,7 @@ auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS)
 {
 	if (pCDS->dwData == 1) {
-		theApp.OpenDocumentFile({ .wstrDataPath { reinterpret_cast<wchar_t*>(pCDS->lpData) },
-			.eMode { Ut::EOpenMode::OPEN_FILE } });
+		theApp.OpenDocumentFile(reinterpret_cast<LPCWSTR>(pCDS->lpData));
 	}
 
 	return CMDIFrameWndEx::OnCopyData(pWnd, pCDS);

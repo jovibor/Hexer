@@ -9,6 +9,7 @@
 #include "CMainFrame.h"
 #include "CChildFrame.h"
 #include "CHexerDoc.h"
+#include <cassert>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -54,6 +55,11 @@ auto CHexerDoc::GetOpenMode()const->Ut::EOpenMode
 	return m_eOpenMode;
 }
 
+auto CHexerDoc::GetProcID()const->DWORD
+{
+	return m_stDataLoader.GetProcID();
+}
+
 auto CHexerDoc::GetVirtualInterface()->HEXCTRL::IHexVirtData*
 {
 	return m_stDataLoader.GetVirtualInterface();
@@ -72,20 +78,18 @@ bool CHexerDoc::IsProcess()const
 bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 {
 	m_eOpenMode = dos.eMode;
-	m_wstrDataPath = ResolveLNK(dos);
+	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 
 	if (!m_stDataLoader.Open(dos)) {
 		const auto wstrLogError = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" open failed: " + GetFileName();
-		theApp.GetAppSettings().RFLRemoveFromList(GetDataPath());
+		theApp.GetAppSettings().RFLRemoveFromList(dos);
 		Ut::Log::AddLogEntryError(wstrLogError);
 		return false;
 	}
 
-	if (dos.eMode != Ut::EOpenMode::OPEN_PROC) {
-		theApp.GetAppSettings().AddToLastOpened(GetDataPath());
-		theApp.GetAppSettings().RFLAddToList(GetDataPath());
-	}
+	theApp.GetAppSettings().RFLAddToList(dos);
+	theApp.GetAppSettings().LOLAddToList(dos);
 
 	const auto wstrLogInfo = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" opened: "
 		+ GetFileName() + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" };
@@ -110,7 +114,7 @@ void CHexerDoc::OnCloseDocument()
 	const auto wstrLogInfo = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" closed: " + GetFileName();
 	Ut::Log::AddLogEntryInfo(wstrLogInfo);
 	if (!static_cast<CMainFrame*>(AfxGetMainWnd())->IsAppClosing()) {
-		theApp.GetAppSettings().RemoveFromLastOpened(GetDataPath());
+		theApp.GetAppSettings().LOLRemoveFromList({ .wstrDataPath { GetDataPath() }, .dwProcID { GetProcID() } });
 	}
 
 	CDocument::OnCloseDocument();
@@ -122,17 +126,27 @@ auto CHexerDoc::GetUniqueDocName(const Ut::DATAOPEN& dos)->std::wstring
 		return std::format(L"Process: {} (ID: {})", dos.wstrDataPath, dos.dwProcID);
 	}
 	else {
-		return dos.fResolveLNK ? ResolveLNK(dos) : dos.wstrDataPath;
+		return dos.wstrDataPath;
 	}
 }
 
 auto CHexerDoc::GetDocTitle(const Ut::DATAOPEN& dos)->std::wstring
 {
-	auto wstr = GetUniqueDocName(dos);
-	if (dos.eMode == Ut::EOpenMode::OPEN_PROC) {
-		return wstr;
+	using enum Ut::EOpenMode;
+	if (dos.eMode == OPEN_PROC) {
+		return GetUniqueDocName(dos);
 	}
-	else {
-		return wstr.substr(wstr.find_last_of(L'\\') + 1);
+
+	const auto nName = dos.wstrDataPath.find_last_of(L'\\');
+	assert(nName != std::wstring::npos);
+	if (nName == std::wstring::npos) {
+		return { };
+	}
+
+	switch (dos.eMode) {
+	case OPEN_DEVICE:
+		return std::format(L"{}: {}", Ut::GetNameFromEOpenMode(OPEN_DEVICE), dos.wstrDataPath.substr(nName + 1));
+	default:
+		return dos.wstrDataPath.substr(nName + 1);
 	}
 }
