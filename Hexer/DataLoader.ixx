@@ -294,6 +294,7 @@ bool CDataLoader::OpenFileVirtual()
 
 bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
 {
+	m_fProcess = true;
 	m_wstrFileName = dos.wstrDataPath; //Process name.
 	m_dwProcID = dos.dwProcID;
 	m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, dos.dwProcID);
@@ -309,7 +310,6 @@ bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
 	m_dwAlignment = 64;
 	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), m_dwAlignment)));
 	m_fVirtual = true;
-	m_fProcess = true;
 	m_fMutable = true;
 
 	return true;

@@ -81,19 +81,35 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 
+	using enum Ut::EOpenMode;
 	if (!m_stDataLoader.Open(dos)) {
-		const auto wstrLogError = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" open failed: " + GetFileName();
+		std::wstring wstrErr;
+		if (IsProcess()) {
+			wstrErr = std::format(L"{} open failed: {} (ID: {})",
+				Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), dos.dwProcID);
+		}
+		else {
+			wstrErr = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" open failed: " + GetFileName();
+		}
+		Ut::Log::AddLogEntryError(wstrErr);
 		theApp.GetAppSettings().RFLRemoveFromList(dos);
-		Ut::Log::AddLogEntryError(wstrLogError);
 		return false;
 	}
 
 	theApp.GetAppSettings().RFLAddToList(dos);
 	theApp.GetAppSettings().LOLAddToList(dos);
 
-	const auto wstrLogInfo = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" opened: "
-		+ GetFileName() + std::wstring { IsFileMutable() ? L" (RW)" : L" (RO)" };
-	Ut::Log::AddLogEntryInfo(wstrLogInfo);
+	std::wstring_view wsvRW = IsFileMutable() ? L"(RW)" : L"(RO)";
+	std::wstring wstrInfo;
+	if (IsProcess()) {
+		wstrInfo = std::format(L"{} opened: {} (ID: {}) {}",
+			Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), GetProcID(), wsvRW);
+	}
+	else {
+		wstrInfo = std::format(L"{} opened: {} {}",
+			Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), wsvRW);
+	}
+	Ut::Log::AddLogEntryInfo(wstrInfo);
 	m_strPathName = GetUniqueDocName(dos).data();
 	m_bEmbedded = FALSE;
 	SetTitle(GetDocTitle(dos).data());
@@ -111,8 +127,16 @@ BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 
 void CHexerDoc::OnCloseDocument()
 {
-	const auto wstrLogInfo = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" closed: " + GetFileName();
-	Ut::Log::AddLogEntryInfo(wstrLogInfo);
+	std::wstring wstrInfo;
+	if (IsProcess()) {
+		wstrInfo = std::format(L"{} closed: {} (ID: {})",
+			Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), GetProcID());
+	}
+	else {
+		(((wstrInfo += Ut::GetNameFromEOpenMode(GetOpenMode())) += L" closed: ") += GetFileName());
+	}
+	Ut::Log::AddLogEntryInfo(wstrInfo);
+
 	if (!static_cast<CMainFrame*>(AfxGetMainWnd())->IsAppClosing()) {
 		theApp.GetAppSettings().LOLRemoveFromList({ .wstrDataPath { GetDataPath() }, .dwProcID { GetProcID() } });
 	}
