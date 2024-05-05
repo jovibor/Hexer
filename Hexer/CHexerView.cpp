@@ -23,6 +23,10 @@ IMPLEMENT_DYNCREATE(CHexerView, CView)
 BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_COMMAND(IDM_FILE_PRINT, &CHexerView::OnFilePrint)
 	ON_COMMAND(IDM_EDIT_EDITMODE, &CHexerView::OnEditEditMode)
+	ON_COMMAND(IDM_EDIT_UNDO, &CHexerView::OnEditUndo)
+	ON_COMMAND(IDM_EDIT_REDO, &CHexerView::OnEditRedo)
+	ON_COMMAND(IDM_EDIT_COPYHEX, &CHexerView::OnEditCopyHex)
+	ON_COMMAND(IDM_EDIT_PASTEHEX, &CHexerView::OnEditPasteHex)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGBKMMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
@@ -109,6 +113,26 @@ void CHexerView::OnEditEditMode()
 
 	const auto pDoc = GetDocument();
 	Ut::Log::AddLogEntryInfo(L"File access changed: " + pDoc->GetFileName() + std::wstring { fNewAccess ? L" (RW)" : L" (RO)" });
+}
+
+void CHexerView::OnEditCopyHex()
+{
+	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_CLPBRD_COPY_HEX);
+}
+
+void CHexerView::OnEditPasteHex()
+{
+	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_CLPBRD_PASTE_HEX);
+}
+
+void CHexerView::OnEditUndo()
+{
+	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_MODIFY_UNDO);
+}
+
+void CHexerView::OnEditRedo()
+{
+	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_MODIFY_REDO);
 }
 
 void CHexerView::OnFilePrint()

@@ -1,10 +1,10 @@
 ## Hexer
-Fast, fully-featured, multi-tab hexadecimal editor based on the [HexCtrl](https://github.com/jovibor/HexCtrl).
+Fast, fully-featured, multi-tab hexadecimal editor, based on the [HexCtrl](https://github.com/jovibor/HexCtrl).
 
 ![](docs/HexerMainWnd.jpg)
 
 ## Features 
-* View and edit files, disks and partitions up to **16EB** (exabyte)
+* View and edit Files, Disks, Partitions and Processes, up to **16EB** (exabyte)
 * Fully-featured **Bookmarks Manager**
 * Fully-featured **Search and Replace**
 * Many options to **Copy/Paste** to/from the clipboard
@@ -12,6 +12,7 @@ Fast, fully-featured, multi-tab hexadecimal editor based on the [HexCtrl](https:
 * Modify data with **Filling** and many **Operations** options
 * Ability to visually divide data into pages
 * Powerful system of Templates
+* And many more.
 
 ## How To Build
 1. Clone git repo with all submodules:  

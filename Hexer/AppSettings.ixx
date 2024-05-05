@@ -32,7 +32,8 @@ public:
 	CAppSettingsRFL() = default;
 	void AddToList(const Ut::DATAOPEN& dos);
 	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const->Ut::DATAOPEN;
-	void Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry, const std::wstring& wstrRegAppPath);
+	void Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess,
+		const std::wstring& wstrRegAppPath);
 	void RemoveFromList(const Ut::DATAOPEN& dos);
 	void SaveSettings();
 	[[nodiscard]] static void AddToListBeginning(const Ut::DATAOPEN& dos, VecDataOpen& vecData);
@@ -47,7 +48,9 @@ private:
 	VecDataOpen m_vecRFL; //Recent Files List data.
 	std::wstring m_wstrRegAppPath; //Application registry path.
 	HMENU m_hMenu { };
-	HBITMAP m_hBMPDisk { }; //Bitmap for disk icon.
+	HBITMAP m_hBMPFile { };    //Bitmap for file icon.
+	HBITMAP m_hBMPDevice { };  //Bitmap for device icon.
+	HBITMAP m_hBMPProcess { }; //Bitmap for process icon.
 	int m_iMaxEntry { };
 	int m_iIDMenuFirst { };
 	bool m_fInit { };
@@ -77,8 +80,8 @@ auto CAppSettingsRFL::GetDataFromMenuID(UINT uID)const->Ut::DATAOPEN
 	return m_vecRFL[uIndex];
 }
 
-void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk, int iMaxEntry,
-	const std::wstring& wstrRegAppPath)
+void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
+	HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess, const std::wstring& wstrRegAppPath)
 {
 	assert(IsMenu(hMenu));
 	if (!IsMenu(hMenu)) {
@@ -87,8 +90,10 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk
 
 	m_hMenu = hMenu;
 	m_iIDMenuFirst = iIDMenuFirst;
-	m_hBMPDisk = hBMPDisk;
 	m_iMaxEntry = std::clamp(iMaxEntry, 0, 20);
+	m_hBMPFile = hBMPFile;
+	m_hBMPDevice = hBMPDevice;
+	m_hBMPProcess = hBMPProcess;
 	m_wstrRegAppPath = wstrRegAppPath;
 	m_fInit = true;
 	m_vecRFL = ReadRegData(GetRegRFLPath().data());
@@ -244,6 +249,7 @@ void CAppSettingsRFL::SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen&
 
 void CAppSettingsRFL::RebuildRFLMenu()
 {
+	using enum Ut::EOpenMode;
 	assert(m_fInit);
 	if (!m_fInit)
 		return;
@@ -258,20 +264,34 @@ void CAppSettingsRFL::RebuildRFLMenu()
 			break;
 
 		std::wstring wstrMenu;
-		if (ref.eMode == Ut::EOpenMode::OPEN_PROC) {
+		if (ref.eMode == OPEN_PROC) {
 			wstrMenu = std::format(L"{} {}: {} (ID: {})", iIndex + 1, Ut::GetNameFromEOpenMode(ref.eMode), ref.wstrDataPath,
 				ref.dwProcID);
 		}
 		else {
 			wstrMenu = std::format(L"{} {}: {}", iIndex + 1, Ut::GetNameFromEOpenMode(ref.eMode), ref.wstrDataPath);
 		}
+
 		const auto iMenuID = m_iIDMenuFirst + iIndex;
 		AppendMenuW(m_hMenu, MF_STRING, iMenuID, wstrMenu.data());
 
-		if (ref.eMode == Ut::EOpenMode::OPEN_DEVICE) {
-			MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { m_hBMPDisk } };
-			SetMenuItemInfoW(m_hMenu, iMenuID, FALSE, &mii);
+		HBITMAP hBmp { };
+		switch (ref.eMode) {
+		case OPEN_FILE:
+			hBmp = m_hBMPFile;
+			break;
+		case OPEN_DEVICE:
+			hBmp = m_hBMPDevice;
+			break;
+		case OPEN_PROC:
+			hBmp = m_hBMPProcess;
+			break;
+		default:
+			break;
 		}
+
+		const MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBmp } };
+		SetMenuItemInfoW(m_hMenu, iMenuID, FALSE, &mii);
 
 		++iIndex;
 	}
@@ -338,7 +358,7 @@ public:
 	void OnSettingsChanged();
 	void RFLAddToList(const Ut::DATAOPEN& dos);
 	[[nodiscard]] auto RFLGetDataFromMenuID(UINT uID)const->Ut::DATAOPEN;
-	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk);
+	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	void RFLRemoveFromList(const Ut::DATAOPEN& dos);
 	void SaveSettings();
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
@@ -613,13 +633,13 @@ auto CAppSettings::RFLGetDataFromMenuID(UINT uID)const->Ut::DATAOPEN
 	return m_stRFL.GetDataFromMenuID(uID);
 }
 
-void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPDisk)
+void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess)
 {
 	assert(m_fLoaded);
 	if (!m_fLoaded)
 		return;
 
-	m_stRFL.Initialize(hMenu, iIDMenuFirst, hBMPDisk, GetGeneralSettings().dwRFLSize, GetRegAppPath());
+	m_stRFL.Initialize(hMenu, iIDMenuFirst, GetGeneralSettings().dwRFLSize, hBMPFile, hBMPDevice, hBMPProcess, GetRegAppPath());
 }
 
 void CAppSettings::RFLRemoveFromList(const Ut::DATAOPEN& dos)

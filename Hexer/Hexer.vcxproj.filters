@@ -180,9 +180,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\IDI_PROPERTIES.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="res\IDR_HEXER_FRAME.ico">
       <Filter>Resource Files</Filter>
     </Image>
@@ -222,7 +219,13 @@
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SEARCH.bmp">
       <Filter>HexCtrl</Filter>
     </Image>
-    <Image Include="res\IDB_OPENDEVICE.bmp">
+    <Image Include="res\IDB_DEVICE.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\IDB_PROCESS.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\IDB_FILE.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

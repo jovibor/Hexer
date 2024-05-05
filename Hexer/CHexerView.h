@@ -19,6 +19,10 @@ private:
 	void OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView)override;
 	void OnDraw(CDC* pDC)override;
 	afx_msg void OnEditEditMode();
+	afx_msg void OnEditCopyHex();
+	afx_msg void OnEditPasteHex();
+	afx_msg void OnEditUndo();
+	afx_msg void OnEditRedo();
 	afx_msg void OnFilePrint();
 	afx_msg void OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnHexCtrlSetFont(NMHDR* pNMHDR, LRESULT* pResult);

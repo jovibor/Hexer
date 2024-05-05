@@ -17,7 +17,9 @@
 #define IDR_MAINFRAME                   200
 #define IDR_HEXER_FRAME                 201
 #define IDR_TOOLBAR_MAIN                202
-#define IDB_OPENDEVICE                  203
+#define IDB_FILE                        203
+#define IDB_DEVICE                      204
+#define IDB_PROCESS                     205
 #define IDC_LINK_HEXER                  300
 #define IDC_LINK_HEXCTRL                301
 #define IDC_STATIC_BUILDTIME            302
@@ -70,22 +72,26 @@
 #define IDM_FILE_OPENFILE               32791
 #define IDM_FILE_OPENDEVICE             32792
 #define IDM_FILE_OPENPROCESS            32793
-#define IDM_EDIT_EDITMODE               32794
-#define IDM_VIEW_DATAINFO               32795
-#define IDM_VIEW_BKMMGR                 32796
-#define IDM_VIEW_DATAINTERP             32797
-#define IDM_VIEW_TEMPLMGR               32798
-#define IDM_VIEW_LOGGER                 32799
-#define IDM_TOOLS_SETTINGS              32800
-#define IDM_TOOLBAR_CUSTOMIZE           32801
-#define IDM_FILE_PRINT                  32802
+#define IDM_FILE_PRINT                  32794
+#define IDM_EDIT_EDITMODE               32795
+#define IDM_EDIT_UNDO                   32796
+#define IDM_EDIT_REDO                   32797
+#define IDM_EDIT_COPYHEX                32798
+#define IDM_EDIT_PASTEHEX               32799
+#define IDM_VIEW_DATAINFO               32800
+#define IDM_VIEW_BKMMGR                 32801
+#define IDM_VIEW_DATAINTERP             32802
+#define IDM_VIEW_TEMPLMGR               32803
+#define IDM_VIEW_LOGGER                 32804
+#define IDM_TOOLS_SETTINGS              32805
+#define IDM_TOOLBAR_CUSTOMIZE           32806
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        327
-#define _APS_NEXT_COMMAND_VALUE         32803
+#define _APS_NEXT_RESOURCE_VALUE        328
+#define _APS_NEXT_COMMAND_VALUE         32807
 #define _APS_NEXT_CONTROL_VALUE         328
 #define _APS_NEXT_SYMED_VALUE           327
 #endif

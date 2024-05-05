@@ -80,7 +80,11 @@ IDR_HEXER_FRAME         ICON                    "res\\IDR_HEXER_FRAME.ico"
 
 IDR_TOOLBAR_MAIN        BITMAP                  "res\\IDR_TOOLBAR_MAIN.bmp"
 
-IDB_OPENDEVICE          BITMAP                  "res\\IDB_OPENDEVICE.bmp"
+IDB_DEVICE              BITMAP                  "res\\IDB_DEVICE.bmp"
+
+IDB_PROCESS             BITMAP                  "res\\IDB_PROCESS.bmp"
+
+IDB_FILE                BITMAP                  "res\\IDB_FILE.bmp"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -125,10 +129,11 @@ BEGIN
     BEGIN
         MENUITEM "Writable Mode",               IDM_EDIT_EDITMODE
         MENUITEM SEPARATOR
-        MENUITEM "&Undo\tCtrl+Z",               ID_EDIT_UNDO
+        MENUITEM "&Undo\tCtrl+Z",               IDM_EDIT_UNDO
+        MENUITEM "Redo",                        IDM_EDIT_REDO
         MENUITEM SEPARATOR
-        MENUITEM "&Copy\tCtrl+C",               ID_EDIT_COPY
-        MENUITEM "&Paste\tCtrl+V",              ID_EDIT_PASTE
+        MENUITEM "&Copy as Hex Bytes\tCtrl+C",  IDM_EDIT_COPYHEX
+        MENUITEM "&Paste as Hex Bytes\tCtrl+V", IDM_EDIT_PASTEHEX
     END
     POPUP "&View"
     BEGIN

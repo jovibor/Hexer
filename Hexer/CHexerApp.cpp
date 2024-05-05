@@ -318,14 +318,21 @@ BOOL CHexerApp::InitInstance()
 	m_pMainWnd = pMainFrame;
 
 	const auto iSizeIcon = static_cast<int>(16 * Ut::GetHiDPIInfo().flDPIScale);
-	const auto hBMPDisk = static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDB_OPENDEVICE), IMAGE_BITMAP,
-		iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
-
-	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPDisk } };
+	const auto hBMPFile = static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDB_FILE),
+		IMAGE_BITMAP, iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
+	const auto hBMPDevice = static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDB_DEVICE),
+		IMAGE_BITMAP, iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
+	const auto hBMPProcess = static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDB_PROCESS),
+		IMAGE_BITMAP, iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
+	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPFile } };
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
-	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Setting the icon for the "Open Device..." menu.
-	const auto pRFSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files List" sub-menu.
-	GetAppSettings().RFLInitialize(pRFSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPDisk);
+	pFileMenu->SetMenuItemInfoW(1, &mii, TRUE); //Icon for the "Open File..." menu.
+	mii.hbmpItem = hBMPDevice;
+	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Icon for the "Open Device..." menu.
+	mii.hbmpItem = hBMPProcess;
+	pFileMenu->SetMenuItemInfoW(3, &mii, TRUE); //Icon for the "Open Process..." menu.
+	const auto pRFLSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files List" sub-menu.
+	GetAppSettings().RFLInitialize(pRFLSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPFile, hBMPDevice, hBMPProcess);
 	DrawMenuBar(pMainFrame->m_hWnd);
 
 	//For Drag'n Drop to work, even in elevated mode.
