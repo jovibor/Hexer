@@ -81,38 +81,17 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 
-	using enum Ut::EOpenMode;
 	if (!m_stDataLoader.Open(dos)) {
-		std::wstring wstrErr;
-		if (IsProcess()) {
-			wstrErr = std::format(L"{} open failed: {} (ID: {})",
-				Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), dos.dwProcID);
-		}
-		else {
-			wstrErr = std::wstring { Ut::GetNameFromEOpenMode(GetOpenMode()) } + L" open failed: " + GetFileName();
-		}
-		Ut::Log::AddLogEntryError(wstrErr);
 		theApp.GetAppSettings().RFLRemoveFromList(dos);
 		return false;
 	}
 
 	theApp.GetAppSettings().RFLAddToList(dos);
 	theApp.GetAppSettings().LOLAddToList(dos);
-
-	std::wstring_view wsvRW = IsFileMutable() ? L"(RW)" : L"(RO)";
-	std::wstring wstrInfo;
-	if (IsProcess()) {
-		wstrInfo = std::format(L"{} opened: {} (ID: {}) {}",
-			Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), GetProcID(), wsvRW);
-	}
-	else {
-		wstrInfo = std::format(L"{} opened: {} {}",
-			Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), wsvRW);
-	}
-	Ut::Log::AddLogEntryInfo(wstrInfo);
 	m_strPathName = GetUniqueDocName(dos).data();
 	m_bEmbedded = FALSE;
 	SetTitle(GetDocTitle(dos).data());
+	m_fOpened = true;
 
 	return true;
 }
@@ -120,24 +99,30 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 
 //Private methods.
 
-BOOL CHexerDoc::OnOpenDocument(LPCTSTR lpszPathName)
+auto CHexerDoc::GetMainFrame()const->CMainFrame*
+{
+	return static_cast<CMainFrame*>(AfxGetMainWnd());
+}
+
+BOOL CHexerDoc::OnOpenDocument(LPCWSTR lpszPathName)
 {
 	return OnOpenDocument({ .wstrDataPath { lpszPathName }, .eMode { Ut::EOpenMode::OPEN_FILE } });
 }
 
 void CHexerDoc::OnCloseDocument()
 {
-	std::wstring wstrInfo;
-	if (IsProcess()) {
-		wstrInfo = std::format(L"{} closed: {} (ID: {})",
-			Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), GetProcID());
-	}
-	else {
-		(((wstrInfo += Ut::GetNameFromEOpenMode(GetOpenMode())) += L" closed: ") += GetFileName());
-	}
-	Ut::Log::AddLogEntryInfo(wstrInfo);
+	//Doing below only when closing an individual opened document, not the whole App.
+	if (m_fOpened && !GetMainFrame()->IsAppClosing()) {
+		std::wstring wstrInfo;
+		if (IsProcess()) {
+			wstrInfo = std::format(L"{} closed: {} (ID: {})",
+				Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), GetProcID());
+		}
+		else {
+			(((wstrInfo += Ut::GetNameFromEOpenMode(GetOpenMode())) += L" closed: ") += GetFileName());
+		}
 
-	if (!static_cast<CMainFrame*>(AfxGetMainWnd())->IsAppClosing()) {
+		Ut::Log::AddLogEntryInfo(wstrInfo);
 		theApp.GetAppSettings().LOLRemoveFromList({ .wstrDataPath { GetDataPath() }, .dwProcID { GetProcID() } });
 	}
 

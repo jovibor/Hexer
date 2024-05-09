@@ -104,14 +104,14 @@ auto CHexerMDTemplate::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
 //CHexerDocMgr.
 class CHexerDocMgr final : public CDocManager {
 public:
-	auto OpenDocumentFile(LPCTSTR lpszFileName, BOOL bAddToMRU = FALSE) -> CDocument* override;
+	auto OpenDocumentFile(LPCWSTR lpszFileName, BOOL bAddToMRU = FALSE) -> CDocument* override;
 	auto OpenDocumentFile(const Ut::DATAOPEN& dos) -> CDocument*;
 	DECLARE_DYNCREATE(CHexerDocMgr);
 };
 
 IMPLEMENT_DYNCREATE(CHexerDocMgr, CDocument)
 
-auto CHexerDocMgr::OpenDocumentFile(LPCTSTR lpszFileName, BOOL /*bAddToMRU*/)->CDocument*
+auto CHexerDocMgr::OpenDocumentFile(LPCWSTR lpszFileName, BOOL /*bAddToMRU*/)->CDocument*
 {
 	//This method also takes a part in the HDROP.
 

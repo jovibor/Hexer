@@ -42,6 +42,7 @@ private:
 	afx_msg void OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListProcsDblClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListProcsGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListProcsGetTooltip(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
 	void OnOK()override;
@@ -54,6 +55,7 @@ private:
 	std::vector<PROCS> m_vecProcs;
 	std::vector<PROCS> m_vecProcsToOpen;
 	std::vector<MODULES> m_vecModules;
+	std::wstring m_wstrTTProcPath; //Tooltip for process image full path.
 	std::locale m_locale;
 	CButton m_btnOpen;
 	CButton m_statInfo;
@@ -65,12 +67,12 @@ private:
 struct CDlgOpenProcess::PROCS {
 	std::wstring wstrProcName;
 	DWORD        dwProcID { };
-	DWORD        dwWorkingSetSize { };
+	DWORD        dwWorkingSet { };
 };
 
 struct CDlgOpenProcess::MODULES {
 	std::wstring wstrModName;
-	DWORD        dwWorkingSetSize { };
+	DWORD        dwWorkingSet { };
 };
 
 BEGIN_MESSAGE_MAP(CDlgOpenProcess, CDialogEx)
@@ -78,6 +80,7 @@ BEGIN_MESSAGE_MAP(CDlgOpenProcess, CDialogEx)
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_OPENPROCESS_LIST_MODULES, &CDlgOpenProcess::OnListModulesGetDispInfo)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPENPROCESS_LIST_MODULES, &CDlgOpenProcess::OnListModulesDblClick)
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_OPENPROCESS_LIST_PROCS, &CDlgOpenProcess::OnListProcsGetDispInfo)
+	ON_NOTIFY(lex::LISTEX_MSG_GETTOOLTIP, IDC_OPENPROCESS_LIST_PROCS, &CDlgOpenProcess::OnListProcsGetTooltip)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPENPROCESS_LIST_PROCS, &CDlgOpenProcess::OnListProcsDblClick)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENPROCESS_LIST_PROCS, &CDlgOpenProcess::OnListProcsItemChanged)
 	ON_WM_CTLCOLOR()
@@ -150,13 +153,14 @@ BOOL CDlgOpenProcess::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	m_locale = std::locale("en_US.UTF-8");
-	m_pListProcs->CreateDialogCtrl(IDC_OPENPROCESS_LIST_PROCS, this);
-	m_pListProcs->SetSortable(true);
+	const lex::LISTEXCREATE lcs { .pParent { this }, .uID { IDC_OPENPROCESS_LIST_PROCS }, .dwTTStyleCell { TTS_NOANIMATE },
+		.dwTTShowTime { 3000 }, .ptTTOffset { 9, -20 }, .fDialogCtrl { true }, .fSortable { true } };
+	m_pListProcs->Create(lcs);
 	m_pListProcs->InsertColumn(0, L"№", 0, 40);
-	m_pListProcs->SetColumnSortMode(0, false);
 	m_pListProcs->InsertColumn(1, L"Process Name", 0, 200);
 	m_pListProcs->InsertColumn(2, L"Process ID", 0, 70);
 	m_pListProcs->InsertColumn(3, L"Working Set", 0, 90);
+	m_pListProcs->SetColumnSortMode(0, false);
 	m_pListModules->CreateDialogCtrl(IDC_OPENPROCESS_LIST_MODULES, this);
 	m_pListModules->SetSortable(true);
 	m_pListModules->InsertColumn(0, L"Module Name", 0, 150);
@@ -211,7 +215,7 @@ void CDlgOpenProcess::OnListModulesGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult
 		pItem->pszText = m_vecModules[iItemID].wstrModName.data();
 		break;
 	case 1: //Working Set.
-		*std::format_to(pItem->pszText, m_locale, L"{:L}KB", m_vecModules[iItemID].dwWorkingSetSize / 1024) = L'\0';
+		*std::format_to(pItem->pszText, m_locale, L"{:L}KB", m_vecModules[iItemID].dwWorkingSet / 1024) = L'\0';
 		break;
 	default:
 		break;
@@ -236,6 +240,9 @@ void CDlgOpenProcess::OnListProcsColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResu
 			break;
 		case 2: //Process ID.
 			iCompare = st1.dwProcID < st2.dwProcID ? -1 : (st1.dwProcID > st2.dwProcID ? 1 : 0);
+			break;
+		case 3: //Working Set.
+			iCompare = st1.dwWorkingSet < st2.dwWorkingSet ? -1 : (st1.dwWorkingSet > st2.dwWorkingSet ? 1 : 0);
 			break;
 		default:
 			break;
@@ -314,11 +321,32 @@ void CDlgOpenProcess::OnListProcsGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/
 		*std::format_to(pItem->pszText, L"{}", m_vecProcs[iItemID].dwProcID) = L'\0';
 		break;
 	case 3: //Working Set.
-		*std::format_to(pItem->pszText, m_locale, L"{:L}KB", m_vecProcs[iItemID].dwWorkingSetSize / 1024) = L'\0';
+		*std::format_to(pItem->pszText, m_locale, L"{:L}KB", m_vecProcs[iItemID].dwWorkingSet / 1024) = L'\0';
 		break;
 	default:
 		break;
 	}
+}
+
+void CDlgOpenProcess::OnListProcsGetTooltip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	const auto pTTI = reinterpret_cast<lex::LISTEXTTINFO*>(pNMHDR);
+	const auto iItem = pTTI->iItem;
+	const auto iSubItem = pTTI->iSubItem;
+	if (iItem < 0 || iSubItem != 1) //First column.
+		return;
+
+	const auto hProc = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_vecProcs[iItem].dwProcID);
+	if (hProc == nullptr)
+		return;
+
+	m_wstrTTProcPath.resize_and_overwrite(MAX_PATH, [hProc](wchar_t* pData, std::size_t sSize) {
+		DWORD dwSize { static_cast<DWORD>(sSize) };
+		const auto ret = QueryFullProcessImageNameW(hProc, 0, pData, &dwSize);
+		return ret ? dwSize : 0; });
+	CloseHandle(hProc);
+
+	pTTI->stData.pwszText = m_wstrTTProcPath.data();
 }
 
 void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
@@ -390,7 +418,7 @@ void CDlgOpenProcess::OnOK()
 		nItem = m_pListProcs->GetNextItem(nItem, LVNI_SELECTED);
 		auto& ref = m_vecProcs[nItem];
 		m_vecProcsToOpen.emplace_back(PROCS { .wstrProcName { std::move(ref.wstrProcName) },
-			.dwProcID { ref.dwProcID }, .dwWorkingSetSize { ref.dwWorkingSetSize } });
+			.dwProcID { ref.dwProcID }, .dwWorkingSet { ref.dwWorkingSet } });
 	}
 
 	CDialogEx::OnOK();

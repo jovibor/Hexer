@@ -29,7 +29,8 @@ public:
 	static auto GetUniqueDocName(const Ut::DATAOPEN& dos) -> std::wstring;
 	static auto GetDocTitle(const Ut::DATAOPEN& dos) -> std::wstring;
 private:
-	BOOL OnOpenDocument(LPCTSTR lpszPathName)override;
+	[[nodiscard]] auto GetMainFrame()const->CMainFrame*;
+	BOOL OnOpenDocument(LPCWSTR lpszPathName)override;
 	void OnCloseDocument()override;
 	DECLARE_DYNCREATE(CHexerDoc);
 	DECLARE_MESSAGE_MAP();
@@ -38,4 +39,5 @@ private:
 	std::wstring m_wstrDataPath;
 	std::wstring m_wstrFileName;
 	Ut::EOpenMode m_eOpenMode { }; //Document open mode.
+	bool m_fOpened { false }; //Document was successfully opened or not.
 };

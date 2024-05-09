@@ -25,6 +25,7 @@ public:
 	[[nodiscard]] auto GetCacheSize()const->DWORD; //Cache size that is reported to the outside, for IHexCtrl.
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
 	[[nodiscard]] auto GetFileMapData()const->std::byte*;
+	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetProcID()const->DWORD;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
@@ -120,6 +121,11 @@ auto CDataLoader::GetFileMapData()const->std::byte*
 	return IsVirtual() ? nullptr : static_cast<std::byte*>(m_lpMapBase);
 }
 
+auto CDataLoader::GetFileName()const->const std::wstring&
+{
+	return m_wstrFileName;
+}
+
 auto CDataLoader::GetMemPageSize()const->DWORD
 {
 	return m_dwPageSize;
@@ -152,11 +158,38 @@ bool CDataLoader::Open(const Ut::DATAOPEN& dos)
 		return false;
 	}
 
-	if (dos.eMode == Ut::EOpenMode::OPEN_PROC) {
-		return OpenProcess(dos);
+	using enum Ut::EOpenMode;
+	std::wstring wstrLog;
+	bool fSuccess { };
+	switch (dos.eMode) {
+	case OPEN_PROC:
+		fSuccess = OpenProcess(dos);
+		if (fSuccess) {
+			wstrLog = std::format(L"Process opened: {} (ID: {}) ({})", GetFileName(), GetProcID(), Ut::GetRWWstr(IsMutable()));
+		}
+		else {
+			wstrLog = std::format(L"Process open failed: {} (ID: {}). {}", GetFileName(), GetProcID(), Ut::GetLastErrorWstr());
+			MessageBoxW(AfxGetMainWnd()->m_hWnd, std::format(L"Can't open process with ID {}.", GetProcID()).data(),
+				L"Opening error", MB_ICONERROR);
+		}
+		break;
+	default:
+		fSuccess = OpenFile(dos);
+		if (fSuccess) {
+			wstrLog = std::format(L"{} opened: {} ({})", Ut::GetNameFromEOpenMode(dos.eMode), GetFileName(),
+				Ut::GetRWWstr(IsMutable()));
+		}
+		else {
+			wstrLog = std::format(L"{} open failed: {}", Ut::GetNameFromEOpenMode(dos.eMode), GetFileName());
+			MessageBoxW(AfxGetMainWnd()->m_hWnd, std::format(L"Can't open {} {}.", Ut::GetNameFromEOpenMode(dos.eMode),
+				GetFileName()).data(), L"Opening error", MB_ICONERROR);
+		}
+		break;
 	}
 
-	return OpenFile(dos);
+	fSuccess ? Ut::Log::AddLogEntryInfo(wstrLog) : Ut::Log::AddLogEntryError(wstrLog);
+
+	return fSuccess;
 }
 
 
@@ -202,7 +235,7 @@ void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 bool CDataLoader::OpenFile(const Ut::DATAOPEN& dos)
 {
 	m_wstrDataPath = dos.wstrDataPath;
-	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1);
+	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //File name.
 
 	if (dos.eMode == Ut::EOpenMode::OPEN_DEVICE || m_wstrDataPath.starts_with(L"\\\\")) { //Special path.
 		m_fVirtual = true;
@@ -297,9 +330,8 @@ bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
 	m_fProcess = true;
 	m_wstrFileName = dos.wstrDataPath; //Process name.
 	m_dwProcID = dos.dwProcID;
-	m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, dos.dwProcID);
+	m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetProcID());
 	if (m_hHandle == nullptr) {
-		PrintLastError(L"OpenProcess");
 		return false;
 	}
 
@@ -317,11 +349,8 @@ bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
 
 void CDataLoader::PrintLastError(std::wstring_view wsvSource)const
 {
-	const auto dwError = GetLastError();
-	wchar_t buffErr[MAX_PATH];
-	FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffErr, MAX_PATH, nullptr);
-	Ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X} {}", m_wstrFileName, wsvSource, dwError, buffErr));
+	Ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X} {}",
+		GetFileName(), wsvSource, GetLastError(), Ut::GetLastErrorWstr()));
 }
 
 auto CDataLoader::ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXCTRL::SpanByte
