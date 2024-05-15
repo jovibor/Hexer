@@ -19,6 +19,7 @@ public:
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetDataPath()const->const std::wstring&;
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
+	[[nodiscard]] auto GetMaxVirtOffset()const->std::uint64_t;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetOpenMode()const->Ut::EOpenMode;
 	[[nodiscard]] auto GetProcID()const->DWORD;

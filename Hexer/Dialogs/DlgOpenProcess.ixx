@@ -9,12 +9,12 @@ module;
 #include "ListEx.h"
 #include "StrToNum.h"
 #include "resource.h"
-#include "psapi.h"
-#include "wtsapi32.h"
 #include <afxdialogex.h>
 #include <format>
+#include <psapi.h>
 #include <string>
 #include <vector>
+#include <wtsapi32.h>
 export module DlgOpenProcess;
 
 #pragma comment(lib, "Wtsapi32.lib")
@@ -154,7 +154,7 @@ BOOL CDlgOpenProcess::OnInitDialog()
 
 	m_locale = std::locale("en_US.UTF-8");
 	const lex::LISTEXCREATE lcs { .pParent { this }, .uID { IDC_OPENPROCESS_LIST_PROCS }, .dwTTStyleCell { TTS_NOANIMATE },
-		.dwTTShowTime { 3000 }, .ptTTOffset { 9, -20 }, .fDialogCtrl { true }, .fSortable { true } };
+		.dwTTShowDelay { 500 }, .dwTTShowTime { 3000 }, .ptTTOffset { 9, -20 }, .fDialogCtrl { true }, .fSortable { true } };
 	m_pListProcs->Create(lcs);
 	m_pListProcs->InsertColumn(0, L"№", 0, 40);
 	m_pListProcs->InsertColumn(1, L"Process Name", 0, 200);
@@ -351,7 +351,7 @@ void CDlgOpenProcess::OnListProcsGetTooltip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
 {
-	static constexpr auto iResAreaHalfWidth = 15;  //Area where cursor turns into resizable (IDC_SIZEWE).
+	static constexpr auto iResAreaHalfWidth = 6;   //Area where cursor turns into resizable (IDC_SIZEWE).
 	static constexpr auto iWidthBetweenLists = 1;  //Width between tree and list after resizing.
 	static constexpr auto iMinLeftListWidth = 100; //Left list minimum allowed width.
 	static const auto hCurResize = static_cast<HCURSOR>(LoadImageW(nullptr, IDC_SIZEWE, IMAGE_CURSOR, 0, 0, LR_SHARED));

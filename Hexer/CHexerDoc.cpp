@@ -45,6 +45,11 @@ auto CHexerDoc::GetDataSize()const->std::uint64_t
 	return m_stDataLoader.GetDataSize();
 }
 
+auto CHexerDoc::GetMaxVirtOffset()const->std::uint64_t
+{
+	return m_stDataLoader.GetMaxVirtOffset();
+}
+
 auto CHexerDoc::GetMemPageSize()const->DWORD
 {
 	return m_stDataLoader.GetMemPageSize();
