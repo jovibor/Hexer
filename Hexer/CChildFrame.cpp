@@ -8,6 +8,9 @@
 #include "CHexerApp.h"
 #include "CChildFrame.h"
 #include "CMainFrame.h"
+#include "CHexerView.h"
+
+import Utility;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -39,6 +42,15 @@ auto CChildFrame::GetMainFrame()const->CMainFrame*
 	return reinterpret_cast<CMainFrame*>(AfxGetMainWnd());
 }
 
+auto CChildFrame::GetHexCtrl()const->HEXCTRL::IHexCtrl*
+{
+	if (const auto pView = GetHexerView(); pView != nullptr) {
+		return pView->GetHexCtrl();
+	}
+
+	return { };
+}
+
 void CChildFrame::OnClose()
 {
 	m_fClosing = true;
@@ -58,6 +70,28 @@ void CChildFrame::OnDestroy()
 	CMDIChildWndEx::OnDestroy();
 }
 
+void CChildFrame::OnFrameActivate()
+{
+	for (const auto hWnd : m_vecWndHidden) { //Show all hidden dialogs.
+		::ShowWindow(hWnd, SW_SHOW);
+	}
+	m_vecWndHidden.clear();
+
+	GetMainFrame()->OnChildFrameActivate();
+}
+
+void CChildFrame::OnFrameDisctivate()
+{
+	for (const auto eWnd : Ut::g_arrHexDlg) { //Hide all active dialogs.
+		if (const auto hWnd = GetHexCtrl()->GetWndHandle(eWnd, false); ::IsWindowVisible(hWnd)) {
+			::ShowWindow(hWnd, SW_HIDE);
+			m_vecWndHidden.emplace_back(hWnd);
+		}
+	}
+
+	GetMainFrame()->OnChildFrameDisactivate();
+}
+
 void CChildFrame::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd)
 {
 	CMDIChildWndEx::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
@@ -71,22 +105,23 @@ void CChildFrame::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeact
 			return;
 		}
 
-		//Buggy MFC sends two WM_MDIACTIVATE messages to the child-frame when a second and onward tab is created.
+		//Buggy MFC sends two WM_MDIACTIVATE messages to the child-frame, when second and subsequent tabs are created.
 		//This count is to prevent unnecessary OnChildFrameActivate calls.
 		if (--m_iMDIActivateCreation == 0) {
 			pMainFrame->OnChildFrameActivate();
 			m_fCreating = false;
 		}
-		return;
-	}
 
-	if (bActivate) {
-		pMainFrame->OnChildFrameActivate();
+		return;
 	}
 
 	if (m_fClosing) {
 		if (pMainFrame->GetChildFramesCount() == 1) { //Indicates that the last tab is closing now.
 			pMainFrame->OnChildFrameCloseLast();
 		}
+
+		return;
 	}
+
+	bActivate ? OnFrameActivate() : OnFrameDisctivate();
 }

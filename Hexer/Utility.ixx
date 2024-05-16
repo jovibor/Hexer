@@ -21,6 +21,10 @@ export namespace Ut {
 
 	constexpr UINT g_arrPanes[] { IDC_PANE_DATAINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGGER };
 
+	//HexCtrl dialogs that is not in panes. They must be hidden/restored during tab switching.
+	constexpr HEXCTRL::EHexWnd g_arrHexDlg[] { HEXCTRL::EHexWnd::DLG_CODEPAGE, HEXCTRL::EHexWnd::DLG_GOTO,
+		HEXCTRL::EHexWnd::DLG_MODIFY, HEXCTRL::EHexWnd::DLG_SEARCH };
+
 	[[nodiscard]] auto GetAppName() -> const std::wstring& {
 		static const std::wstring wstrAppName { [] {
 			CStringW strw;

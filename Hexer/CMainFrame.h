@@ -27,8 +27,9 @@ public:
 	[[nodiscard]] bool IsPaneVisible(UINT uPaneID); //Is Pane visible even if pane's window itself is tabbed and hidden atm (not active).
 	[[nodiscard]] bool IsPaneActive(UINT uPaneID);  //Is Pane itself visible atm.
 	void OnChildFrameActivate();
-	void OnChildFrameCloseLast(); //When the last child frame is closed.
-	void OnChildFrameOpenFirst(); //When the first child frame is opened.
+	void OnChildFrameCloseLast();   //When the last child frame is closed.
+	void OnChildFrameDisactivate();
+	void OnChildFrameOpenFirst();   //When the first child frame is opened.
 	void ShowPane(UINT uPaneID, bool fShow, bool fActivate);
 	void UpdatePaneFileInfo();
 protected:

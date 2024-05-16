@@ -81,6 +81,11 @@ void CMainFrame::OnChildFrameCloseLast()
 	HideAllPanes(); //To disable panes from showing at the next app's start-up.
 }
 
+void CMainFrame::OnChildFrameDisactivate()
+{
+	//Nothing to implement yet.
+}
+
 void CMainFrame::OnChildFrameOpenFirst()
 {
 	if (IsAppClosing()) {
