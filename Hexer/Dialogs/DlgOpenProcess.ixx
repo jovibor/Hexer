@@ -206,16 +206,14 @@ void CDlgOpenProcess::OnListModulesGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult
 	if ((pItem->mask & LVIF_TEXT) == 0)
 		return;
 
-	const auto iItemID = pItem->iItem;
-	if (iItemID < 0 || pItem->iSubItem < 0)
-		return;
+	const auto iItem = pItem->iItem;
 
 	switch (pItem->iSubItem) {
 	case 0: //Module Name.
-		pItem->pszText = m_vecModules[iItemID].wstrModName.data();
+		pItem->pszText = m_vecModules[iItem].wstrModName.data();
 		break;
 	case 1: //Working Set.
-		*std::format_to(pItem->pszText, m_locale, L"{:L}KB", m_vecModules[iItemID].dwWorkingSet / 1024) = L'\0';
+		*std::format_to(pItem->pszText, m_locale, L"{:L}KB", m_vecModules[iItem].dwWorkingSet / 1024) = L'\0';
 		break;
 	default:
 		break;
@@ -306,22 +304,20 @@ void CDlgOpenProcess::OnListProcsGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/
 	if ((pItem->mask & LVIF_TEXT) == 0)
 		return;
 
-	const auto iItemID = pItem->iItem;
-	if (iItemID < 0 || pItem->iSubItem < 0)
-		return;
+	const auto iItem = pItem->iItem;
 
 	switch (pItem->iSubItem) {
 	case 0: //№.
-		*std::format_to(pItem->pszText, L"{}", iItemID) = L'\0';
+		*std::format_to(pItem->pszText, L"{}", iItem) = L'\0';
 		break;
 	case 1: //Process Name.
-		pItem->pszText = m_vecProcs[iItemID].wstrProcName.data();
+		pItem->pszText = m_vecProcs[iItem].wstrProcName.data();
 		break;
 	case 2: //Process ID.
-		*std::format_to(pItem->pszText, L"{}", m_vecProcs[iItemID].dwProcID) = L'\0';
+		*std::format_to(pItem->pszText, L"{}", m_vecProcs[iItem].dwProcID) = L'\0';
 		break;
 	case 3: //Working Set.
-		*std::format_to(pItem->pszText, m_locale, L"{:L}KB", m_vecProcs[iItemID].dwWorkingSet / 1024) = L'\0';
+		*std::format_to(pItem->pszText, m_locale, L"{:L}KB", m_vecProcs[iItem].dwWorkingSet / 1024) = L'\0';
 		break;
 	default:
 		break;

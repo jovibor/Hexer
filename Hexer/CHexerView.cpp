@@ -27,11 +27,13 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_COMMAND(IDM_EDIT_REDO, &CHexerView::OnEditRedo)
 	ON_COMMAND(IDM_EDIT_COPYHEX, &CHexerView::OnEditCopyHex)
 	ON_COMMAND(IDM_EDIT_PASTEHEX, &CHexerView::OnEditPasteHex)
+	ON_COMMAND(IDM_VIEW_PROCMEMORY, &CHexerView::OnViewProcMemory)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGBKMMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_SETFONT, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlSetFont)
 	ON_UPDATE_COMMAND_UI(IDM_EDIT_EDITMODE, &CHexerView::OnUpdateEditEditMode)
+	ON_UPDATE_COMMAND_UI(IDM_VIEW_PROCMEMORY, &CHexerView::OnUpdateProcMemory)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
@@ -40,6 +42,11 @@ auto CHexerView::GetDataInfo()const->Ut::DATAINFO
 	const auto pDoc = GetDocument();
 	return { .wsvDataPath = pDoc->GetDataPath(), .wsvFileName = pDoc->GetFileName(), .ullDataSize = pDoc->GetDataSize(),
 		.dwPageSize = GetHexCtrl()->GetPageSize(), .eMode { pDoc->GetOpenMode() }, .fMutable = GetHexCtrl()->IsMutable() };
+}
+
+auto CHexerView::GetDlgProcMemory()const->HWND
+{
+	return m_dlgProcMem;
 }
 
 auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
@@ -142,22 +149,22 @@ void CHexerView::OnFilePrint()
 
 void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
-	UINT uPaineID;
+	UINT uPaneID;
 	switch (pNMHDR->code) {
 	case HEXCTRL::HEXCTRL_MSG_DLGBKMMGR:
-		uPaineID = IDC_PANE_BKMMGR;
+		uPaneID = IDC_PANE_BKMMGR;
 		break;
 	case HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP:
-		uPaineID = IDC_PANE_DATAINTERP;
+		uPaneID = IDC_PANE_DATAINTERP;
 		break;
 	case HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR:
-		uPaineID = IDC_PANE_TEMPLMGR;
+		uPaneID = IDC_PANE_TEMPLMGR;
 		break;
 	default:
 		return;
 	}
 
-	GetMainFrame()->ShowPane(uPaineID, true, true);
+	GetMainFrame()->ShowPane(uPaneID, true, true);
 }
 
 void CHexerView::OnHexCtrlSetFont(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
@@ -233,6 +240,23 @@ void CHexerView::OnUpdateEditEditMode(CCmdUI* pCmdUI)
 		pCmdUI->Enable(FALSE);
 		pCmdUI->SetCheck(FALSE);
 	}
+}
+
+void CHexerView::OnUpdateProcMemory(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(GetDocument()->IsProcess());
+	if (::IsWindow(m_dlgProcMem)) {
+		pCmdUI->SetCheck(m_dlgProcMem.IsWindowVisible());
+	}
+}
+
+void CHexerView::OnViewProcMemory()
+{
+	if (!::IsWindow(m_dlgProcMem)) {
+		m_dlgProcMem.Init(GetHexCtrl(), GetDocument()->GetVecProcMemory());
+		m_dlgProcMem.Create(IDD_PROCMEMORY, AfxGetMainWnd());
+	}
+	m_dlgProcMem.ShowWindow(m_dlgProcMem.IsWindowVisible() ? SW_HIDE : SW_SHOW);
 }
 
 void CHexerView::SetPaneAlreadyLaunch(UINT uPaneID)

@@ -23,6 +23,7 @@ public:
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetOpenMode()const->Ut::EOpenMode;
 	[[nodiscard]] auto GetProcID()const->DWORD;
+	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsFileMutable()const;
 	[[nodiscard]] bool IsProcess()const;

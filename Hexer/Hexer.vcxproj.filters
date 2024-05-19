@@ -170,6 +170,9 @@
     <ClCompile Include="Dialogs\DlgOpenProcess.ixx">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="Dialogs\DlgProcMemory.ixx">
+      <Filter>Modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Hexer.rc">

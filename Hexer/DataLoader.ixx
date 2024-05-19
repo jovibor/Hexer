@@ -29,6 +29,7 @@ public:
 	[[nodiscard]] auto GetMaxVirtOffset()const->std::uint64_t;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetProcID()const->DWORD;
+	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsMutable()const;
 	[[nodiscard]] bool IsProcess()const;
@@ -53,7 +54,7 @@ private:
 	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
 	std::wstring m_wstrDataPath; //Data path to open.
 	std::wstring m_wstrFileName; //File name without path, or Process name.
-	std::vector<MEMORY_BASIC_INFORMATION> m_vecMemRegInfo; //Process memory regions info.
+	std::vector<MEMORY_BASIC_INFORMATION> m_vecProcMemory; //Process memory regions info.
 	HANDLE m_hHandle { };        //Handle of a file or process.
 	HANDLE m_hMapObject { };     //Returned by CreateFileMappingW.
 	LPVOID m_lpMapBase { };      //Returned by MapViewOfFile.
@@ -98,7 +99,7 @@ void CDataLoader::Close()
 
 	m_pCache.reset();
 	m_wstrDataPath.clear();
-	m_vecMemRegInfo.clear();
+	m_vecProcMemory.clear();
 	m_hHandle = nullptr;
 	m_hMapObject = nullptr;
 	m_lpMapBase = nullptr;
@@ -146,6 +147,11 @@ auto CDataLoader::GetMemPageSize()const->DWORD
 auto CDataLoader::GetProcID()const->DWORD
 {
 	return m_dwProcID;
+}
+
+auto CDataLoader::GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&
+{
+	return m_vecProcMemory;
 }
 
 auto CDataLoader::GetVirtualInterface()->HEXCTRL::IHexVirtData*
@@ -233,18 +239,18 @@ void CDataLoader::OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)
 	const auto ullOffset = hdi.stHexSpan.ullOffset;
 	std::uint64_t u64RegsTotalSize { }; //Regions total size.
 	if (fGetVirt) {
-		const auto it = std::find_if(m_vecMemRegInfo.begin(), m_vecMemRegInfo.end(),
+		const auto it = std::find_if(m_vecProcMemory.begin(), m_vecProcMemory.end(),
 		[ullOffset, &u64RegsTotalSize](const MEMORY_BASIC_INFORMATION& ref) mutable {
 			u64RegsTotalSize += ref.RegionSize;
 			return ullOffset < u64RegsTotalSize; });
 
-		if (it != m_vecMemRegInfo.end()) {
+		if (it != m_vecProcMemory.end()) {
 			const auto ullOffsetFromRegionBegin = ullOffset - (u64RegsTotalSize - it->RegionSize);
 			hdi.stHexSpan.ullOffset = reinterpret_cast<ULONGLONG>(it->BaseAddress) + ullOffsetFromRegionBegin;
 		}
 	}
 	else {
-		const auto it = std::find_if(m_vecMemRegInfo.begin(), m_vecMemRegInfo.end(),
+		const auto it = std::find_if(m_vecProcMemory.begin(), m_vecProcMemory.end(),
 			[ullOffset, &u64RegsTotalSize](const MEMORY_BASIC_INFORMATION& ref) mutable {
 				if (ullOffset >= reinterpret_cast<ULONGLONG>(ref.BaseAddress)
 					&& ullOffset < (reinterpret_cast<ULONGLONG>(ref.BaseAddress) + ref.RegionSize)) {
@@ -254,7 +260,7 @@ void CDataLoader::OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)
 				u64RegsTotalSize += ref.RegionSize;
 				return false; });
 
-		if (it != m_vecMemRegInfo.end()) {
+		if (it != m_vecProcMemory.end()) {
 			hdi.stHexSpan.ullOffset = u64RegsTotalSize + (ullOffset - reinterpret_cast<ULONGLONG>(it->BaseAddress));
 		}
 	}
@@ -382,8 +388,8 @@ bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
 		return false;
 	}
 
-	m_vecMemRegInfo.clear();
-	m_vecMemRegInfo.reserve(16);
+	m_vecProcMemory.clear();
+	m_vecProcMemory.reserve(16);
 	const std::byte* pMemCurr { nullptr };
 	while (true) {
 		MEMORY_BASIC_INFORMATION mbi;
@@ -394,11 +400,11 @@ bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
 
 		if (mbi.State == MEM_COMMIT && !(mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD))) {
 			m_ullMaxVirtOffset = reinterpret_cast<std::uint64_t>(pMemCurr) - 1;
-			m_vecMemRegInfo.emplace_back(mbi);
+			m_vecProcMemory.emplace_back(mbi);
 		}
 	}
 
-	m_stDataSize.QuadPart = std::reduce(m_vecMemRegInfo.begin(), m_vecMemRegInfo.end(), 0ULL,
+	m_stDataSize.QuadPart = std::reduce(m_vecProcMemory.begin(), m_vecProcMemory.end(), 0ULL,
 		[](ULONGLONG ullSumm, const MEMORY_BASIC_INFORMATION& ref) { return ullSumm + ref.RegionSize; });
 	m_dwAlignment = 64;
 	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), m_dwAlignment)));
@@ -477,7 +483,7 @@ auto CDataLoader::ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 	std::uint64_t u64RegsTotalSize { 0ULL }; //Total size of the commited regions of pages.
 	bool fVestige { false }; //Is there any remainder memory to acquire?
 
-	for (const auto& mbi : m_vecMemRegInfo) {
+	for (const auto& mbi : m_vecProcMemory) {
 		u64RegsTotalSize += mbi.RegionSize;
 		std::byte* pAddrToRead { };
 		std::uint64_t u64SizeToRead { };

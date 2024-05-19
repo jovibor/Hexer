@@ -14,6 +14,7 @@
 #define IDD_LOGGER                      109
 #define IDD_SETTINGSHEXCTRL             110
 #define IDD_SETTINGSGENERAL             111
+#define IDD_PROCMEMORY                  112
 #define IDR_MAINFRAME                   200
 #define IDR_HEXER_FRAME                 201
 #define IDR_TOOLBAR_MAIN                202
@@ -48,6 +49,7 @@
 #define IDC_OPENPROCESS_LIST_MODULES    325
 #define IDC_OPENPROCESS_BTN_REFRESH     326
 #define IDC_OPENPROCESS_STAT_INFO       327
+#define IDC_PROCMEMORY_LIST             328
 #define IDM_FILE_RFL00                  32770
 #define IDM_FILE_RFL01                  32771
 #define IDM_FILE_RFL02                  32772
@@ -83,16 +85,17 @@
 #define IDM_VIEW_DATAINTERP             32802
 #define IDM_VIEW_TEMPLMGR               32803
 #define IDM_VIEW_LOGGER                 32804
-#define IDM_TOOLS_SETTINGS              32805
-#define IDM_TOOLBAR_CUSTOMIZE           32806
+#define IDM_VIEW_PROCMEMORY             32805
+#define IDM_TOOLS_SETTINGS              32806
+#define IDM_TOOLBAR_CUSTOMIZE           32807
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        328
-#define _APS_NEXT_COMMAND_VALUE         32807
-#define _APS_NEXT_CONTROL_VALUE         328
-#define _APS_NEXT_SYMED_VALUE           327
+#define _APS_NEXT_RESOURCE_VALUE        329
+#define _APS_NEXT_COMMAND_VALUE         32808
+#define _APS_NEXT_CONTROL_VALUE         329
+#define _APS_NEXT_SYMED_VALUE           329
 #endif
 #endif

@@ -80,13 +80,22 @@ void CChildFrame::OnFrameActivate()
 	GetMainFrame()->OnChildFrameActivate();
 }
 
-void CChildFrame::OnFrameDisctivate()
+void CChildFrame::OnFrameDisactivate()
 {
-	for (const auto eWnd : Ut::g_arrHexDlg) { //Hide all active dialogs.
+	//HexCtrl dialogs that is not in panes. They must be hidden/restored during tab switching.
+	static constexpr HEXCTRL::EHexWnd arrHexDlg[] { HEXCTRL::EHexWnd::DLG_CODEPAGE, HEXCTRL::EHexWnd::DLG_GOTO,
+		HEXCTRL::EHexWnd::DLG_MODIFY, HEXCTRL::EHexWnd::DLG_SEARCH };
+
+	for (const auto eWnd : arrHexDlg) { //Hide all active HexCtrl dialogs.
 		if (const auto hWnd = GetHexCtrl()->GetWndHandle(eWnd, false); ::IsWindowVisible(hWnd)) {
 			::ShowWindow(hWnd, SW_HIDE);
 			m_vecWndHidden.emplace_back(hWnd);
 		}
+	}
+
+	if (const auto hWnd = GetHexerView()->GetDlgProcMemory(); ::IsWindowVisible(hWnd)) { //Hide DlgProcMemory.
+		::ShowWindow(hWnd, SW_HIDE);
+		m_vecWndHidden.emplace_back(hWnd);
 	}
 
 	GetMainFrame()->OnChildFrameDisactivate();
@@ -123,5 +132,5 @@ void CChildFrame::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeact
 		return;
 	}
 
-	bActivate ? OnFrameActivate() : OnFrameDisctivate();
+	bActivate ? OnFrameActivate() : OnFrameDisactivate();
 }

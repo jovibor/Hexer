@@ -20,7 +20,7 @@ private:
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
 	afx_msg void OnDestroy();
 	void OnFrameActivate();
-	void OnFrameDisctivate();
+	void OnFrameDisactivate();
 	afx_msg void OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd);
 	DECLARE_DYNCREATE(CChildFrame);
 	DECLARE_MESSAGE_MAP();

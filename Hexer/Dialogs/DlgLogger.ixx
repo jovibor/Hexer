@@ -132,14 +132,11 @@ void CDlgLogger::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	if ((pItem->mask & LVIF_TEXT) == 0)
 		return;
 
-	const auto iItemID = pItem->iItem;
-	if (iItemID < 0 || pItem->iSubItem < 0)
-		return;
-
-	const auto& refData = m_vecData[iItemID];
+	const auto iItem = pItem->iItem;
+	const auto& refData = m_vecData[iItem];
 	switch (pItem->iSubItem) {
 	case 0: //№.
-		*std::format_to(pItem->pszText, L"{}", iItemID + 1) = L'\0';
+		*std::format_to(pItem->pszText, L"{}", iItem + 1) = L'\0';
 		break;
 	case 1: //Time.
 		*std::format_to(pItem->pszText, L"{:%H:%M:%OS}", refData.tmloc) = L'\0';

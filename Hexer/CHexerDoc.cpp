@@ -65,6 +65,11 @@ auto CHexerDoc::GetProcID()const->DWORD
 	return m_stDataLoader.GetProcID();
 }
 
+auto CHexerDoc::GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&
+{
+	return m_stDataLoader.GetVecProcMemory();
+}
+
 auto CHexerDoc::GetVirtualInterface()->HEXCTRL::IHexVirtData*
 {
 	return m_stDataLoader.GetVirtualInterface();
