@@ -104,21 +104,21 @@ auto CHexerMDTemplate::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
 //CHexerDocMgr.
 class CHexerDocMgr final : public CDocManager {
 public:
+	auto OpenDocumentCustom(LPCWSTR lpszFileName, bool fDontLNK) -> CDocument*;
+	auto OpenDocumentCustom(const Ut::DATAOPEN& dos) -> CDocument*;
 	auto OpenDocumentFile(LPCWSTR lpszFileName, BOOL bAddToMRU = FALSE) -> CDocument* override;
-	auto OpenDocumentFile(const Ut::DATAOPEN& dos) -> CDocument*;
 	DECLARE_DYNCREATE(CHexerDocMgr);
 };
 
 IMPLEMENT_DYNCREATE(CHexerDocMgr, CDocument)
 
-auto CHexerDocMgr::OpenDocumentFile(LPCWSTR lpszFileName, BOOL /*bAddToMRU*/)->CDocument*
+auto CHexerDocMgr::OpenDocumentCustom(LPCWSTR lpszFileName, bool fDontLNK)->CDocument*
 {
-	//This method also takes a part in the HDROP.
-
-	return OpenDocumentFile({ .wstrDataPath { Ut::ResolveLNK(lpszFileName) }, .eMode { Ut::EOpenMode::OPEN_FILE } });
+	return OpenDocumentCustom({ .wstrDataPath { fDontLNK ? lpszFileName : Ut::ResolveLNK(lpszFileName) },
+		.eMode { Ut::EOpenMode::OPEN_FILE } });
 }
 
-auto CHexerDocMgr::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
+auto CHexerDocMgr::OpenDocumentCustom(const Ut::DATAOPEN& dos)->CDocument*
 {
 	//This code below is copy-pasted from the original CDocManager::OpenDocumentFile.
 	//We need to override this method to remove calls to AtlStrLen, AfxFullPath, AfxResolveShortcut
@@ -183,6 +183,13 @@ auto CHexerDocMgr::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
 	return pBestTemplate->OpenDocumentFile(dos);
 }
 
+auto CHexerDocMgr::OpenDocumentFile(LPCWSTR lpszFileName, BOOL /*bAddToMRU*/)->CDocument*
+{
+	//This method also takes a part in the HDROP.
+
+	return OpenDocumentCustom({ .wstrDataPath { Ut::ResolveLNK(lpszFileName) }, .eMode { Ut::EOpenMode::OPEN_FILE } });
+}
+
 
 //CHexerApp.
 BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
@@ -210,35 +217,46 @@ void CHexerApp::OnFileOpenFile()
 {
 	const auto lmbFOD = [this]()->bool {
 		CFileDialog fd(TRUE, nullptr, nullptr, OFN_OVERWRITEPROMPT | OFN_EXPLORER | OFN_ALLOWMULTISELECT |
-			OFN_DONTADDTORECENT | OFN_ENABLESIZING | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST, L"All files (*.*)|*.*||");
+			OFN_DONTADDTORECENT | OFN_ENABLESIZING | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NODEREFERENCELINKS,
+			L"All files (*.*)|*.*||");
+		constexpr auto dwIDChkLNK = 1UL;
+		fd.AddCheckButton(dwIDChkLNK, L"Don't resolve .lnk", FALSE);
+		if (fd.DoModal() != IDOK)
+			return true;
 
-		if (fd.DoModal() == IDOK) {
-			CComPtr<IFileOpenDialog> pIFOD = fd.GetIFileOpenDialog();
-			CComPtr<IShellItemArray> pResults;
-			pIFOD->GetResults(&pResults);
-			bool fOpened { false };
-			DWORD dwCount { };
-			pResults->GetCount(&dwCount);
-			for (auto i = 0U; i < dwCount; ++i) {
-				CComPtr<IShellItem> pItem;
-				pResults->GetItemAt(i, &pItem);
-				CComHeapPtr<wchar_t> pwstrPath;
-				pItem->GetDisplayName(SIGDN_FILESYSPATH, &pwstrPath);
-				const auto pDoc = OpenDocumentFile(pwstrPath);
-				fOpened = !fOpened ? pDoc != nullptr : true;
-			}
-			return fOpened;
+		BOOL iChecked;
+		fd.GetCheckButtonState(dwIDChkLNK, iChecked);
+		const auto fDontLNK = iChecked == TRUE;
+		CComPtr<IFileOpenDialog> pIFOD = fd.GetIFileOpenDialog();
+		CComPtr<IShellItemArray> pResults;
+		pIFOD->GetResults(&pResults);
+		bool fOpened { false };
+		DWORD dwCount { };
+		pResults->GetCount(&dwCount);
+		for (auto i = 0U; i < dwCount; ++i) {
+			CComPtr<IShellItem> pItem;
+			pResults->GetItemAt(i, &pItem);
+			CComHeapPtr<wchar_t> pwstrPath;
+			pItem->GetDisplayName(SIGDN_FILESYSPATH, &pwstrPath);
+			const auto pDoc = OpenDocumentCustom(pwstrPath, fDontLNK);
+			fOpened = !fOpened ? pDoc != nullptr : true;
 		}
-		return true;
+		return fOpened;
 		};
 
 	while (!lmbFOD()) { }; //If no file has been opened (in multiple selection) show the "Open File Dialog" again.
 }
 
-auto CHexerApp::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
+auto CHexerApp::OpenDocumentCustom(LPCWSTR pwszPath, bool fDontLNK)->CDocument*
 {
 	ENSURE_VALID(m_pDocManager);
-	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentFile(dos);
+	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentCustom(pwszPath, fDontLNK);
+}
+
+auto CHexerApp::OpenDocumentCustom(const Ut::DATAOPEN& dos)->CDocument*
+{
+	ENSURE_VALID(m_pDocManager);
+	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentCustom(dos);
 }
 
 auto CHexerApp::OpenDocumentFile(LPCWSTR pwszPath)->CDocument*
@@ -356,7 +374,7 @@ BOOL CHexerApp::InitInstance()
 		break;
 	case CAppSettings::EStartup::RESTORE_LAST_OPENED:
 		for (const auto& ref : GetAppSettings().GetLastOpenedList()) {
-			OpenDocumentFile(ref);
+			OpenDocumentCustom(ref);
 		}
 		break;
 	default:
@@ -395,7 +413,7 @@ void CHexerApp::OnAppAbout()
 void CHexerApp::OnFileNewFile()
 {
 	if (CDlgNewFile dlg; dlg.DoModal() == IDOK) {
-		OpenDocumentFile(dlg.GetNewFileInfo());
+		OpenDocumentCustom(dlg.GetNewFileInfo());
 	}
 }
 
@@ -403,7 +421,7 @@ void CHexerApp::OnFileOpenDevice()
 {
 	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& wstrPath : dlg.GetPaths()) {
-			OpenDocumentFile({ .wstrDataPath { wstrPath }, .eMode { Ut::EOpenMode::OPEN_DEVICE } });
+			OpenDocumentCustom({ .wstrDataPath { wstrPath }, .eMode { Ut::EOpenMode::OPEN_DEVICE } });
 		}
 	}
 }
@@ -412,7 +430,7 @@ void CHexerApp::OnFileOpenProcess()
 {
 	if (CDlgOpenProcess dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& ref : dlg.GetProcesses()) {
-			OpenDocumentFile({ .wstrDataPath { ref.wstrProcName }, .dwProcID { ref.dwProcID },
+			OpenDocumentCustom({ .wstrDataPath { ref.wstrProcName }, .dwProcID { ref.dwProcID },
 				.eMode { Ut::EOpenMode::OPEN_PROC } });
 		}
 	}
@@ -438,5 +456,5 @@ void CHexerApp::OnToolsSettings()
 
 void CHexerApp::OnFileRFL(UINT uID)
 {
-	OpenDocumentFile(GetAppSettings().RFLGetDataFromMenuID(uID));
+	OpenDocumentCustom(GetAppSettings().RFLGetDataFromMenuID(uID));
 }

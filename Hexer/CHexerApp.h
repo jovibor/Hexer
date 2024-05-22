@@ -16,8 +16,9 @@ public:
 	afx_msg void OnFileOpenFile();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
 	[[nodiscard]] auto GetClassName()const->LPCWSTR;
-	auto OpenDocumentFile(const Ut::DATAOPEN& dos) -> CDocument*;
-	auto OpenDocumentFile(LPCWSTR pwszPath) -> CDocument*;
+	auto OpenDocumentCustom(LPCWSTR pwszPath, bool fDontLNK) -> CDocument*;
+	auto OpenDocumentCustom(const Ut::DATAOPEN& dos) -> CDocument*;
+	auto OpenDocumentFile(LPCWSTR pwszPath) -> CDocument* override;
 private:
 	BOOL InitInstance()override;
 	int ExitInstance()override;
