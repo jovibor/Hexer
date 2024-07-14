@@ -577,12 +577,14 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontInfoParam", refClrs.clrFontInfoParam);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontInfoData", refClrs.clrFontInfoData);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontCaret", refClrs.clrFontCaret);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontBkm", refClrs.clrFontBkm);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBk", refClrs.clrBk);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkSel", refClrs.clrBkSel);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkDataInterp", refClrs.clrBkDataInterp);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkInfoBar", refClrs.clrBkInfoBar);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkCaret", refClrs.clrBkCaret);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkCaretSel", refClrs.clrBkCaretSel);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkBkm", refClrs.clrBkBkm);
 		}
 		else { GetHexCtrlSettings() = GetHexCtrlDefs(); }
 	}
@@ -594,11 +596,6 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 	LoadHexCtrlTemplates();
 
 	m_fLoaded = true;
-}
-
-void CAppSettings::OnSettingsChanged()
-{
-	ShowInWindowsContextMenu(m_stGeneralData.fWindowsMenu);
 }
 
 void CAppSettings::LOLAddToList(const Ut::DATAOPEN& dos)
@@ -613,6 +610,11 @@ void CAppSettings::LOLAddToList(const Ut::DATAOPEN& dos)
 void CAppSettings::LOLRemoveFromList(const Ut::DATAOPEN& dos)
 {
 	std::erase_if(m_vecLOL, [&dos](const Ut::DATAOPEN& refData) { return refData == dos; });
+}
+
+void CAppSettings::OnSettingsChanged()
+{
+	ShowInWindowsContextMenu(m_stGeneralData.fWindowsMenu);
 }
 
 void CAppSettings::RFLAddToList(const Ut::DATAOPEN& dos)
@@ -728,12 +730,14 @@ void CAppSettings::SaveSettings()
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontInfoParam", refClrs.clrFontInfoParam);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontInfoData", refClrs.clrFontInfoData);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontCaret", refClrs.clrFontCaret);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontBkm", refClrs.clrFontBkm);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBk", refClrs.clrBk);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkSel", refClrs.clrBkSel);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkDataInterp", refClrs.clrBkDataInterp);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkInfoBar", refClrs.clrBkInfoBar);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkCaret", refClrs.clrBkCaret);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkCaretSel", refClrs.clrBkCaretSel);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkBkm", refClrs.clrBkBkm);
 }
 
 void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)

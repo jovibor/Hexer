@@ -317,7 +317,7 @@ enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
 	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, wchDateSepar, wstrDateFormat, fScrollLines,
 	flScrollRatio, fInfoBar, fOffsetHex, dwCharsExtraSpace, stLogFont,
 	clrFontHex, clrFontText, clrFontSel, clrFontDataInterp, clrFontCaption, clrFontInfoParam, clrFontInfoData,
-	clrFontCaret, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel
+	clrFontCaret, clrFontBkm, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel, clrBkBkm
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsHexCtrl, CDialogEx)
@@ -357,12 +357,14 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueRGB(std::to_underlying(clrFontInfoParam), refClrs.clrFontInfoParam);
 	SetPropValueRGB(std::to_underlying(clrFontInfoData), refClrs.clrFontInfoData);
 	SetPropValueRGB(std::to_underlying(clrFontCaret), refClrs.clrFontCaret);
+	SetPropValueRGB(std::to_underlying(clrFontBkm), refClrs.clrFontBkm);
 	SetPropValueRGB(std::to_underlying(clrBk), refClrs.clrBk);
 	SetPropValueRGB(std::to_underlying(clrBkSel), refClrs.clrBkSel);
 	SetPropValueRGB(std::to_underlying(clrBkDataInterp), refClrs.clrBkDataInterp);
 	SetPropValueRGB(std::to_underlying(clrBkInfoBar), refClrs.clrBkInfoBar);
 	SetPropValueRGB(std::to_underlying(clrBkCaret), refClrs.clrBkCaret);
 	SetPropValueRGB(std::to_underlying(clrBkCaretSel), refClrs.clrBkCaretSel);
+	SetPropValueRGB(std::to_underlying(clrBkBkm), refClrs.clrBkBkm);
 	m_grid.SetRedraw(TRUE);
 	m_grid.RedrawWindow();
 }
@@ -392,12 +394,14 @@ void CDlgSettingsHexCtrl::SaveSettings()
 	refClrs.clrFontInfoParam = GetPropValueRGB(std::to_underlying(clrFontInfoParam));
 	refClrs.clrFontInfoData = GetPropValueRGB(std::to_underlying(clrFontInfoData));
 	refClrs.clrFontCaret = GetPropValueRGB(std::to_underlying(clrFontCaret));
+	refClrs.clrFontBkm = GetPropValueRGB(std::to_underlying(clrFontBkm));
 	refClrs.clrBk = GetPropValueRGB(std::to_underlying(clrBk));
 	refClrs.clrBkSel = GetPropValueRGB(std::to_underlying(clrBkSel));
 	refClrs.clrBkDataInterp = GetPropValueRGB(std::to_underlying(clrBkDataInterp));
 	refClrs.clrBkInfoBar = GetPropValueRGB(std::to_underlying(clrBkInfoBar));
 	refClrs.clrBkCaret = GetPropValueRGB(std::to_underlying(clrBkCaret));
 	refClrs.clrBkCaretSel = GetPropValueRGB(std::to_underlying(clrBkCaretSel));
+	refClrs.clrBkBkm = GetPropValueRGB(std::to_underlying(clrBkBkm));
 }
 
 
@@ -543,6 +547,8 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontInfoData));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Caret", refClrs.clrFontCaret),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontCaret));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Bookmarks", refClrs.clrFontBkm),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontBkm));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Background", refClrs.clrBk),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBk));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Selection", refClrs.clrBkSel),
@@ -555,6 +561,8 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBkCaret));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Caret in Selection", refClrs.clrBkCaretSel),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBkCaretSel));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Bookmarks", refClrs.clrBkBkm),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBkBkm));
 
 	const auto pColors = new CMFCPropertyGridProperty(L"Colors:");
 	for (const auto& it : m_vecGrid) {

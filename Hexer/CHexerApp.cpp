@@ -45,7 +45,7 @@ BOOL CDlgAbout::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	const auto wstrDescr = std::format(L"Hexer Editor v{}.{}.{}, based on the HexCtrl v{}.{}.{}\r\n"
-		"Copyright © 2023-2024 Jovibor",
+		"Copyright © 2023-present Jovibor",
 		Ut::HEXER_VERSION_MAJOR, Ut::HEXER_VERSION_MINOR, Ut::HEXER_VERSION_PATCH,
 		HEXCTRL::HEXCTRL_VERSION_MAJOR, HEXCTRL::HEXCTRL_VERSION_MINOR, HEXCTRL::HEXCTRL_VERSION_PATCH);
 	GetDlgItem(IDC_ABOUT_STATIC_VERSION)->SetWindowTextW(wstrDescr.data());
