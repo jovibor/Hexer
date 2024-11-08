@@ -59,11 +59,11 @@ export namespace Ut {
 		};
 	}
 
-	[[nodiscard]] auto GetLastErrorWstr() -> std::wstring {
+	[[nodiscard]] auto GetLastErrorWstr(DWORD dwErr = 0) -> std::wstring {
 		std::wstring wstr;
-		wstr.resize_and_overwrite(MAX_PATH, [](wchar_t* pData, std::size_t sSize)noexcept {
+		wstr.resize_and_overwrite(MAX_PATH, [=](wchar_t* pData, std::size_t sSize)noexcept {
 			return FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-				::GetLastError(), 0, pData, static_cast<DWORD>(sSize), nullptr);
+				dwErr > 0 ? dwErr : GetLastError(), 0, pData, static_cast<DWORD>(sSize), nullptr);
 			});
 		return wstr;
 	}

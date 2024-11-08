@@ -8,6 +8,7 @@ module;
 #include <SDKDDKVer.h>
 #include "HexCtrl.h"
 #include <cassert>
+#include <expected>
 #include <filesystem>
 #include <format>
 #include <memory>
@@ -38,13 +39,13 @@ private:
 	[[nodiscard]] auto GetInternalCacheSize()const->DWORD; //The real cache size used internally.
 	[[nodiscard]] bool IsModified()const;
 	[[nodiscard]] bool IsVirtual()const;
+	void LogLastError(std::wstring_view wsvSource, DWORD dwErr = 0)const;
 	void OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)override;
 	void OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)override;
 	void OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)override;
-	[[nodiscard]] bool OpenFileVirtual();
-	[[nodiscard]] bool OpenFile(const Ut::DATAOPEN& dos);
-	[[nodiscard]] bool OpenProcess(const Ut::DATAOPEN& dos);
-	void PrintLastError(std::wstring_view wsvSource)const;
+	[[nodiscard]] auto OpenFileVirtual() -> std::expected<void, DWORD>;
+	[[nodiscard]] auto OpenFile(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
+	[[nodiscard]] auto OpenProcess(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
 	[[nodiscard]] auto ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
 	[[nodiscard]] auto ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
 	void WriteFileData();
@@ -59,8 +60,8 @@ private:
 	HANDLE m_hMapObject { };     //Returned by CreateFileMappingW.
 	LPVOID m_lpMapBase { };      //Returned by MapViewOfFile.
 	LARGE_INTEGER m_stDataSize { };
-	std::uint64_t m_ullOffsetCurr { }; //Offset of the data that is currently in the cache.
-	std::uint64_t m_ullSizeCurr { };   //Size of the data that is currently in the cache.
+	std::uint64_t m_ullOffsetCurr { };    //Offset of the data that is currently in the cache.
+	std::uint64_t m_ullSizeCurr { };      //Size of the data that is currently in the cache.
 	std::uint64_t m_ullMaxVirtOffset { }; //Maximum virtual address of a process.
 	DWORD m_dwPageSize { };     //System Virtual page size.
 	DWORD m_dwAlignment { };    //An alignment that the offset and the size must be aligned on, for the ReadFile.
@@ -178,36 +179,36 @@ bool CDataLoader::Open(const Ut::DATAOPEN& dos)
 
 	using enum Ut::EOpenMode;
 	std::wstring wstrLog;
-	bool fSuccess { };
+	std::expected<void, DWORD> expOpen;
 	switch (dos.eMode) {
 	case OPEN_PROC:
-		fSuccess = OpenProcess(dos);
-		if (fSuccess) {
+		expOpen = OpenProcess(dos);
+		if (expOpen) {
 			wstrLog = std::format(L"Process opened: {} (ID: {}) ({})", GetFileName(), GetProcID(), Ut::GetRWWstr(IsMutable()));
 		}
 		else {
-			wstrLog = std::format(L"Process open failed: {} (ID: {}). {}", GetFileName(), GetProcID(), Ut::GetLastErrorWstr());
-			MessageBoxW(AfxGetMainWnd()->m_hWnd, std::format(L"Can't open process with ID {}.", GetProcID()).data(),
-				L"Opening error", MB_ICONERROR);
+			wstrLog = std::format(L"Process open failed: {} (ID: {}). \r\n{}", GetFileName(), GetProcID(),
+				Ut::GetLastErrorWstr(expOpen.error()));
+			MessageBoxW(AfxGetMainWnd()->m_hWnd, wstrLog.data(), L"Opening error", MB_ICONERROR);
 		}
 		break;
 	default:
-		fSuccess = OpenFile(dos);
-		if (fSuccess) {
+		expOpen = OpenFile(dos);
+		if (expOpen) {
 			wstrLog = std::format(L"{} opened: {} ({})", Ut::GetNameFromEOpenMode(dos.eMode), GetFileName(),
 				Ut::GetRWWstr(IsMutable()));
 		}
 		else {
-			wstrLog = std::format(L"{} open failed: {}", Ut::GetNameFromEOpenMode(dos.eMode), GetFileName());
-			MessageBoxW(AfxGetMainWnd()->m_hWnd, std::format(L"Can't open {} {}.", Ut::GetNameFromEOpenMode(dos.eMode),
-				GetFileName()).data(), L"Opening error", MB_ICONERROR);
+			wstrLog = std::format(L"{} open failed: {} \r\n{}", Ut::GetNameFromEOpenMode(dos.eMode), GetFileName(),
+				Ut::GetLastErrorWstr(expOpen.error()));
+			MessageBoxW(AfxGetMainWnd()->m_hWnd, wstrLog.data(), L"Opening error", MB_ICONERROR);
 		}
 		break;
 	}
 
-	fSuccess ? Ut::Log::AddLogEntryInfo(wstrLog) : Ut::Log::AddLogEntryError(wstrLog);
+	expOpen ? Ut::Log::AddLogEntryInfo(wstrLog) : Ut::Log::AddLogEntryError(wstrLog);
 
-	return fSuccess;
+	return expOpen.has_value();
 }
 
 
@@ -229,6 +230,12 @@ bool CDataLoader::IsModified()const
 bool CDataLoader::IsVirtual()const
 {
 	return m_fVirtual;
+}
+
+void CDataLoader::LogLastError(std::wstring_view wsvSource, DWORD dwErr)const
+{
+	Ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X} {}",
+		GetFileName(), wsvSource, dwErr > 0 ? dwErr : GetLastError(), Ut::GetLastErrorWstr(dwErr)));
 }
 
 void CDataLoader::OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)
@@ -285,7 +292,7 @@ void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 	}
 }
 
-bool CDataLoader::OpenFile(const Ut::DATAOPEN& dos)
+auto CDataLoader::OpenFile(const Ut::DATAOPEN& dos)->std::expected<void, DWORD>
 {
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //File name.
@@ -300,8 +307,9 @@ bool CDataLoader::OpenFile(const Ut::DATAOPEN& dos)
 
 	if (fNewFile) { //Setting the size of the new file.
 		if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(dos.ullNewFileSize) } }, nullptr, FILE_BEGIN) == FALSE) {
-			PrintLastError(L"SetFilePointerEx");
-			return false;
+			const auto err = GetLastError();
+			LogLastError(L"SetFilePointerEx", err);
+			return std::unexpected(err);
 		}
 		SetEndOfFile(m_hHandle);
 	}
@@ -313,8 +321,9 @@ bool CDataLoader::OpenFile(const Ut::DATAOPEN& dos)
 		}
 
 		if (m_hHandle == INVALID_HANDLE_VALUE) {
-			PrintLastError(L"CreateFileW");
-			return false;
+			const auto err = GetLastError();
+			LogLastError(L"CreateFileW", err);
+			return std::unexpected(err);
 		}
 	}
 	else {
@@ -327,31 +336,33 @@ bool CDataLoader::OpenFile(const Ut::DATAOPEN& dos)
 
 	if (GetFileSizeEx(m_hHandle, &m_stDataSize); m_stDataSize.QuadPart == 0) { //Zero size.
 		MessageBoxW(nullptr, L"File is zero size.", m_wstrDataPath.data(), MB_ICONERROR);
-		return false;
+		return std::unexpected(0);
 	}
 
 	if (m_hMapObject = CreateFileMappingW(m_hHandle, nullptr, m_fMutable ? PAGE_READWRITE : PAGE_READONLY, 0, 0, nullptr);
 		m_hMapObject == nullptr) {
-		PrintLastError(L"CreateFileMappingW");
+		const auto err = GetLastError();
+		LogLastError(L"CreateFileMappingW", err);
 		CloseHandle(m_hHandle);
-		return false;
+		return std::unexpected(err);
 	}
 
 	m_lpMapBase = MapViewOfFile(m_hMapObject, m_fMutable ? FILE_MAP_WRITE : FILE_MAP_READ, 0, 0, 0);
 
-	return true;
+	return { };
 }
 
-bool CDataLoader::OpenFileVirtual()
+auto CDataLoader::OpenFileVirtual()->std::expected<void, DWORD>
 {
 	if (m_hHandle == nullptr)
-		return false;
+		return std::unexpected(0);
 
 	DISK_GEOMETRY stGeometry { };
 	DWORD dwBytesRet { };
 	if (!DeviceIoControl(m_hHandle, IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &stGeometry, sizeof(stGeometry), &dwBytesRet, nullptr)) {
-		PrintLastError(L"DeviceIoControl(IOCTL_DISK_GET_DRIVE_GEOMETRY)");
-		return false;
+		const auto err = GetLastError();
+		LogLastError(L"DeviceIoControl(IOCTL_DISK_GET_DRIVE_GEOMETRY)", err);
+		return std::unexpected(err);
 	}
 
 	m_dwAlignment = stGeometry.BytesPerSector;
@@ -362,8 +373,9 @@ bool CDataLoader::OpenFileVirtual()
 	case MEDIA_TYPE::RemovableMedia:
 	case MEDIA_TYPE::FixedMedia:
 		if (!DeviceIoControl(m_hHandle, IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &stLengthInfo, sizeof(stLengthInfo), &dwBytesRet, nullptr)) {
-			PrintLastError(L"DeviceIoControl(IOCTL_DISK_GET_LENGTH_INFO)");
-			return false;
+			const auto err = GetLastError();
+			LogLastError(L"DeviceIoControl(IOCTL_DISK_GET_LENGTH_INFO)", err);
+			return std::unexpected(err);
 		}
 		break;
 	default:
@@ -375,17 +387,16 @@ bool CDataLoader::OpenFileVirtual()
 	m_stDataSize.QuadPart = stLengthInfo.Length.QuadPart;
 	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), m_dwAlignment))); //Initialize the data cache.
 
-	return true;
+	return { };
 }
 
-bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
+auto CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)->std::expected<void, DWORD>
 {
 	m_fProcess = true;
 	m_wstrFileName = dos.wstrDataPath; //Process name.
 	m_dwProcID = dos.dwProcID;
-	m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetProcID());
-	if (m_hHandle == nullptr) {
-		return false;
+	if (m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetProcID()); m_hHandle == nullptr) {
+		return std::unexpected(GetLastError());
 	}
 
 	m_vecProcMemory.clear();
@@ -411,13 +422,7 @@ bool CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)
 	m_fVirtual = true;
 	m_fMutable = true;
 
-	return true;
-}
-
-void CDataLoader::PrintLastError(std::wstring_view wsvSource)const
-{
-	Ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X} {}",
-		GetFileName(), wsvSource, GetLastError(), Ut::GetLastErrorWstr()));
+	return { };
 }
 
 auto CDataLoader::ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize)->HEXCTRL::SpanByte
@@ -442,13 +447,13 @@ auto CDataLoader::ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 	assert((ullSizeAligned - ullOffsetRemainder) >= ullSize);
 
 	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(ullOffsetAligned) } }, nullptr, FILE_BEGIN) == FALSE) {
-		PrintLastError(L"SetFilePointerEx");
+		LogLastError(L"SetFilePointerEx");
 		assert(false);
 		return { };
 	}
 
 	if (ReadFile(m_hHandle, m_pCache.get(), static_cast<DWORD>(ullSizeAligned), nullptr, nullptr) == FALSE) {
-		PrintLastError(L"ReadFile");
+		LogLastError(L"ReadFile");
 		assert(false);
 		return { };
 	}
@@ -502,7 +507,7 @@ auto CDataLoader::ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 
 		if (u64SizeToRead > 0) {
 			if (ReadProcessMemory(m_hHandle, pAddrToRead, m_pCache.get() + u64CacheOffset, u64SizeToRead, nullptr) == FALSE) {
-				PrintLastError(L"ReadProcessMemory");
+				LogLastError(L"ReadProcessMemory");
 				m_ullOffsetCurr = 0;
 				m_ullSizeCurr = 0;
 				if (!m_fCacheZeroed) {
@@ -535,13 +540,13 @@ void CDataLoader::WriteFileData()
 		return;
 
 	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(m_ullOffsetCurr) } }, nullptr, FILE_BEGIN) == FALSE) {
-		PrintLastError(L"SetFilePointerEx");
+		LogLastError(L"SetFilePointerEx");
 		assert(false);
 		return;
 	}
 
 	if (WriteFile(m_hHandle, m_pCache.get(), static_cast<DWORD>(m_ullSizeCurr), nullptr, nullptr) == FALSE) {
-		PrintLastError(L"WriteFile");
+		LogLastError(L"WriteFile");
 	}
 
 	m_fModified = false;
@@ -587,7 +592,7 @@ void CDataLoader::WriteProcData(const HEXCTRL::HEXDATAINFO& hdi)
 
 			if (u64SizeToWrite > 0) {
 				if (WriteProcessMemory(m_hHandle, pAddrToWrite, pData + u64CacheOffset, u64SizeToWrite, nullptr) == FALSE) {
-					PrintLastError(L"WriteProcessMemory");
+					LogLastError(L"WriteProcessMemory");
 					return;
 				}
 

@@ -216,9 +216,8 @@ auto CHexerApp::GetClassName()const->LPCWSTR
 void CHexerApp::OnFileOpenFile()
 {
 	const auto lmbFOD = [this]()->bool {
-		CFileDialog fd(TRUE, nullptr, nullptr, OFN_OVERWRITEPROMPT | OFN_EXPLORER | OFN_ALLOWMULTISELECT |
-			OFN_DONTADDTORECENT | OFN_ENABLESIZING | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NODEREFERENCELINKS,
-			L"All files (*.*)|*.*||");
+		CFileDialog fd(TRUE, nullptr, nullptr, OFN_EXPLORER | OFN_ALLOWMULTISELECT | OFN_DONTADDTORECENT
+			| OFN_ENABLESIZING | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NODEREFERENCELINKS, L"All files (*.*)|*.*||");
 		constexpr auto dwIDChkLNK = 1UL;
 		fd.AddCheckButton(dwIDChkLNK, L"Don't resolve .lnk", FALSE);
 		if (fd.DoModal() != IDOK)
@@ -286,6 +285,11 @@ BOOL CHexerApp::InitInstance()
 
 	if (!GetAppSettings().GetGeneralSettings().fMultipleInst) { //Single.
 		//Check for the already running app instance.
+		//The WaitForSingleObject call is needed for cases when multiple files are opened simultaneously,
+		//like dropping on app's shortcut. In such cases the first process must have some time-room
+		//to create itself, create a main window, etc...
+		//Hence, we wait for the hMutex to be released at the end of the InitInstance() function in the main process.
+		//Only then we are seeking for the main window, at that point it's created for sure.
 		if (hMutex = CreateMutexW(nullptr, TRUE, GetClassName()); GetLastError() == ERROR_ALREADY_EXISTS) {
 			WaitForSingleObject(hMutex, 2000); //Wait maximum for two sec (more than enough).
 		}
