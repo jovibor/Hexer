@@ -6,8 +6,9 @@
 *******************************************************************************/
 #include "stdafx.h"
 #include "CHexerApp.h"
-#include "CChildFrame.h"
 #include "CMainFrame.h"
+#include "CChildFrame.h"
+#include "CHexerDoc.h"
 #include "CHexerView.h"
 
 import Utility;
@@ -36,6 +37,16 @@ void CChildFrame::SetHexerView(CHexerView* pView)
 
 
 //Private methods.
+
+auto CChildFrame::GetFrameIcon()const->HICON
+{
+	const auto pView = GetHexerView();
+	if (pView == nullptr) {
+		return { };
+	}
+
+	return pView->GetDocument()->GetDocIcon();
+}
 
 auto CChildFrame::GetMainFrame()const->CMainFrame*
 {

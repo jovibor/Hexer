@@ -17,11 +17,11 @@ class CHexerView final : public CView {
 public:
 	[[nodiscard]] auto GetDataInfo()const->Ut::DATAINFO;
 	[[nodiscard]] auto GetDlgProcMemory()const->HWND;
+	[[nodiscard]] auto GetDocument()const->CHexerDoc*;
 	[[nodiscard]] auto GetHexCtrl()const->HEXCTRL::IHexCtrl*;
 	[[nodiscard]] auto GetHWNDForPane(UINT uPaneID) -> HWND;
 private:
 	[[nodiscard]] auto GetChildFrame()const->CChildFrame*;
-	[[nodiscard]] auto GetDocument()const->CHexerDoc*;
 	[[nodiscard]] auto GetMainFrame()const->CMainFrame*;
 	[[nodiscard]] bool IsPaneAlreadyLaunch(UINT uPaneID)const;
 	void OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView)override;

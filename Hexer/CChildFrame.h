@@ -14,6 +14,7 @@ public:
 	[[nodiscard]] auto GetHexerView()const->CHexerView*;
 	void SetHexerView(CHexerView* pView);
 private:
+	auto GetFrameIcon()const->HICON override;
 	[[nodiscard]] auto GetMainFrame()const->CMainFrame*;
 	[[nodiscard]] auto GetHexCtrl()const->HEXCTRL::IHexCtrl*;
 	afx_msg void OnClose();

@@ -126,6 +126,25 @@ export namespace Ut {
 		return wstrPath;
 	};
 
+	[[nodiscard]] auto GetHBITMAP(int iResID) -> HBITMAP {
+		const auto iSizeIcon = static_cast<int>(16 * Ut::GetHiDPIInfo().flDPIScale);
+		return static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(iResID),
+			IMAGE_BITMAP, iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
+	}
+
+	[[nodiscard]] auto HICONfromHBITMAP(HBITMAP hbmp) -> HICON {
+		BITMAP stBmp;
+		if (!GetObjectW(hbmp, sizeof(BITMAP), &stBmp))
+			return { };
+
+		const auto hbmpMask = CreateCompatibleBitmap(::GetDC(nullptr), stBmp.bmWidth, stBmp.bmHeight);
+		ICONINFO ii { .fIcon { TRUE }, .hbmMask { hbmpMask }, .hbmColor { hbmp } };
+		auto hICO = CreateIconIndirect(&ii);
+		DeleteObject(hbmpMask);
+
+		return hICO;
+	}
+
 	struct DATAOPEN { //Main data opening struct.
 		std::wstring  wstrDataPath; //Or Process name.
 		std::uint64_t ullNewFileSize { };

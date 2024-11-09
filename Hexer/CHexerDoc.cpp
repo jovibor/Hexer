@@ -5,6 +5,7 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #include "stdafx.h"
+#include "resource.h"
 #include "CHexerApp.h"
 #include "CMainFrame.h"
 #include "CChildFrame.h"
@@ -43,6 +44,11 @@ auto CHexerDoc::GetDataPath()const->const std::wstring&
 auto CHexerDoc::GetDataSize()const->std::uint64_t
 {
 	return m_stDataLoader.GetDataSize();
+}
+
+auto CHexerDoc::GetDocIcon()const->HICON
+{
+	return m_hDocIcon;
 }
 
 auto CHexerDoc::GetMaxVirtOffset()const->std::uint64_t
@@ -101,6 +107,21 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 	m_strPathName = GetUniqueDocName(dos).data();
 	m_bEmbedded = FALSE;
 	SetTitle(GetDocTitle(dos).data());
+	const auto iResID = [this]() {
+		using enum Ut::EOpenMode;
+		switch (GetOpenMode()) {
+		case OPEN_FILE:
+		case NEW_FILE:
+			return IDB_FILE;
+		case OPEN_DEVICE:
+			return IDB_DEVICE;
+		case OPEN_PROC:
+			return IDB_PROCESS;
+		default:
+			return 0;
+		}
+		}();
+	m_hDocIcon = Ut::HICONfromHBITMAP(Ut::GetHBITMAP(iResID));
 	m_fOpened = true;
 
 	return true;

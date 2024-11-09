@@ -19,6 +19,7 @@ public:
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetDataPath()const->const std::wstring&;
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
+	[[nodiscard]] auto GetDocIcon()const->HICON;
 	[[nodiscard]] auto GetMaxVirtOffset()const->std::uint64_t;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetOpenMode()const->Ut::EOpenMode;
@@ -41,5 +42,6 @@ private:
 	std::wstring m_wstrDataPath;
 	std::wstring m_wstrFileName;
 	Ut::EOpenMode m_eOpenMode { }; //Document open mode.
+	HICON m_hDocIcon { };     //Document icon.
 	bool m_fOpened { false }; //Document was successfully opened or not.
 };

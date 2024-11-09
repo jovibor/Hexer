@@ -339,13 +339,9 @@ BOOL CHexerApp::InitInstance()
 	pMainFrame->LoadFrame(IDR_HEXER_FRAME); //Also used in the CMainFrame::PreCreateWindow.
 	m_pMainWnd = pMainFrame;
 
-	const auto iSizeIcon = static_cast<int>(16 * Ut::GetHiDPIInfo().flDPIScale);
-	const auto hBMPFile = static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDB_FILE),
-		IMAGE_BITMAP, iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
-	const auto hBMPDevice = static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDB_DEVICE),
-		IMAGE_BITMAP, iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
-	const auto hBMPProcess = static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDB_PROCESS),
-		IMAGE_BITMAP, iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
+	const auto hBMPFile = Ut::GetHBITMAP(IDB_FILE);
+	const auto hBMPDevice = Ut::GetHBITMAP(IDB_DEVICE);
+	const auto hBMPProcess = Ut::GetHBITMAP(IDB_PROCESS);
 	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPFile } };
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
 	pFileMenu->SetMenuItemInfoW(1, &mii, TRUE); //Icon for the "Open File..." menu.
