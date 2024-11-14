@@ -15,7 +15,6 @@ import Utility;
 class CHexerDoc final : public CDocument {
 public:
 	[[nodiscard]] auto GetCacheSize()const->DWORD;
-	[[nodiscard]] auto GetFileMapData()const->std::byte*;
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetDataPath()const->const std::wstring&;
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;

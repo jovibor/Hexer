@@ -26,11 +26,6 @@ auto CHexerDoc::GetCacheSize()const->DWORD
 	return m_stDataLoader.GetCacheSize();
 }
 
-auto CHexerDoc::GetFileMapData()const->std::byte*
-{
-	return m_stDataLoader.GetFileMapData();
-}
-
 auto CHexerDoc::GetFileName()const->const std::wstring&
 {
 	return m_wstrFileName;

@@ -45,9 +45,6 @@
     <ClInclude Include="dep\HexCtrl\HexCtrl\HexCtrl.h">
       <Filter>HexCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="dep\HexCtrl\HexCtrl\dep\ListEx\ListEx.h">
-      <Filter>HexCtrl</Filter>
-    </ClInclude>
     <ClInclude Include="dep\HexCtrl\HexCtrl\res\HexCtrlRes.h">
       <Filter>HexCtrl</Filter>
     </ClInclude>
@@ -97,9 +94,6 @@
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\dep\ListEx\CListEx.cpp">
-      <Filter>HexCtrl</Filter>
     </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexCtrl.cpp">
       <Filter>HexCtrl</Filter>
@@ -172,6 +166,12 @@
     </ClCompile>
     <ClCompile Include="Dialogs\DlgProcMemory.ixx">
       <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum.ixx">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\dep\ListEx\ListEx.ixx">
+      <Filter>HexCtrl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

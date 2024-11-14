@@ -14,10 +14,15 @@ module;
 #include <string>
 export module Utility;
 
+export import StrToNum;
+export namespace stn = HEXCTRL::stn;
+export import ListEx;
+export namespace lex = HEXCTRL::LISTEX;
+
 export namespace Ut {
 	constexpr auto HEXER_VERSION_MAJOR = 1;
 	constexpr auto HEXER_VERSION_MINOR = 2;
-	constexpr auto HEXER_VERSION_PATCH = 1;
+	constexpr auto HEXER_VERSION_PATCH = 2;
 
 	constexpr UINT g_arrPanes[] { IDC_PANE_DATAINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGGER };
 

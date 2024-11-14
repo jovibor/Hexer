@@ -7,10 +7,9 @@
 *******************************************************************************/
 #include <SDKDDKVer.h>
 #include "HexCtrl.h"
-#include "ListEx.h"
-#include "StrToNum.h"
 #include "resource.h"
 #include <afxdialogex.h>
+#include <cassert>
 #include <format>
 #include <string>
 #include <unordered_map>
@@ -18,7 +17,6 @@
 export module DlgProcMemory;
 
 import Utility;
-namespace lex = HEXCTRL::LISTEX;
 
 export class CDlgProcMemory final : public CDialogEx {
 public:

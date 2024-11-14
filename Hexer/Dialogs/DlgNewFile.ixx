@@ -6,7 +6,6 @@ module;
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #include <SDKDDKVer.h>
-#include "StrToNum.h"
 #include "resource.h"
 #include <afxdlgs.h>
 #include <afxdialogex.h>

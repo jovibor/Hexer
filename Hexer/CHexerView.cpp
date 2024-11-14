@@ -192,7 +192,7 @@ void CHexerView::OnInitialUpdate()
 	for (const auto& p : theApp.GetAppSettings().GetHexCtrlTemplates()) {
 		pHex->GetTemplates()->AddTemplate(*p);
 	}
-	pHex->SetData({ .spnData { std::span<std::byte>{ pDoc->GetFileMapData(), pDoc->GetDataSize() } },
+	pHex->SetData({ .spnData { std::span<std::byte>{ reinterpret_cast<std::byte*>(nullptr), pDoc->GetDataSize() } },
 		.pHexVirtData { pDoc->GetVirtualInterface() }, .ullMaxVirtOffset { pDoc->GetMaxVirtOffset() },
 		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }

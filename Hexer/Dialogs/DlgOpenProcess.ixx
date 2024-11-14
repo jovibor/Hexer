@@ -6,10 +6,9 @@ module;
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #include <SDKDDKVer.h>
-#include "ListEx.h"
-#include "StrToNum.h"
 #include "resource.h"
 #include <afxdialogex.h>
+#include <algorithm>
 #include <format>
 #include <psapi.h>
 #include <string>
@@ -19,7 +18,6 @@ export module DlgOpenProcess;
 
 #pragma comment(lib, "Wtsapi32.lib")
 import Utility;
-namespace lex = HEXCTRL::LISTEX;
 
 export class CDlgOpenProcess final : public CDialogEx {
 public:

@@ -8,7 +8,6 @@ module;
 #include <SDKDDKVer.h>
 #include "resource.h"
 #include "HexCtrl.h"
-#include "StrToNum.h"
 #include <afxwin.h>
 #include <algorithm>
 #include <cassert>
