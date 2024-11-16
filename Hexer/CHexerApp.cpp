@@ -28,7 +28,7 @@ CHexerApp theApp;
 //CDlgAbout.
 class CDlgAbout final : public CDialogEx {
 public:
-	explicit CDlgAbout()noexcept : CDialogEx(IDD_ABOUTBOX) {}
+	explicit CDlgAbout()noexcept : CDialogEx(IDD_ABOUTBOX) { }
 private:
 	BOOL OnInitDialog()override;
 	DECLARE_MESSAGE_MAP();
@@ -59,7 +59,8 @@ BOOL CDlgAbout::OnInitDialog()
 class CHexerMDTemplate final : public CMultiDocTemplate {
 public:
 	CHexerMDTemplate(UINT nIDResource, CRuntimeClass* pDocClass, CRuntimeClass* pFrameClass, CRuntimeClass* pViewClass)
-		: CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass) {}
+		: CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass) {
+	}
 	[[nodiscard]] auto OpenDocumentFile(const Ut::DATAOPEN& dos) -> CDocument*;
 };
 
@@ -338,6 +339,7 @@ BOOL CHexerApp::InitInstance()
 	const auto pMainFrame = new CMainFrame;
 	pMainFrame->LoadFrame(IDR_HEXER_FRAME); //Also used in the CMainFrame::PreCreateWindow.
 	m_pMainWnd = pMainFrame;
+	Ut::SetMainWnd(pMainFrame->m_hWnd);
 
 	const auto hBMPFile = Ut::GetHBITMAP(IDB_FILE);
 	const auto hBMPDevice = Ut::GetHBITMAP(IDB_DEVICE);

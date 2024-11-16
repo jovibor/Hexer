@@ -31,27 +31,32 @@ public:
 	[[nodiscard]] auto GetProcID()const->DWORD;
 	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
 	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
-	[[nodiscard]] bool IsDevice()const;
 	[[nodiscard]] bool IsMutable()const;
-	[[nodiscard]] bool IsProcess()const;
 	[[nodiscard]] bool Open(const Ut::DATAOPEN& dos);
 private:
+	void FlushCache();
+	[[nodiscard]] auto GetDeviceAlign()const->DWORD;
 	[[nodiscard]] auto GetInternalCacheSize()const->DWORD; //The real cache size used internally.
+	void InitInternalCache(DWORD dwAlign = 32U);
+	[[nodiscard]] bool IsDevice()const;
+	[[nodiscard]] bool IsFile()const;
+	[[nodiscard]] bool IsImmediateWrite()const;
 	[[nodiscard]] bool IsModified()const;
+	[[nodiscard]] bool IsProcess()const;
 	void LogLastError(std::wstring_view wsvSource, DWORD dwErr = 0)const;
+	[[nodiscard]] auto NewFile(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
 	void OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)override;
 	void OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)override;
 	void OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)override;
-	[[nodiscard]] auto OpenDevice() -> std::expected<void, DWORD>;
+	[[nodiscard]] auto OpenDevice(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
 	[[nodiscard]] auto OpenFile(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
 	[[nodiscard]] auto OpenProcess(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
 	[[nodiscard]] auto ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
 	[[nodiscard]] auto ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize) -> HEXCTRL::SpanByte;
-	void WriteFileData();
+	void WriteDeviceData(const HEXCTRL::HEXDATAINFO& hdi);
+	void WriteFileData(const HEXCTRL::HEXDATAINFO& hdi);
 	void WriteProcData(const HEXCTRL::HEXDATAINFO& hdi);
 private:
-	static constexpr auto m_dwCacheSize { 1024UL * 1024UL }; //1MB cache size.
-	static constexpr auto m_dwMallocAlign { 32U }; //Default alignment for the _aligned_malloc function.
 	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
 	std::wstring m_wstrDataPath; //Data path to open.
 	std::wstring m_wstrFileName; //File name without path, or Process name.
@@ -66,8 +71,8 @@ private:
 	DWORD m_dwProcID { };          //Process ID.
 	Ut::EOpenMode m_eOpenMode { }; //From Ut::DATAOPEN.
 	bool m_fMutable { false };     //Is data opened as RW or RO?
-	bool m_fModified { false };    //File was modified.
-	bool m_fCacheZeroed { false }; //If cache set with zeros or not.
+	bool m_fModified { false };    //Data was modified.
+	bool m_fCacheZeroed { false }; //If cache is set with zeros or not.
 };
 
 CDataLoader::CDataLoader()
@@ -84,14 +89,11 @@ CDataLoader::~CDataLoader()
 
 void CDataLoader::Close()
 {
-	if (m_hHandle != nullptr) {
-		if (!IsProcess()) {
-			WriteFileData();
-		}
-
-		CloseHandle(m_hHandle);
+	if (IsFile()) {
+		FlushCache();
 	}
 
+	CloseHandle(m_hHandle);
 	m_pCache.reset();
 	m_wstrDataPath.clear();
 	m_vecProcMemory.clear();
@@ -145,19 +147,9 @@ auto CDataLoader::GetVirtualInterface()->HEXCTRL::IHexVirtData*
 	return this;
 }
 
-bool CDataLoader::IsDevice()const
-{
-	return m_eOpenMode == Ut::EOpenMode::OPEN_DEVICE;
-}
-
 bool CDataLoader::IsMutable()const
 {
 	return m_fMutable;
-}
-
-bool CDataLoader::IsProcess()const
-{
-	return m_eOpenMode == Ut::EOpenMode::OPEN_PROC;
 }
 
 bool CDataLoader::Open(const Ut::DATAOPEN& dos)
@@ -169,48 +161,93 @@ bool CDataLoader::Open(const Ut::DATAOPEN& dos)
 
 	using enum Ut::EOpenMode;
 	m_eOpenMode = dos.eMode;
-	std::wstring wstrLog;
 	std::expected<void, DWORD> expOpen;
 	switch (dos.eMode) {
+	case OPEN_FILE:
+		expOpen = OpenFile(dos);
+		break;
+	case OPEN_DEVICE:
+		expOpen = OpenDevice(dos);
+		break;
 	case OPEN_PROC:
 		expOpen = OpenProcess(dos);
-		if (expOpen) {
-			wstrLog = std::format(L"Process opened: {} (ID: {}) ({})", GetFileName(), GetProcID(), Ut::GetRWWstr(IsMutable()));
-		}
-		else {
-			wstrLog = std::format(L"Process open failed: {} (ID: {}). \r\n{}", GetFileName(), GetProcID(),
-				Ut::GetLastErrorWstr(expOpen.error()));
-			MessageBoxW(AfxGetMainWnd()->m_hWnd, wstrLog.data(), L"Opening error", MB_ICONERROR);
-		}
+		break;
+	case NEW_FILE:
+		expOpen = NewFile(dos);
 		break;
 	default:
-		expOpen = OpenFile(dos);
-		if (expOpen) {
-			wstrLog = std::format(L"{} opened: {} ({})", Ut::GetNameFromEOpenMode(dos.eMode), GetFileName(),
-				Ut::GetRWWstr(IsMutable()));
-		}
-		else {
-			wstrLog = std::format(L"{} open failed: {} \r\n{}", Ut::GetNameFromEOpenMode(dos.eMode), GetFileName(),
-				Ut::GetLastErrorWstr(expOpen.error()));
-			MessageBoxW(AfxGetMainWnd()->m_hWnd, wstrLog.data(), L"Opening error", MB_ICONERROR);
-		}
 		break;
 	}
 
-	expOpen ? Ut::Log::AddLogEntryInfo(wstrLog) : Ut::Log::AddLogEntryError(wstrLog);
+	if (!expOpen) {
+		const auto wstrLog = std::format(L"{} open failed: {} \r\n{}", Ut::GetNameFromEOpenMode(dos.eMode), GetFileName(),
+			Ut::GetLastErrorWstr(expOpen.error()));
+		MessageBoxW(AfxGetMainWnd()->m_hWnd, wstrLog.data(), L"Opening error", MB_ICONERROR);
+		Ut::Log::AddLogEntryError(wstrLog);
+		return false;
+	}
 
-	return expOpen.has_value();
+	const auto wstrLog = std::format(L"{} opened: {} ({})", Ut::GetNameFromEOpenMode(dos.eMode), GetFileName(),
+		Ut::GetRWWstr(IsMutable()));
+	Ut::Log::AddLogEntryInfo(wstrLog);
+	return true;
 }
 
 
 //Private methods.
+
+void CDataLoader::FlushCache()
+{
+	if (!IsModified())
+		return;
+
+	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(m_ullOffsetCurr) } }, nullptr, FILE_BEGIN) == FALSE) {
+		LogLastError(L"SetFilePointerEx");
+		assert(false);
+		return;
+	}
+
+	if (WriteFile(m_hHandle, m_pCache.get(), static_cast<DWORD>(m_ullSizeCurr), nullptr, nullptr) == FALSE) {
+		LogLastError(L"WriteFile");
+	}
+
+	m_fModified = false;
+}
+
+auto CDataLoader::GetDeviceAlign()const->DWORD
+{
+	return m_dwDeviceAlign;
+}
 
 auto CDataLoader::GetInternalCacheSize()const->DWORD
 {
 	//Internal working cache size is two times bigger than the size reported to the IHexCtrl.
 	//This will ensure that the data size returned after the OnHexGetData call will not be smaller than
 	//the size requested, even after offset and size aligning, either during File or Process data reading.
-	return m_dwCacheSize;
+	return 1024UL * 1024UL; //1MB cache size.
+}
+
+void CDataLoader::InitInternalCache(DWORD dwAlign)
+{
+	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), dwAlign)));
+}
+
+bool CDataLoader::IsDevice()const
+{
+	return m_eOpenMode == Ut::EOpenMode::OPEN_DEVICE;
+}
+
+bool CDataLoader::IsFile()const
+{
+	using enum Ut::EOpenMode;
+	return m_eOpenMode == OPEN_FILE || m_eOpenMode == NEW_FILE;
+}
+
+bool CDataLoader::IsImmediateWrite()const
+{
+	//If true then any data change will be written back to the file immediately.
+	//Otherwise, the whole cache will be written, but only when it needs to be refilled.
+	return false;
 }
 
 bool CDataLoader::IsModified()const
@@ -218,10 +255,50 @@ bool CDataLoader::IsModified()const
 	return m_fModified;
 }
 
+bool CDataLoader::IsProcess()const
+{
+	return m_eOpenMode == Ut::EOpenMode::OPEN_PROC;
+}
+
 void CDataLoader::LogLastError(std::wstring_view wsvSource, DWORD dwErr)const
 {
 	Ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X} {}",
 		GetFileName(), wsvSource, dwErr > 0 ? dwErr : GetLastError(), Ut::GetLastErrorWstr(dwErr)));
+}
+
+auto CDataLoader::NewFile(const Ut::DATAOPEN &dos)->std::expected<void, DWORD>
+{
+	assert(dos.eMode == Ut::EOpenMode::NEW_FILE);
+	assert(dos.ullNewFileSize > 0);
+	if (dos.ullNewFileSize == 0) {
+		return std::unexpected(0);
+	}
+
+	m_wstrDataPath = dos.wstrDataPath;
+	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //File name.
+
+	if (m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+		nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr); m_hHandle == INVALID_HANDLE_VALUE) {
+		return std::unexpected(GetLastError());
+	}
+
+	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(dos.ullNewFileSize) } }, nullptr, FILE_BEGIN) == FALSE) {
+		const auto err = GetLastError();
+		LogLastError(L"SetFilePointerEx", err);
+		return std::unexpected(err);
+	}
+
+	SetEndOfFile(m_hHandle);
+
+	if (GetFileSizeEx(m_hHandle, &m_stDataSize); m_stDataSize.QuadPart == 0) { //Check zero size.
+		assert(false);
+		return std::unexpected(0);
+	}
+
+	InitInternalCache();
+	m_fMutable = true;
+
+	return { };
 }
 
 void CDataLoader::OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)
@@ -271,10 +348,20 @@ void CDataLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
 
 void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 {
-	m_fModified = true;
-
-	if (IsProcess()) {
-		WriteProcData(hdi); //Writing to the process address space immediately.
+	using enum Ut::EOpenMode;
+	switch (m_eOpenMode) {
+	case OPEN_DEVICE:
+		WriteDeviceData(hdi);
+		break;
+	case OPEN_FILE:
+	case NEW_FILE:
+		WriteFileData(hdi);
+		break;
+	case OPEN_PROC:
+		WriteProcData(hdi);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -283,26 +370,12 @@ auto CDataLoader::OpenFile(const Ut::DATAOPEN& dos)->std::expected<void, DWORD>
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //File name.
 
-	const auto fNewFile = dos.eMode == Ut::EOpenMode::NEW_FILE;
-	m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
-		fNewFile ? CREATE_ALWAYS : OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-
-	if (fNewFile) { //Setting the size of the new file.
-		if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(dos.ullNewFileSize) } }, nullptr, FILE_BEGIN) == FALSE) {
-			const auto err = GetLastError();
-			LogLastError(L"SetFilePointerEx", err);
-			return std::unexpected(err);
-		}
-		SetEndOfFile(m_hHandle);
-	}
+	m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+		nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (m_hHandle == INVALID_HANDLE_VALUE) {
-		if (!fNewFile) { //Trying to open in ReadOnly mode.
-			m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
-				OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-		}
-
-		if (m_hHandle == INVALID_HANDLE_VALUE) {
+		if (m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);	m_hHandle == INVALID_HANDLE_VALUE) {
 			return std::unexpected(GetLastError());
 		}
 	}
@@ -310,24 +383,32 @@ auto CDataLoader::OpenFile(const Ut::DATAOPEN& dos)->std::expected<void, DWORD>
 		m_fMutable = true;
 	}
 
-	if (IsDevice()) {
-		return OpenDevice();
-	}
-
-	if (GetFileSizeEx(m_hHandle, &m_stDataSize); m_stDataSize.QuadPart == 0) { //Zero size.
-		MessageBoxW(nullptr, L"File is zero size.", m_wstrDataPath.data(), MB_ICONERROR);
+	if (GetFileSizeEx(m_hHandle, &m_stDataSize); m_stDataSize.QuadPart == 0) { //Check zero size.
+		assert(false);
 		return std::unexpected(0);
 	}
 
-	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), m_dwMallocAlign))); //Initialize the data cache.
+	InitInternalCache();
 
 	return { };
 }
 
-auto CDataLoader::OpenDevice()->std::expected<void, DWORD>
+auto CDataLoader::OpenDevice(const Ut::DATAOPEN& dos)->std::expected<void, DWORD>
 {
-	if (m_hHandle == nullptr)
-		return std::unexpected(0);
+	m_wstrDataPath = dos.wstrDataPath;
+	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //File name.
+	m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+		nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+	if (m_hHandle == INVALID_HANDLE_VALUE) {
+		if (m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);	m_hHandle == INVALID_HANDLE_VALUE) {
+			return std::unexpected(GetLastError());
+		}
+	}
+	else {
+		m_fMutable = true;
+	}
 
 	DISK_GEOMETRY stGeometry { };
 	DWORD dwBytesRet { };
@@ -357,7 +438,7 @@ auto CDataLoader::OpenDevice()->std::expected<void, DWORD>
 	}
 
 	m_stDataSize.QuadPart = stLengthInfo.Length.QuadPart;
-	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), m_dwDeviceAlign))); //Initialize the data cache.
+	InitInternalCache(GetDeviceAlign());
 
 	return { };
 }
@@ -388,7 +469,7 @@ auto CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)->std::expected<void, DWOR
 
 	m_stDataSize.QuadPart = std::reduce(m_vecProcMemory.begin(), m_vecProcMemory.end(), 0ULL,
 		[](ULONGLONG ullSumm, const MEMORY_BASIC_INFORMATION& ref) { return ullSumm + ref.RegionSize; });
-	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), m_dwMallocAlign)));
+	InitInternalCache();
 	m_fMutable = true;
 
 	return { };
@@ -402,13 +483,14 @@ auto CDataLoader::ReadFileData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 		return { };
 	}
 
-	if (ullOffset >= m_ullOffsetCurr && (ullOffset + ullSize) <= (m_ullOffsetCurr + m_ullSizeCurr)) { //Data is already in the cache.
+	//Data is already in the cache?
+	if (ullOffset >= m_ullOffsetCurr && (ullOffset + ullSize) <= (m_ullOffsetCurr + m_ullSizeCurr)) {
 		return { m_pCache.get() + (ullOffset - m_ullOffsetCurr), ullSize };
 	}
 
-	WriteFileData(); //Flush current cache data if it was modified, before the ReadFile.
+	FlushCache();
 
-	const auto ullOffsetRemainder = ullOffset % m_dwDeviceAlign;
+	const auto ullOffsetRemainder = ullOffset % GetDeviceAlign();
 	const auto ullOffsetAligned = ullOffset - ullOffsetRemainder;
 	const auto ullSizeAligned = (ullOffsetAligned + GetInternalCacheSize()) <= GetDataSize() ?
 		GetInternalCacheSize() : GetDataSize() - ullOffsetAligned; //Size at the end of a file might be non aligned.
@@ -441,7 +523,8 @@ auto CDataLoader::ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 		return { };
 	}
 
-	if (ullOffset >= m_ullOffsetCurr && (ullOffset + ullSize) <= (m_ullOffsetCurr + m_ullSizeCurr)) { //Data is already in the cache.
+	//Data is already in the cache?
+	if (ullOffset >= m_ullOffsetCurr && (ullOffset + ullSize) <= (m_ullOffsetCurr + m_ullSizeCurr)) {
 		return { m_pCache.get() + (ullOffset - m_ullOffsetCurr), ullSize };
 	}
 
@@ -503,35 +586,67 @@ auto CDataLoader::ReadProcData(std::uint64_t ullOffset, std::uint64_t ullSize)->
 	return { m_pCache.get() + ullOffsetRemainder, ullSizeAligned - ullOffsetRemainder };
 }
 
-void CDataLoader::WriteFileData()
+void CDataLoader::WriteDeviceData(const HEXCTRL::HEXDATAINFO& hdi)
 {
-	if (!IsModified())
-		return;
+	const auto ullOffsetOrig { hdi.stHexSpan.ullOffset };
+	const auto ullSizeOrig { hdi.stHexSpan.ullSize };
+	assert(ullOffsetOrig >= m_ullOffsetCurr);
+	assert(ullSizeOrig <= m_ullSizeCurr);
 
-	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(m_ullOffsetCurr) } }, nullptr, FILE_BEGIN) == FALSE) {
+	const auto ullOffsetRem = ullOffsetOrig % GetDeviceAlign();
+	const auto ullOffsetAlign = ullOffsetOrig - ullOffsetRem;
+	const auto ullSizeToAdd = GetDeviceAlign() - ((ullSizeOrig + ullOffsetRem) % GetDeviceAlign());
+	const auto ullSizeAlign = ullSizeOrig + ullOffsetRem + ullSizeToAdd;
+	assert(ullOffsetAlign >= m_ullOffsetCurr);
+	assert(ullSizeAlign <= m_ullSizeCurr);
+	const auto ullOffsetFromCache = ullOffsetAlign - m_ullOffsetCurr;
+
+	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(ullOffsetAlign) } }, nullptr, FILE_BEGIN) == FALSE) {
 		LogLastError(L"SetFilePointerEx");
 		assert(false);
 		return;
 	}
 
-	if (WriteFile(m_hHandle, m_pCache.get(), static_cast<DWORD>(m_ullSizeCurr), nullptr, nullptr) == FALSE) {
+	if (WriteFile(m_hHandle, m_pCache.get() + ullOffsetFromCache, static_cast<DWORD>(ullSizeAlign), nullptr, nullptr) == FALSE) {
 		LogLastError(L"WriteFile");
 	}
+}
 
-	m_fModified = false;
+void CDataLoader::WriteFileData(const HEXCTRL::HEXDATAINFO& hdi)
+{
+	if (!IsImmediateWrite()) {
+		m_fModified = true;
+		return;
+	}
+
+	const auto ullOffsetOrig { hdi.stHexSpan.ullOffset };
+	const auto ullSizeOrig { hdi.stHexSpan.ullSize };
+	assert(ullOffsetOrig >= m_ullOffsetCurr);
+	assert(ullSizeOrig <= m_ullSizeCurr);
+	const auto ullOffsetFromCache = ullOffsetOrig - m_ullOffsetCurr;
+
+	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(ullOffsetOrig) } }, nullptr, FILE_BEGIN) == FALSE) {
+		LogLastError(L"SetFilePointerEx");
+		assert(false);
+		return;
+	}
+
+	if (WriteFile(m_hHandle, m_pCache.get() + ullOffsetFromCache, static_cast<DWORD>(ullSizeOrig), nullptr, nullptr) == FALSE) {
+		LogLastError(L"WriteFile");
+	}
 }
 
 void CDataLoader::WriteProcData(const HEXCTRL::HEXDATAINFO& hdi)
 {
 	const std::byte* pMemCurr { nullptr };
-	const auto pData = hdi.spnData.data();
-	const auto ullOffset = hdi.stHexSpan.ullOffset;
-	std::uint64_t u64SizeRemain { hdi.stHexSpan.ullSize };
+	const auto pData { hdi.spnData.data() };
+	const auto ullOffset { hdi.stHexSpan.ullOffset };
+	auto ullSizeRemain { hdi.stHexSpan.ullSize };
 	assert(ullOffset >= m_ullOffsetCurr);
-	assert(u64SizeRemain <= m_ullSizeCurr);
+	assert(ullSizeRemain <= m_ullSizeCurr);
 
-	std::uint64_t u64CacheOffset { 0ULL };   //Offset in the pData to get data from.
-	std::uint64_t u64RegsTotalSize { 0ULL }; //Total size of the commited regions of pages.
+	auto u64DataOffset { 0ULL };    //Offset in the pData to get data from.
+	auto u64RegsTotalSize { 0ULL }; //Total size of the commited regions of pages.
 	bool fVestige { false }; //Is there any remainder data to write?
 
 	while (true) {
@@ -549,30 +664,29 @@ void CDataLoader::WriteProcData(const HEXCTRL::HEXDATAINFO& hdi)
 
 			if (fVestige) {
 				const auto u64AvailSizeInRegion = mbi.RegionSize;
-				u64SizeToWrite = u64AvailSizeInRegion >= u64SizeRemain ? u64SizeRemain : u64AvailSizeInRegion;
+				u64SizeToWrite = u64AvailSizeInRegion >= ullSizeRemain ? ullSizeRemain : u64AvailSizeInRegion;
 				pAddrToWrite = reinterpret_cast<std::byte*>(mbi.BaseAddress);
 			}
 			else if (ullOffset < u64RegsTotalSize) {
 				const auto u64OffsetFromRegionBegin = ullOffset - (u64RegsTotalSize - mbi.RegionSize);
 				const auto u64AvailSizeInRegion = mbi.RegionSize - u64OffsetFromRegionBegin;
-				u64SizeToWrite = u64AvailSizeInRegion >= u64SizeRemain ? u64SizeRemain : u64AvailSizeInRegion;
+				u64SizeToWrite = u64AvailSizeInRegion >= ullSizeRemain ? ullSizeRemain : u64AvailSizeInRegion;
 				pAddrToWrite = reinterpret_cast<std::byte*>(mbi.BaseAddress) + u64OffsetFromRegionBegin;
 			}
 
 			if (u64SizeToWrite > 0) {
-				if (WriteProcessMemory(m_hHandle, pAddrToWrite, pData + u64CacheOffset, u64SizeToWrite, nullptr) == FALSE) {
+				if (WriteProcessMemory(m_hHandle, pAddrToWrite, pData + u64DataOffset, u64SizeToWrite, nullptr) == FALSE) {
 					LogLastError(L"WriteProcessMemory");
 					return;
 				}
 
-				if (u64SizeToWrite == u64SizeRemain) { //We have written required size.
-					m_fModified = false;
+				if (u64SizeToWrite == ullSizeRemain) { //We have written required size.
 					break;
 				}
 
 				fVestige = true;
-				u64SizeRemain -= u64SizeToWrite;
-				u64CacheOffset += u64SizeToWrite;
+				ullSizeRemain -= u64SizeToWrite;
+				u64DataOffset += u64SizeToWrite;
 			}
 		}
 	}

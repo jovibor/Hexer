@@ -18,6 +18,7 @@ export import StrToNum;
 export namespace stn = HEXCTRL::stn;
 export import ListEx;
 export namespace lex = HEXCTRL::LISTEX;
+static HWND g_hWndMain { };
 
 export namespace Ut {
 	constexpr auto HEXER_VERSION_MAJOR = 1;
@@ -25,6 +26,16 @@ export namespace Ut {
 	constexpr auto HEXER_VERSION_PATCH = 2;
 
 	constexpr UINT g_arrPanes[] { IDC_PANE_DATAINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGGER };
+
+	//AfxGetMainWnd() doesn't return correct handle in some cases.
+	//For instance, when open process and trying filling its whole memory with any data.
+	void SetMainWnd(HWND hWnd) {
+		g_hWndMain = hWnd;
+	}
+
+	[[nodiscard]] auto GetMainWnd() -> HWND {
+		return g_hWndMain;
+	}
 
 	[[nodiscard]] auto GetAppName() -> const std::wstring& {
 		static const std::wstring wstrAppName { [] {
@@ -197,7 +208,7 @@ export namespace Ut {
 		};
 
 		void AddLogEntry(const LOGINFO& li) {
-			AfxGetMainWnd()->SendMessageW(WM_ADD_LOG_ENTRY, 0, reinterpret_cast<WPARAM>(&li));
+			SendMessageW(GetMainWnd(), WM_ADD_LOG_ENTRY, 0, reinterpret_cast<WPARAM>(&li));
 		}
 
 		void AddLogEntryError(std::wstring_view wsvMsg) {

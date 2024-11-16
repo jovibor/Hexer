@@ -83,7 +83,7 @@ bool CHexerDoc::IsFileMutable()const
 
 bool CHexerDoc::IsProcess()const
 {
-	return m_stDataLoader.IsProcess();
+	return GetOpenMode() == Ut::EOpenMode::OPEN_PROC;
 }
 
 bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)

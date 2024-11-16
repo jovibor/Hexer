@@ -842,25 +842,29 @@ void CAppSettings::ShowInWindowsContextMenu(bool fShow)
 {
 	wchar_t buffPath[MAX_PATH];
 	GetModuleFileNameW(nullptr, buffPath, MAX_PATH);
-	const std::wstring wstrAppKey = L"*\\shell\\The Hexer";
+	const std::wstring wstrAppKey = L"Software\\Classes\\*\\shell\\The Hexer";
 
 	CRegKey regCR;
-	if (const auto fOpen = regCR.Open(HKEY_CLASSES_ROOT, wstrAppKey.data()) == ERROR_SUCCESS; fOpen == fShow)
+	if (const auto fOpen = regCR.Open(HKEY_CURRENT_USER, wstrAppKey.data()) == ERROR_SUCCESS; fOpen == fShow)
 		return;
 
 	if (fShow) {
-		regCR.Create(HKEY_CLASSES_ROOT, wstrAppKey.data());
+		if (regCR.Create(HKEY_CURRENT_USER, wstrAppKey.data()) != ERROR_SUCCESS) {
+			assert(true);
+			return;
+		}
+
 		regCR.SetStringValue(nullptr, L"Open in Hexer");
 		regCR.SetStringValue(L"Icon", buffPath);
 		const auto wstrCommand = wstrAppKey + L"\\command";
-		regCR.Create(HKEY_CLASSES_ROOT, wstrCommand.data());
+		regCR.Create(HKEY_CURRENT_USER, wstrCommand.data());
 		const auto wstrPath = std::format(L"\"{}\" \"%1\"", buffPath);
 		regCR.SetStringValue(nullptr, wstrPath.data());
 	}
 	else {
 		regCR.Close();
 		CRegKey regShell;
-		regShell.Open(HKEY_CLASSES_ROOT, L"*\\shell");
+		regShell.Open(HKEY_CURRENT_USER, L"Software\\Classes\\*\\shell");
 		regShell.RecurseDeleteKey(L"The Hexer");
 	}
 }
