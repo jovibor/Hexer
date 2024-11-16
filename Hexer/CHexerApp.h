@@ -13,6 +13,7 @@ import AppSettings;
 
 class CHexerApp final : public CWinAppEx {
 public:
+	void NotifyTabsOnSettingsChange();
 	afx_msg void OnFileOpenFile();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
 	[[nodiscard]] auto GetClassName()const->LPCWSTR;

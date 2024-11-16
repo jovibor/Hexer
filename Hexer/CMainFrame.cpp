@@ -20,6 +20,7 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWndEx)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
 	ON_COMMAND_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnViewRangePanes)
+	ON_MESSAGE(Ut::WM_APP_SETTINGS_CHANGED, &CMainFrame::OnAppSettingsChanged)
 	ON_MESSAGE(Ut::WM_ADD_LOG_ENTRY, &CMainFrame::OnAddLogEntry)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnUpdateRangePanes)
 	ON_WM_CLOSE()
@@ -326,6 +327,12 @@ void CMainFrame::HideAllPanes()
 auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 {
 	AddLogEntry(*reinterpret_cast<Ut::Log::LOGINFO*>(lParam));
+	return S_OK;
+}
+
+auto CMainFrame::OnAppSettingsChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
+{
+	theApp.NotifyTabsOnSettingsChange();
 	return S_OK;
 }
 

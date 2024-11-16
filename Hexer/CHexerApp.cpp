@@ -214,6 +214,18 @@ auto CHexerApp::GetClassName()const->LPCWSTR
 	return L"HexerClassUnique{78306c63-7865}";
 }
 
+void CHexerApp::NotifyTabsOnSettingsChange()
+{
+	auto posDocTempl = GetFirstDocTemplatePosition();
+	while (posDocTempl != nullptr) {
+		const auto pDocTempl = GetNextDocTemplate(posDocTempl);
+		auto posDoc = pDocTempl->GetFirstDocPosition();
+		while (posDoc != nullptr) {
+			pDocTempl->GetNextDoc(posDoc)->UpdateAllViews(nullptr, Ut::WM_APP_SETTINGS_CHANGED);
+		}
+	}
+}
+
 void CHexerApp::OnFileOpenFile()
 {
 	const auto lmbFOD = [this]()->bool {
@@ -441,19 +453,7 @@ void CHexerApp::OnFileOpenProcess()
 void CHexerApp::OnToolsSettings()
 {
 	CDlgSettings dlg;
-	if (dlg.DoModal(m_stAppSettings) != IDOK)
-		return;
-
-	auto posDocTempl = GetFirstDocTemplatePosition();
-	while (posDocTempl != nullptr) {
-		const auto pDocTempl = GetNextDocTemplate(posDocTempl);
-		auto posDoc = pDocTempl->GetFirstDocPosition();
-		while (posDoc != nullptr) {
-			pDocTempl->GetNextDoc(posDoc)->UpdateAllViews(nullptr, Ut::WM_APP_SETTINGS_CHANGED);
-		}
-	}
-
-	m_stAppSettings.OnSettingsChanged();
+	dlg.DoModal(m_stAppSettings);
 }
 
 void CHexerApp::OnFileRFL(UINT uID)

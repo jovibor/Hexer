@@ -151,8 +151,10 @@ public:
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	[[nodiscard]] auto GetGridVec()const->const std::vector<GRIDDATA> & override;
+	[[nodiscard]] bool IsModified()const;
 	void OnCancel()override;
 	BOOL OnInitDialog()override;
+	auto OnPropertyDataChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	enum class EGroup : std::uint8_t;
 	enum class EName : std::uint8_t;
 	DECLARE_MESSAGE_MAP();
@@ -161,6 +163,7 @@ private:
 	CHexerPropGridCtrl m_grid;
 	std::vector<GRIDDATA> m_vecGrid;
 	CFont m_fntGrid;
+	bool m_fModified { false }; //Some setting has been modified.
 };
 
 enum class CDlgSettingsGeneral::EGroup : std::uint8_t {
@@ -172,6 +175,7 @@ enum class CDlgSettingsGeneral::EName : std::uint8_t {
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsGeneral, CDialogEx)
+	ON_REGISTERED_MESSAGE(AFX_WM_PROPERTY_CHANGED, &CDlgSettingsGeneral::OnPropertyDataChanged)
 END_MESSAGE_MAP()
 
 auto CDlgSettingsGeneral::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSettings* pAppSettings)->BOOL
@@ -193,16 +197,21 @@ void CDlgSettingsGeneral::ResetToDefaults()
 	SetPropOptValueByData(std::to_underlying(fWindowsMenu), refDefs.fWindowsMenu);
 	m_grid.SetRedraw(TRUE);
 	m_grid.RedrawWindow();
+	m_fModified = true;
 }
 
 void CDlgSettingsGeneral::SaveSettings()
 {
+	if (!IsModified())
+		return;
+
 	using enum EName;
 	auto& refSett = m_pAppSettings->GetGeneralSettings();
 	refSett.fMultipleInst = GetPropOptDataDWORD(std::to_underlying(fMultipleInst));
 	refSett.dwRFLSize = GetPropValueDWORD(std::to_underlying(dwRFLSize));
 	refSett.eStartup = static_cast<CAppSettings::EStartup>(GetPropOptDataDWORD(std::to_underlying(eStartup)));
 	refSett.fWindowsMenu = GetPropOptDataDWORD(std::to_underlying(fWindowsMenu));
+	m_fModified = false;
 }
 
 
@@ -217,6 +226,11 @@ void CDlgSettingsGeneral::DoDataExchange(CDataExchange* pDX)
 auto CDlgSettingsGeneral::GetGridVec()const->const std::vector<GRIDDATA>&
 {
 	return m_vecGrid;
+}
+
+bool CDlgSettingsGeneral::IsModified()const
+{
+	return m_fModified;
 }
 
 void CDlgSettingsGeneral::OnCancel()
@@ -287,6 +301,14 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	return TRUE;
 }
 
+auto CDlgSettingsGeneral::OnPropertyDataChanged(WPARAM wParam, LPARAM lParam)->LRESULT
+{
+	m_fModified = true;
+	GetParent()->SendMessageW(AFX_WM_PROPERTY_CHANGED, wParam, lParam);
+
+	return TRUE;
+}
+
 
 //CDlgSettingsHexCtrl.
 class CDlgSettingsHexCtrl final : public CDialogEx, IPropsHelper {
@@ -299,14 +321,17 @@ private:
 	enum class EName : std::uint8_t;
 	void DoDataExchange(CDataExchange* pDX)override;
 	[[nodiscard]] auto GetGridVec()const->const std::vector<GRIDDATA> & override;
+	[[nodiscard]] bool IsModified()const;
 	void OnCancel()override;
 	BOOL OnInitDialog()override;
+	auto OnPropertyDataChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	DECLARE_MESSAGE_MAP();
 private:
 	CAppSettings* m_pAppSettings { };
 	CHexerPropGridCtrl m_grid;
 	std::vector<GRIDDATA> m_vecGrid;
 	CFont m_fntGrid;
+	bool m_fModified { false };
 };
 
 enum class CDlgSettingsHexCtrl::EGroup : std::uint8_t {
@@ -321,6 +346,7 @@ enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsHexCtrl, CDialogEx)
+	ON_REGISTERED_MESSAGE(AFX_WM_PROPERTY_CHANGED, &CDlgSettingsHexCtrl::OnPropertyDataChanged)
 END_MESSAGE_MAP()
 
 auto CDlgSettingsHexCtrl::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSettings* pAppSettings)->BOOL
@@ -367,10 +393,14 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueRGB(std::to_underlying(clrBkBkm), refClrs.clrBkBkm);
 	m_grid.SetRedraw(TRUE);
 	m_grid.RedrawWindow();
+	m_fModified = true;
 }
 
 void CDlgSettingsHexCtrl::SaveSettings()
 {
+	if (!IsModified())
+		return;
+
 	using enum EName;
 	auto& refSett = m_pAppSettings->GetHexCtrlSettings();
 	refSett.stLogFont = *GetPropValuePLOGFONT(std::to_underlying(stLogFont));
@@ -402,6 +432,7 @@ void CDlgSettingsHexCtrl::SaveSettings()
 	refClrs.clrBkCaret = GetPropValueRGB(std::to_underlying(clrBkCaret));
 	refClrs.clrBkCaretSel = GetPropValueRGB(std::to_underlying(clrBkCaretSel));
 	refClrs.clrBkBkm = GetPropValueRGB(std::to_underlying(clrBkBkm));
+	m_fModified = false;
 }
 
 
@@ -416,6 +447,11 @@ void CDlgSettingsHexCtrl::DoDataExchange(CDataExchange* pDX)
 auto CDlgSettingsHexCtrl::GetGridVec()const->const std::vector<GRIDDATA>&
 {
 	return m_vecGrid;
+}
+
+bool CDlgSettingsHexCtrl::IsModified()const
+{
+	return m_fModified;
 }
 
 void CDlgSettingsHexCtrl::OnCancel()
@@ -576,20 +612,31 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	return TRUE;
 }
 
+auto CDlgSettingsHexCtrl::OnPropertyDataChanged(WPARAM wParam, LPARAM lParam)->LRESULT
+{
+	m_fModified = true;
+	GetParent()->SendMessageW(AFX_WM_PROPERTY_CHANGED, wParam, lParam);
+
+	return TRUE;
+}
+
 
 //CDlgSettings.
 export class CDlgSettings final : public CDialogEx {
 public:
-	CDlgSettings(CWnd* pParent = nullptr) : CDialogEx(IDD_SETTINGS, pParent) {}
+	CDlgSettings(CWnd* pParent = nullptr) : CDialogEx(IDD_SETTINGS, pParent) { }
 	auto DoModal(CAppSettings& refSettings) -> INT_PTR;
 private:
 	enum class ETabs : std::uint8_t; //All the tabs.
 	void DoDataExchange(CDataExchange* pDX)override;
+	void OnApply();
 	void OnCancel()override;
 	afx_msg void OnDefaults();
 	BOOL OnInitDialog()override;
 	void OnOK()override;
+	auto OnAnyPropertyDataChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg void OnTabSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
+	void SaveSettings();
 	void SetCurrentTab(ETabs eTab);
 	[[nodiscard]] auto TabIDToName(int iTab)const->ETabs;
 	[[nodiscard]] auto TabNameToID(ETabs eTab)const->int;
@@ -599,6 +646,7 @@ private:
 	std::unique_ptr<CDlgSettingsGeneral> m_pDlgSettingsGeneral { std::make_unique<CDlgSettingsGeneral>() };
 	std::unique_ptr<CDlgSettingsHexCtrl> m_pDlgSettingsHexCtrl { std::make_unique<CDlgSettingsHexCtrl>() };
 	CAppSettings* m_pAppSettings { };
+	bool m_fModified { false }; //Some setting has been modified.
 };
 
 enum class CDlgSettings::ETabs : std::uint8_t {
@@ -606,8 +654,10 @@ enum class CDlgSettings::ETabs : std::uint8_t {
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettings, CDialogEx)
+	ON_BN_CLICKED(IDC_SETTINGS_APPLY, &CDlgSettings::OnApply)
 	ON_BN_CLICKED(IDC_SETTINGS_DEFS, &CDlgSettings::OnDefaults)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_SETTINGS_TAB, &CDlgSettings::OnTabSelChanged)
+	ON_REGISTERED_MESSAGE(AFX_WM_PROPERTY_CHANGED, &CDlgSettings::OnAnyPropertyDataChanged)
 END_MESSAGE_MAP()
 
 auto CDlgSettings::DoModal(CAppSettings& refSettings)->INT_PTR
@@ -626,6 +676,12 @@ void CDlgSettings::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_SETTINGS_TAB, m_tabMain);
 }
 
+void CDlgSettings::OnApply()
+{
+	SaveSettings();
+	GetDlgItem(IDC_SETTINGS_APPLY)->EnableWindow(FALSE);
+}
+
 void CDlgSettings::OnCancel()
 {
 	CDialogEx::OnCancel();
@@ -638,6 +694,8 @@ void CDlgSettings::OnDefaults()
 
 	m_pDlgSettingsGeneral->ResetToDefaults();
 	m_pDlgSettingsHexCtrl->ResetToDefaults();
+	GetDlgItem(IDC_SETTINGS_APPLY)->EnableWindow(TRUE);
+	m_fModified = true;
 }
 
 BOOL CDlgSettings::OnInitDialog()
@@ -682,15 +740,33 @@ BOOL CDlgSettings::OnInitDialog()
 
 void CDlgSettings::OnOK()
 {
-	m_pDlgSettingsGeneral->SaveSettings();
-	m_pDlgSettingsHexCtrl->SaveSettings();
-
+	SaveSettings();
 	CDialogEx::OnOK();
+}
+
+auto CDlgSettings::OnAnyPropertyDataChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
+{
+	GetDlgItem(IDC_SETTINGS_APPLY)->EnableWindow(TRUE);
+	m_fModified = true;
+
+	return TRUE;
 }
 
 void CDlgSettings::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
 	SetCurrentTab(TabIDToName(m_tabMain.GetCurSel()));
+}
+
+void CDlgSettings::SaveSettings()
+{
+	if (!m_fModified)
+		return;
+
+	m_pDlgSettingsGeneral->SaveSettings();
+	m_pDlgSettingsHexCtrl->SaveSettings();
+	m_pAppSettings->OnSettingsChanged();
+	::SendMessageW(Ut::GetMainWnd(), Ut::WM_APP_SETTINGS_CHANGED, 0, 0);
+	m_fModified = false;
 }
 
 void CDlgSettings::SetCurrentTab(ETabs eTab)
