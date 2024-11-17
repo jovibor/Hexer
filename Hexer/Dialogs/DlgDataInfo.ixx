@@ -124,7 +124,7 @@ void CDlgDataInfo::UpdateGridData()
 {
 	const auto lmbSetValue = [&](CMFCPropertyGridProperty* pProp) {
 		using enum EPropName;
-		auto wstr = std::wstring { GetNameFromEOpenMode(m_dis.eMode) };
+		auto wstr = std::wstring { GetNameFromEOpenMode(m_dis.eOpenMode) };
 		switch (static_cast<EPropName>(pProp->GetData())) {
 		case DATA_PATH:
 			wstr += L" path:";

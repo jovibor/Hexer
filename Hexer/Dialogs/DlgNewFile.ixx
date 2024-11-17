@@ -25,7 +25,7 @@ private:
 	afx_msg void OnChangeEditPath();
 	DECLARE_MESSAGE_MAP();
 private:
-	Ut::DATAOPEN m_stDOS { };
+	Ut::DATAOPEN m_stDOS;
 	CEdit m_stEditSize;
 	CEdit m_stEditPath;
 	CComboBox m_stComboMeasure;
@@ -90,7 +90,7 @@ void CDlgNewFile::OnChangeEditPath()
 
 void CDlgNewFile::OnOK()
 {
-	m_stDOS.eMode = Ut::EOpenMode::NEW_FILE;
+	m_stDOS.eOpenMode = Ut::EOpenMode::NEW_FILE;
 	CStringW wstr;
 	m_stEditPath.GetWindowTextW(wstr);
 	m_stDOS.wstrDataPath = wstr;
@@ -107,7 +107,7 @@ void CDlgNewFile::OnOK()
 			return;
 		}
 
-		m_stDOS.ullNewFileSize = *opt * m_stComboMeasure.GetItemData(m_stComboMeasure.GetCurSel());
+		m_stDOS.ullSizeNewFile = *opt * m_stComboMeasure.GetItemData(m_stComboMeasure.GetCurSel());
 	}
 
 	CDialogEx::OnOK();

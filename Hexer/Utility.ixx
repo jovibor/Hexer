@@ -109,9 +109,13 @@ export namespace Ut {
 		OPEN_FILE, OPEN_DEVICE, OPEN_PROC, NEW_FILE
 	};
 
-	[[nodiscard]] auto GetNameFromEOpenMode(EOpenMode eMode) -> std::wstring_view {
+	enum class EFileIOMode :std::uint8_t {
+		FILE_MMAP, FILE_IOBUFF, FILE_IOIMMEDIATE
+	};
+
+	[[nodiscard]] auto GetNameFromEOpenMode(EOpenMode eOpenMode) -> std::wstring_view {
 		using enum EOpenMode;
-		switch (eMode) {
+		switch (eOpenMode) {
 		case OPEN_DEVICE:
 			return L"Device";
 		case OPEN_PROC:
@@ -163,9 +167,9 @@ export namespace Ut {
 
 	struct DATAOPEN { //Main data opening struct.
 		std::wstring  wstrDataPath; //Or Process name.
-		std::uint64_t ullNewFileSize { };
+		std::uint64_t ullSizeNewFile { };
 		DWORD         dwProcID { };
-		EOpenMode     eMode { EOpenMode::OPEN_FILE };
+		EOpenMode     eOpenMode { EOpenMode::OPEN_FILE };
 		[[nodiscard]] bool operator==(const DATAOPEN& rhs)const {
 			return wstrDataPath == rhs.wstrDataPath && dwProcID == rhs.dwProcID;
 		};
@@ -176,7 +180,7 @@ export namespace Ut {
 		std::wstring_view wsvFileName { };
 		std::uint64_t     ullDataSize { };
 		std::uint32_t     dwPageSize { };
-		EOpenMode         eMode { };
+		EOpenMode         eOpenMode { };
 		bool              fMutable { };
 	};
 

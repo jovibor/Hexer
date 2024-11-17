@@ -26,11 +26,6 @@ auto CHexerDoc::GetCacheSize()const->DWORD
 	return m_stDataLoader.GetCacheSize();
 }
 
-auto CHexerDoc::GetFileName()const->const std::wstring&
-{
-	return m_wstrFileName;
-}
-
 auto CHexerDoc::GetDataPath()const->const std::wstring&
 {
 	return m_wstrDataPath;
@@ -44,6 +39,16 @@ auto CHexerDoc::GetDataSize()const->std::uint64_t
 auto CHexerDoc::GetDocIcon()const->HICON
 {
 	return m_hDocIcon;
+}
+
+auto CHexerDoc::GetFileMMAPData()const->std::byte*
+{
+	return m_stDataLoader.GetFileMMAPData();
+}
+
+auto CHexerDoc::GetFileName()const->const std::wstring&
+{
+	return m_wstrFileName;
 }
 
 auto CHexerDoc::GetMaxVirtOffset()const->std::uint64_t
@@ -88,17 +93,17 @@ bool CHexerDoc::IsProcess()const
 
 bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 {
-	m_eOpenMode = dos.eMode;
+	m_eOpenMode = dos.eOpenMode;
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
-
-	if (!m_stDataLoader.Open(dos)) {
-		theApp.GetAppSettings().RFLRemoveFromList(dos);
+	auto& refSett = theApp.GetAppSettings();
+	if (!m_stDataLoader.Open(dos, refSett.GetGeneralSettings().eFileIOMode)) {
+		refSett.RFLRemoveFromList(dos);
 		return false;
 	}
 
-	theApp.GetAppSettings().RFLAddToList(dos);
-	theApp.GetAppSettings().LOLAddToList(dos);
+	refSett.RFLAddToList(dos);
+	refSett.LOLAddToList(dos);
 	m_strPathName = GetUniqueDocName(dos).data();
 	m_bEmbedded = FALSE;
 	SetTitle(GetDocTitle(dos).data());
@@ -132,7 +137,7 @@ auto CHexerDoc::GetMainFrame()const->CMainFrame*
 
 BOOL CHexerDoc::OnOpenDocument(LPCWSTR lpszPathName)
 {
-	return OnOpenDocument({ .wstrDataPath { lpszPathName }, .eMode { Ut::EOpenMode::OPEN_FILE } });
+	return OnOpenDocument({ .wstrDataPath { lpszPathName }, .eOpenMode { Ut::EOpenMode::OPEN_FILE } });
 }
 
 void CHexerDoc::OnCloseDocument()
@@ -157,7 +162,7 @@ void CHexerDoc::OnCloseDocument()
 
 auto CHexerDoc::GetUniqueDocName(const Ut::DATAOPEN& dos)->std::wstring
 {
-	if (dos.eMode == Ut::EOpenMode::OPEN_PROC) {
+	if (dos.eOpenMode == Ut::EOpenMode::OPEN_PROC) {
 		return std::format(L"Process: {} (ID: {})", dos.wstrDataPath, dos.dwProcID);
 	}
 	else {
@@ -168,7 +173,7 @@ auto CHexerDoc::GetUniqueDocName(const Ut::DATAOPEN& dos)->std::wstring
 auto CHexerDoc::GetDocTitle(const Ut::DATAOPEN& dos)->std::wstring
 {
 	using enum Ut::EOpenMode;
-	if (dos.eMode == OPEN_PROC) {
+	if (dos.eOpenMode == OPEN_PROC) {
 		return GetUniqueDocName(dos);
 	}
 
@@ -178,7 +183,7 @@ auto CHexerDoc::GetDocTitle(const Ut::DATAOPEN& dos)->std::wstring
 		return { };
 	}
 
-	switch (dos.eMode) {
+	switch (dos.eOpenMode) {
 	case OPEN_DEVICE:
 		return std::format(L"{}: {}", Ut::GetNameFromEOpenMode(OPEN_DEVICE), dos.wstrDataPath.substr(nName + 1));
 	default:

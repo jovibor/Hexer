@@ -15,10 +15,11 @@ import Utility;
 class CHexerDoc final : public CDocument {
 public:
 	[[nodiscard]] auto GetCacheSize()const->DWORD;
-	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetDataPath()const->const std::wstring&;
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
 	[[nodiscard]] auto GetDocIcon()const->HICON;
+	[[nodiscard]] auto GetFileMMAPData()const->std::byte*;
+	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetMaxVirtOffset()const->std::uint64_t;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetOpenMode()const->Ut::EOpenMode;

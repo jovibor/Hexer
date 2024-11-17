@@ -116,7 +116,7 @@ IMPLEMENT_DYNCREATE(CHexerDocMgr, CDocument)
 auto CHexerDocMgr::OpenDocumentCustom(LPCWSTR lpszFileName, bool fDontLNK)->CDocument*
 {
 	return OpenDocumentCustom({ .wstrDataPath { fDontLNK ? lpszFileName : Ut::ResolveLNK(lpszFileName) },
-		.eMode { Ut::EOpenMode::OPEN_FILE } });
+		.eOpenMode { Ut::EOpenMode::OPEN_FILE } });
 }
 
 auto CHexerDocMgr::OpenDocumentCustom(const Ut::DATAOPEN& dos)->CDocument*
@@ -188,7 +188,7 @@ auto CHexerDocMgr::OpenDocumentFile(LPCWSTR lpszFileName, BOOL /*bAddToMRU*/)->C
 {
 	//This method also takes a part in the HDROP.
 
-	return OpenDocumentCustom({ .wstrDataPath { Ut::ResolveLNK(lpszFileName) }, .eMode { Ut::EOpenMode::OPEN_FILE } });
+	return OpenDocumentCustom({ .wstrDataPath { Ut::ResolveLNK(lpszFileName) }, .eOpenMode { Ut::EOpenMode::OPEN_FILE } });
 }
 
 
@@ -435,7 +435,7 @@ void CHexerApp::OnFileOpenDevice()
 {
 	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& wstrPath : dlg.GetPaths()) {
-			OpenDocumentCustom({ .wstrDataPath { wstrPath }, .eMode { Ut::EOpenMode::OPEN_DEVICE } });
+			OpenDocumentCustom({ .wstrDataPath { wstrPath }, .eOpenMode { Ut::EOpenMode::OPEN_DEVICE } });
 		}
 	}
 }
@@ -445,7 +445,7 @@ void CHexerApp::OnFileOpenProcess()
 	if (CDlgOpenProcess dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& ref : dlg.GetProcesses()) {
 			OpenDocumentCustom({ .wstrDataPath { ref.wstrProcName }, .dwProcID { ref.dwProcID },
-				.eMode { Ut::EOpenMode::OPEN_PROC } });
+				.eOpenMode { Ut::EOpenMode::OPEN_PROC } });
 		}
 	}
 }

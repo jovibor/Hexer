@@ -167,11 +167,11 @@ private:
 };
 
 enum class CDlgSettingsGeneral::EGroup : std::uint8_t {
-	GROUP_GENERAL
+	GROUP_GENERAL, GROUP_IO
 };
 
 enum class CDlgSettingsGeneral::EName : std::uint8_t {
-	fMultipleInst, dwRFLSize, eStartup, fWindowsMenu
+	fMultipleInst, dwRFLSize, eStartup, fWindowsMenu, eFileIOMode
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsGeneral, CDialogEx)
@@ -195,6 +195,7 @@ void CDlgSettingsGeneral::ResetToDefaults()
 	SetPropValueDWORD(std::to_underlying(dwRFLSize), refDefs.dwRFLSize);
 	SetPropOptValueByData(std::to_underlying(eStartup), std::to_underlying(refDefs.eStartup));
 	SetPropOptValueByData(std::to_underlying(fWindowsMenu), refDefs.fWindowsMenu);
+	SetPropOptValueByData(std::to_underlying(eFileIOMode), std::to_underlying(refDefs.eFileIOMode));
 	m_grid.SetRedraw(TRUE);
 	m_grid.RedrawWindow();
 	m_fModified = true;
@@ -211,6 +212,7 @@ void CDlgSettingsGeneral::SaveSettings()
 	refSett.dwRFLSize = GetPropValueDWORD(std::to_underlying(dwRFLSize));
 	refSett.eStartup = static_cast<CAppSettings::EStartup>(GetPropOptDataDWORD(std::to_underlying(eStartup)));
 	refSett.fWindowsMenu = GetPropOptDataDWORD(std::to_underlying(fWindowsMenu));
+	refSett.eFileIOMode = static_cast<Ut::EFileIOMode>(GetPropOptDataDWORD(std::to_underlying(eFileIOMode)));
 	m_fModified = false;
 }
 
@@ -242,7 +244,7 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_grid.MarkModifiedProperties(1, 0);
+	m_grid.MarkModifiedProperties(TRUE, FALSE);
 	m_grid.EnableHeaderCtrl(TRUE, L"Property", L"Value");
 	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 190 };
 	m_grid.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
@@ -270,9 +272,9 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	const auto& refStartup = m_vecGrid.emplace_back(new CHexerPropGridProp(L"On Startup:", L""),
 		std::to_underlying(GROUP_GENERAL), std::to_underlying(eStartup));
 	const auto pPropStartup = static_cast<CHexerPropGridProp*>(refStartup.pProp);
-	pPropStartup->AddOptionEx(L"Do Nothing", static_cast<DWORD_PTR>(CAppSettings::EStartup::DO_NOTHING));
-	pPropStartup->AddOptionEx(L"Restore Last Opened Files", static_cast<DWORD_PTR>(CAppSettings::EStartup::RESTORE_LAST_OPENED));
-	pPropStartup->AddOptionEx(L"Show File Open Dialog", static_cast<DWORD_PTR>(CAppSettings::EStartup::SHOW_FOD));
+	pPropStartup->AddOptionEx(L"Do Nothing", std::to_underlying(CAppSettings::EStartup::DO_NOTHING));
+	pPropStartup->AddOptionEx(L"Restore Last Opened Files", std::to_underlying(CAppSettings::EStartup::RESTORE_LAST_OPENED));
+	pPropStartup->AddOptionEx(L"Show File Open Dialog", std::to_underlying(CAppSettings::EStartup::SHOW_FOD));
 	pPropStartup->SetValueFromData(std::to_underlying(refSett.eStartup));
 	pPropStartup->AllowEdit(FALSE);
 
@@ -290,13 +292,30 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	pPropWindowsMenu->SetValueFromData(refSett.fWindowsMenu);
 	pPropWindowsMenu->AllowEdit(FALSE);
 
-	const auto pAppear = new CMFCPropertyGridProperty(L"General:");
+	const auto pGeneral = new CMFCPropertyGridProperty(L"General:");
 	for (const auto& it : m_vecGrid) {
 		if (it.ui8Group == std::to_underlying(GROUP_GENERAL)) {
-			pAppear->AddSubItem(it.pProp);
+			pGeneral->AddSubItem(it.pProp);
 		}
 	}
-	m_grid.AddProperty(pAppear);
+	m_grid.AddProperty(pGeneral);
+
+	const auto& refIO = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Files I/O Mode:", L""),
+		std::to_underlying(GROUP_IO), std::to_underlying(eFileIOMode));
+	const auto pPropFileIO = static_cast<CHexerPropGridProp*>(refIO.pProp);
+	pPropFileIO->AddOptionEx(L"Memory Mapping", std::to_underlying(Ut::EFileIOMode::FILE_MMAP));
+	pPropFileIO->AddOptionEx(L"Disk I/O Buffered", std::to_underlying(Ut::EFileIOMode::FILE_IOBUFF));
+	pPropFileIO->AddOptionEx(L"Disk I/O Immediate", std::to_underlying(Ut::EFileIOMode::FILE_IOIMMEDIATE));
+	pPropFileIO->SetValueFromData(std::to_underlying(refSett.eFileIOMode));
+	pPropFileIO->AllowEdit(FALSE);
+
+	const auto pIO = new CMFCPropertyGridProperty(L"Data I/O:");
+	for (const auto& it : m_vecGrid) {
+		if (it.ui8Group == std::to_underlying(GROUP_IO)) {
+			pIO->AddSubItem(it.pProp);
+		}
+	}
+	m_grid.AddProperty(pIO);
 
 	return TRUE;
 }
@@ -463,7 +482,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_grid.MarkModifiedProperties(1, 0);
+	m_grid.MarkModifiedProperties(TRUE, FALSE);
 	m_grid.EnableHeaderCtrl(TRUE, L"Property", L"Value");
 	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 150 };
 	m_grid.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
@@ -557,13 +576,13 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 		CF_EFFECTS | CF_FIXEDPITCHONLY | CF_FORCEFONTEXIST | CF_INITTOLOGFONTSTRUCT | CF_NOSIMULATIONS | CF_NOSCRIPTSEL),
 		std::to_underlying(GROUP_GENERAL), std::to_underlying(stLogFont));
 
-	const auto pAppear = new CMFCPropertyGridProperty(L"General:");
+	const auto pGeneral = new CMFCPropertyGridProperty(L"General:");
 	for (const auto& it : m_vecGrid) {
 		if (it.ui8Group == std::to_underlying(GROUP_GENERAL)) {
-			pAppear->AddSubItem(it.pProp);
+			pGeneral->AddSubItem(it.pProp);
 		}
 	}
-	m_grid.AddProperty(pAppear);
+	m_grid.AddProperty(pGeneral);
 
 	//HexCtrl colors.
 	const auto& refClrs = m_pAppSettings->GetHexCtrlSettings().stClrs;
@@ -702,8 +721,8 @@ BOOL CDlgSettings::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 0, L"General", 0, static_cast<int>(ETabs::TAB_GENERAL));
-	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 1, L"HexCtrl", 0, static_cast<int>(ETabs::TAB_HEXCTRL));
+	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 0, L"General", 0, std::to_underlying(ETabs::TAB_GENERAL));
+	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 1, L"HexCtrl", 0, std::to_underlying(ETabs::TAB_HEXCTRL));
 
 	CRect rcTab;
 	m_tabMain.GetItemRect(0, rcTab);
@@ -799,7 +818,7 @@ auto CDlgSettings::TabNameToID(ETabs eTab)const->int {
 	for (auto i { 0 }; i < m_tabMain.GetItemCount(); ++i) {
 		TCITEMW tci { .mask { TCIF_PARAM } };
 		m_tabMain.GetItem(i, &tci);
-		if (tci.lParam == static_cast<int>(eTab)) {
+		if (tci.lParam == std::to_underlying(eTab)) {
 			return i;
 		}
 	}

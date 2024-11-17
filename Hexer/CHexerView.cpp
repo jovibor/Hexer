@@ -41,7 +41,7 @@ auto CHexerView::GetDataInfo()const->Ut::DATAINFO
 {
 	const auto pDoc = GetDocument();
 	return { .wsvDataPath = pDoc->GetDataPath(), .wsvFileName = pDoc->GetFileName(), .ullDataSize = pDoc->GetDataSize(),
-		.dwPageSize = GetHexCtrl()->GetPageSize(), .eMode { pDoc->GetOpenMode() }, .fMutable = GetHexCtrl()->IsMutable() };
+		.dwPageSize = GetHexCtrl()->GetPageSize(), .eOpenMode { pDoc->GetOpenMode() }, .fMutable = GetHexCtrl()->IsMutable() };
 }
 
 auto CHexerView::GetDlgProcMemory()const->HWND
@@ -117,9 +117,8 @@ void CHexerView::OnEditEditMode()
 	const auto fNewAccess = !GetHexCtrl()->IsMutable();
 	GetHexCtrl()->SetMutable(fNewAccess);
 	GetMainFrame()->UpdatePaneFileInfo();
-
 	const auto pDoc = GetDocument();
-	Ut::Log::AddLogEntryInfo(L"File access changed: " + pDoc->GetFileName() + std::wstring { fNewAccess ? L" (RW)" : L" (RO)" });
+	Ut::Log::AddLogEntryInfo(L"Data access changed: " + pDoc->GetFileName() + std::wstring { fNewAccess ? L" (RW)" : L" (RO)" });
 }
 
 void CHexerView::OnEditCopyHex()
@@ -192,7 +191,7 @@ void CHexerView::OnInitialUpdate()
 	for (const auto& p : theApp.GetAppSettings().GetHexCtrlTemplates()) {
 		pHex->GetTemplates()->AddTemplate(*p);
 	}
-	pHex->SetData({ .spnData { std::span<std::byte>{ reinterpret_cast<std::byte*>(nullptr), pDoc->GetDataSize() } },
+	pHex->SetData({ .spnData { pDoc->GetFileMMAPData(), pDoc->GetDataSize() },
 		.pHexVirtData { pDoc->GetVirtualInterface() }, .ullMaxVirtOffset { pDoc->GetMaxVirtOffset() },
 		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }

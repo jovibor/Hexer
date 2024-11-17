@@ -139,9 +139,9 @@ void CAppSettingsRFL::AddToListBeginning(const Ut::DATAOPEN& dos, VecDataOpen& v
 	using enum Ut::EOpenMode;
 	//Remove any duplicates. Processes can have same names but different IDs.
 	std::erase_if(vecData, [&dos](const Ut::DATAOPEN& refData) { return refData == dos; });
-	const auto eMode = dos.eMode == NEW_FILE ? OPEN_FILE : dos.eMode;
+	const auto eOpenMode = dos.eOpenMode == NEW_FILE ? OPEN_FILE : dos.eOpenMode;
 	vecData.emplace(vecData.begin(), Ut::DATAOPEN {
-		.wstrDataPath { dos.wstrDataPath }, .dwProcID { dos.dwProcID }, .eMode { eMode } });
+		.wstrDataPath { dos.wstrDataPath }, .dwProcID { dos.dwProcID }, .eOpenMode { eOpenMode } });
 }
 
 auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
@@ -165,20 +165,20 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 		if (iCode == ERROR_SUCCESS && dwDataType == REG_SZ) {
 			const auto wsvName = std::wstring_view { buffName };
 			using enum Ut::EOpenMode;
-			Ut::EOpenMode eMode { OPEN_FILE }; //Default;
+			Ut::EOpenMode eOpenMode { OPEN_FILE }; //Default;
 			if (const auto it = wsvName.find(L':'); it != std::wstring_view::npos) {
 				const auto wsvMode = wsvName.substr(it + 1);
 				if (wsvMode == L"Device") {
-					eMode = OPEN_DEVICE;
+					eOpenMode = OPEN_DEVICE;
 				}
 				else if (wsvMode == L"Process") {
-					eMode = OPEN_PROC;
+					eOpenMode = OPEN_PROC;
 				}
 			}
 
-			Ut::DATAOPEN stDOS { .eMode { eMode } };
+			Ut::DATAOPEN stDOS { .eOpenMode { eOpenMode } };
 			const auto wsvData = std::wstring_view { buffData };
-			if (eMode == OPEN_PROC) {
+			if (eOpenMode == OPEN_PROC) {
 				const auto nID = wsvData.find(L"ID:");
 				if (nID == std::wstring_view::npos) {
 					continue;
@@ -232,12 +232,12 @@ void CAppSettingsRFL::SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen&
 	reg.RecurseDeleteKey(wsvKeyName.data()); //Remove all data in the key.
 	reg.Create(HKEY_CURRENT_USER, pwszRegPath);
 	for (const auto& [idx, ref] : vecData | std::views::enumerate) {
-		if (ref.eMode == OPEN_PROC) {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetNameFromEOpenMode(ref.eMode)).data(),
+		if (ref.eOpenMode == OPEN_PROC) {
+			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetNameFromEOpenMode(ref.eOpenMode)).data(),
 				std::format(L"ID:{};Name:{};", ref.dwProcID, ref.wstrDataPath).data());
 		}
 		else {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetNameFromEOpenMode(ref.eMode)).data(),
+			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetNameFromEOpenMode(ref.eOpenMode)).data(),
 				ref.wstrDataPath.data());
 		}
 	}
@@ -263,19 +263,19 @@ void CAppSettingsRFL::RebuildRFLMenu()
 			break;
 
 		std::wstring wstrMenu;
-		if (ref.eMode == OPEN_PROC) {
-			wstrMenu = std::format(L"{} {}: {} (ID: {})", iIndex + 1, Ut::GetNameFromEOpenMode(ref.eMode), ref.wstrDataPath,
+		if (ref.eOpenMode == OPEN_PROC) {
+			wstrMenu = std::format(L"{} {}: {} (ID: {})", iIndex + 1, Ut::GetNameFromEOpenMode(ref.eOpenMode), ref.wstrDataPath,
 				ref.dwProcID);
 		}
 		else {
-			wstrMenu = std::format(L"{} {}: {}", iIndex + 1, Ut::GetNameFromEOpenMode(ref.eMode), ref.wstrDataPath);
+			wstrMenu = std::format(L"{} {}: {}", iIndex + 1, Ut::GetNameFromEOpenMode(ref.eOpenMode), ref.wstrDataPath);
 		}
 
 		const auto iMenuID = m_iIDMenuFirst + iIndex;
 		AppendMenuW(m_hMenu, MF_STRING, iMenuID, wstrMenu.data());
 
 		HBITMAP hBmp { };
-		switch (ref.eMode) {
+		switch (ref.eOpenMode) {
 		case OPEN_FILE:
 			hBmp = m_hBMPFile;
 			break;
@@ -310,20 +310,21 @@ public:
 		std::uint64_t ullPaneDataBkmMgr { };     //Pane data for the "Bokmark Manager".
 		std::uint64_t ullPaneDataDataInterp { }; //Pane data for the "Template Manager".
 		std::uint64_t ullPaneDataTemplMgr { };   //Pane data for the "Data Interpreter".
-		PANESTATUS stPSFileInfo { };             //Pane status for the "File Properties".
-		PANESTATUS stPSBkmMgr { };               //Pane status for the "Bokmark Manager".
-		PANESTATUS stPSDataInterp { };           //Pane status for the "Data Interpreter".
-		PANESTATUS stPSTemplMgr { };             //Pane status for the "Template Manager".
-		PANESTATUS stPSLogInfo { };              //Pane status for the "Log Information".
+		PANESTATUS    stPSFileInfo { };          //Pane status for the "File Properties".
+		PANESTATUS    stPSBkmMgr { };            //Pane status for the "Bokmark Manager".
+		PANESTATUS    stPSDataInterp { };        //Pane status for the "Data Interpreter".
+		PANESTATUS    stPSTemplMgr { };          //Pane status for the "Template Manager".
+		PANESTATUS    stPSLogInfo { };           //Pane status for the "Log Information".
 	};
 	enum class EStartup :std::uint8_t {
 		DO_NOTHING, RESTORE_LAST_OPENED, SHOW_FOD
 	};
 	struct GENERALSETTINGS {
-		bool fMultipleInst { }; //0-Single, 1-Multiple.
-		DWORD dwRFLSize { };
-		EStartup eStartup { };
-		bool fWindowsMenu { }; //1-Show, 0-Don't show.
+		bool            fMultipleInst { }; //0-Single, 1-Multiple.
+		DWORD           dwRFLSize { };
+		EStartup        eStartup { };
+		Ut::EFileIOMode eFileIOMode { };
+		bool            fWindowsMenu { }; //1-Show, 0-Don't show.
 	};
 	struct HEXCTRLSETTINGS {
 		LOGFONTW stLogFont { };
@@ -463,6 +464,10 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 
 	((m_wstrRegAppPath += L"Software\\") += wsvAppName) += L"\\";
 
+	//Filling all the default settings first, then load from the registry.
+	GetGeneralSettings() = GetGeneralDefs();
+	GetHexCtrlSettings() = GetHexCtrlDefs();
+
 	//Settings.
 	const auto wstrKeySettings = GetRegSettingsPath();
 	if (CRegKey regSettings; regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) == ERROR_SUCCESS) {
@@ -504,6 +509,9 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 		DWORD dwStartup { };
 		regSettings.QueryDWORDValue(L"GeneralStartup", dwStartup);
 		refGeneral.eStartup = static_cast<EStartup>(dwStartup);
+		DWORD dwFileIOMode { };
+		regSettings.QueryDWORDValue(L"GeneralFileIOMode", dwFileIOMode);
+		refGeneral.eFileIOMode = static_cast<Ut::EFileIOMode>(dwFileIOMode);
 		DWORD dwWindowsMenu { };
 		regSettings.QueryDWORDValue(L"GeneralWindowsMenu", dwWindowsMenu);
 		refGeneral.fWindowsMenu = dwWindowsMenu;
@@ -585,11 +593,6 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkCaretSel", refClrs.clrBkCaretSel);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkBkm", refClrs.clrBkBkm);
 		}
-		else { GetHexCtrlSettings() = GetHexCtrlDefs(); }
-	}
-	else {
-		GetGeneralSettings() = GetGeneralDefs();
-		GetHexCtrlSettings() = GetHexCtrlDefs();
 	}
 
 	LoadHexCtrlTemplates();
@@ -684,6 +687,7 @@ void CAppSettings::SaveSettings()
 	regSettings.SetDWORDValue(L"GeneralInstances", refGeneral.fMultipleInst);
 	regSettings.SetDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
 	regSettings.SetDWORDValue(L"GeneralStartup", std::to_underlying(refGeneral.eStartup));
+	regSettings.SetDWORDValue(L"GeneralFileIOMode", std::to_underlying(refGeneral.eFileIOMode));
 	regSettings.SetDWORDValue(L"GeneralWindowsMenu", refGeneral.fWindowsMenu);
 
 	//HexCtrl settings.
@@ -878,7 +882,7 @@ auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
 {
 	static const GENERALSETTINGS defs { .fMultipleInst { false }, .dwRFLSize { 20 }, .eStartup { EStartup::DO_NOTHING },
-		.fWindowsMenu { false } };
+		.eFileIOMode { Ut::EFileIOMode::FILE_MMAP }, .fWindowsMenu { false } };
 	return defs;
 }
 
