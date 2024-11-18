@@ -192,7 +192,7 @@ void CHexerView::OnInitialUpdate()
 		pHex->GetTemplates()->AddTemplate(*p);
 	}
 	pHex->SetData({ .spnData { pDoc->GetFileMMAPData(), pDoc->GetDataSize() },
-		.pHexVirtData { pDoc->GetVirtualInterface() }, .ullMaxVirtOffset { pDoc->GetMaxVirtOffset() },
+		.pHexVirtData { pDoc->GetIHexVirtData() }, .ullMaxVirtOffset { pDoc->GetMaxVirtOffset() },
 		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
 }
 

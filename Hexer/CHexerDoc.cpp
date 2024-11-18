@@ -76,9 +76,9 @@ auto CHexerDoc::GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMAT
 	return m_stDataLoader.GetVecProcMemory();
 }
 
-auto CHexerDoc::GetVirtualInterface()->HEXCTRL::IHexVirtData*
+auto CHexerDoc::GetIHexVirtData()->HEXCTRL::IHexVirtData*
 {
-	return m_stDataLoader.GetVirtualInterface();
+	return m_stDataLoader.GetIHexVirtData();
 }
 
 bool CHexerDoc::IsFileMutable()const

@@ -31,9 +31,9 @@ public:
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetProcID()const->DWORD;
 	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
-	[[nodiscard]] auto GetVirtualInterface() -> HEXCTRL::IHexVirtData*;
+	[[nodiscard]] auto GetIHexVirtData() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsMutable()const;
-	[[nodiscard]] bool Open(const Ut::DATAOPEN& dos, Ut::EFileIOMode eFileIOMode);
+	[[nodiscard]] bool Open(const Ut::DATAOPEN& dos, Ut::EDataIOMode eFileIOMode);
 private:
 	void FlushCache();
 	[[nodiscard]] auto GetDeviceAlign()const->DWORD;
@@ -46,13 +46,13 @@ private:
 	[[nodiscard]] bool IsModified()const;
 	[[nodiscard]] bool IsProcess()const;
 	void LogLastError(std::wstring_view wsvSource, DWORD dwErr = 0)const;
-	[[nodiscard]] auto NewFile(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
+	[[nodiscard]] auto NewFile() -> std::expected<void, DWORD>;
 	void OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)override;
 	void OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)override;
 	void OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)override;
-	[[nodiscard]] auto OpenDevice(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
-	[[nodiscard]] auto OpenFile(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
-	[[nodiscard]] auto OpenProcess(const Ut::DATAOPEN& dos) -> std::expected<void, DWORD>;
+	[[nodiscard]] auto OpenDevice() -> std::expected<void, DWORD>;
+	[[nodiscard]] auto OpenFile() -> std::expected<void, DWORD>;
+	[[nodiscard]] auto OpenProcess() -> std::expected<void, DWORD>;
 	[[nodiscard]] auto ReadFileData(const HEXCTRL::HEXDATAINFO& hdi) -> HEXCTRL::SpanByte;
 	[[nodiscard]] auto ReadProcData(const HEXCTRL::HEXDATAINFO& hdi) -> HEXCTRL::SpanByte;
 	void WriteDeviceData(const HEXCTRL::HEXDATAINFO& hdi);
@@ -60,8 +60,8 @@ private:
 	void WriteProcData(const HEXCTRL::HEXDATAINFO& hdi);
 private:
 	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
-	std::wstring m_wstrDataPath; //Data path to open.
-	std::wstring m_wstrFileName; //File name without path, or Process name.
+	Ut::DATAOPEN m_dos;            //Copy struct from the Open() method.
+	std::wstring m_wstrFileName;   //File name without path, or Process name.
 	std::vector<MEMORY_BASIC_INFORMATION> m_vecProcMemory; //Process memory regions info.
 	HANDLE m_hHandle { };          //Handle of a file or process.
 	HANDLE m_hMapObject { };       //Returned by CreateFileMappingW.
@@ -72,9 +72,7 @@ private:
 	std::uint64_t m_ullMaxVirtOffset { }; //Maximum virtual address of a process.
 	DWORD m_dwPageSize { };        //System Virtual page size.
 	DWORD m_dwDeviceAlign { 1 };   //Alignment that the offset and the size must be aligned on, for the ReadFile on Device.
-	DWORD m_dwProcID { };          //Process ID.
-	Ut::EOpenMode m_eOpenMode { }; //From Ut::DATAOPEN.
-	Ut::EFileIOMode m_eFileIOMode { };
+	Ut::EDataIOMode m_eFileIOMode { };
 	bool m_fMutable { false };     //Is data opened as RW or RO?
 	bool m_fModified { false };    //Data was modified.
 	bool m_fCacheZeroed { false }; //If cache is set with zeros or not.
@@ -106,10 +104,12 @@ void CDataLoader::Close()
 	}
 
 	CloseHandle(m_hHandle);
-	m_pCache.reset();
-	m_wstrDataPath.clear();
-	m_vecProcMemory.clear();
 	m_hHandle = nullptr;
+	m_hMapObject = nullptr;
+	m_lpMapBase = nullptr;
+	m_pCache.reset();
+	m_vecProcMemory.clear();
+	m_dos = { };
 	m_stDataSize = { };
 	m_ullOffsetCurr = 0;
 	m_ullSizeCurr = 0;
@@ -117,6 +117,7 @@ void CDataLoader::Close()
 	m_ullMaxVirtOffset = 0;
 	m_fMutable = false;
 	m_fModified = false;
+	m_fCacheZeroed = false;
 }
 
 auto CDataLoader::GetCacheSize()const->DWORD
@@ -131,7 +132,7 @@ auto CDataLoader::GetDataSize()const->std::uint64_t
 
 auto CDataLoader::GetFileMMAPData()const->std::byte*
 {
-	return (IsProcess() && IsFileMMAP()) ? static_cast<std::byte*>(m_lpMapBase) : nullptr;
+	return static_cast<std::byte*>(m_lpMapBase);
 }
 
 auto CDataLoader::GetFileName()const->const std::wstring&
@@ -151,7 +152,7 @@ auto CDataLoader::GetMemPageSize()const->DWORD
 
 auto CDataLoader::GetProcID()const->DWORD
 {
-	return m_dwProcID;
+	return m_dos.dwProcID;
 }
 
 auto CDataLoader::GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&
@@ -159,19 +160,9 @@ auto CDataLoader::GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORM
 	return m_vecProcMemory;
 }
 
-auto CDataLoader::GetVirtualInterface()->HEXCTRL::IHexVirtData*
+auto CDataLoader::GetIHexVirtData()->HEXCTRL::IHexVirtData*
 {
-	using enum Ut::EOpenMode;
-	switch (m_eOpenMode) {
-	case NEW_FILE:
-	case OPEN_FILE:
-		return IsFileMMAP() ? nullptr : this;
-	case OPEN_DEVICE:
-	case OPEN_PROC:
-		return this;
-	default:
-		return nullptr;
-	}
+	return (IsFile() && IsFileMMAP()) ? nullptr : this;
 }
 
 bool CDataLoader::IsMutable()const
@@ -179,29 +170,30 @@ bool CDataLoader::IsMutable()const
 	return m_fMutable;
 }
 
-bool CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::EFileIOMode eFileIOMode)
+bool CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::EDataIOMode eFileIOMode)
 {
 	assert(m_hHandle == nullptr);
 	if (m_hHandle != nullptr) { //Already opened.
 		return false;
 	}
 
-	using enum Ut::EOpenMode;
-	m_eOpenMode = dos.eOpenMode;
+	m_dos = dos;
 	m_eFileIOMode = eFileIOMode;
+
+	using enum Ut::EOpenMode;
 	std::expected<void, DWORD> expOpen;
 	switch (dos.eOpenMode) {
 	case OPEN_FILE:
-		expOpen = OpenFile(dos);
+		expOpen = OpenFile();
 		break;
 	case OPEN_DEVICE:
-		expOpen = OpenDevice(dos);
+		expOpen = OpenDevice();
 		break;
 	case OPEN_PROC:
-		expOpen = OpenProcess(dos);
+		expOpen = OpenProcess();
 		break;
 	case NEW_FILE:
-		expOpen = NewFile(dos);
+		expOpen = NewFile();
 		break;
 	default:
 		break;
@@ -218,6 +210,7 @@ bool CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::EFileIOMode eFileIOMode)
 	const auto wstrLog = std::format(L"{} opened: {} ({})", Ut::GetNameFromEOpenMode(dos.eOpenMode), GetFileName(),
 		Ut::GetRWWstr(IsMutable()));
 	Ut::Log::AddLogEntryInfo(wstrLog);
+
 	return true;
 }
 
@@ -262,25 +255,25 @@ void CDataLoader::InitInternalCache(DWORD dwAlign)
 
 bool CDataLoader::IsDevice()const
 {
-	return m_eOpenMode == Ut::EOpenMode::OPEN_DEVICE;
+	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_DEVICE;
 }
 
 bool CDataLoader::IsFile()const
 {
 	using enum Ut::EOpenMode;
-	return m_eOpenMode == OPEN_FILE || m_eOpenMode == NEW_FILE;
+	return m_dos.eOpenMode == OPEN_FILE || m_dos.eOpenMode == NEW_FILE;
 }
 
 bool CDataLoader::IsFileMMAP()const
 {
-	return m_eFileIOMode == Ut::EFileIOMode::FILE_MMAP;
+	return m_eFileIOMode == Ut::EDataIOMode::FILE_MMAP;
 }
 
 bool CDataLoader::IsFileIOIMMEDIATE()const
 {
 	//If true then any data change will be written back to the file immediately.
 	//Otherwise, the whole cache will be written, but only when it needs to be refilled.
-	return m_eFileIOMode == Ut::EFileIOMode::FILE_IOIMMEDIATE;
+	return m_eFileIOMode == Ut::EDataIOMode::DATA_IOIMMEDIATE;
 }
 
 bool CDataLoader::IsModified()const
@@ -290,7 +283,7 @@ bool CDataLoader::IsModified()const
 
 bool CDataLoader::IsProcess()const
 {
-	return m_eOpenMode == Ut::EOpenMode::OPEN_PROC;
+	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_PROC;
 }
 
 void CDataLoader::LogLastError(std::wstring_view wsvSource, DWORD dwErr)const
@@ -299,23 +292,22 @@ void CDataLoader::LogLastError(std::wstring_view wsvSource, DWORD dwErr)const
 		GetFileName(), wsvSource, dwErr > 0 ? dwErr : GetLastError(), Ut::GetLastErrorWstr(dwErr)));
 }
 
-auto CDataLoader::NewFile(const Ut::DATAOPEN &dos)->std::expected<void, DWORD>
+auto CDataLoader::NewFile()->std::expected<void, DWORD>
 {
-	assert(dos.eOpenMode == Ut::EOpenMode::NEW_FILE);
-	assert(dos.ullSizeNewFile > 0);
-	if (dos.ullSizeNewFile == 0) {
+	assert(m_dos.eOpenMode == Ut::EOpenMode::NEW_FILE);
+	assert(m_dos.ullSizeNewFile > 0);
+	if (m_dos.ullSizeNewFile == 0) {
 		return std::unexpected(0);
 	}
 
-	m_wstrDataPath = dos.wstrDataPath;
-	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //File name.
+	m_wstrFileName = m_dos.wstrDataPath.substr(m_dos.wstrDataPath.find_last_of(L'\\') + 1); //File name.
 
-	if (m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+	if (m_hHandle = CreateFileW(m_dos.wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
 		nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr); m_hHandle == INVALID_HANDLE_VALUE) {
 		return std::unexpected(GetLastError());
 	}
 
-	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(dos.ullSizeNewFile) } }, nullptr, FILE_BEGIN) == FALSE) {
+	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(m_dos.ullSizeNewFile) } }, nullptr, FILE_BEGIN) == FALSE) {
 		const auto err = GetLastError();
 		LogLastError(L"SetFilePointerEx", err);
 		return std::unexpected(err);
@@ -372,7 +364,7 @@ void CDataLoader::OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)
 void CDataLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
 {
 	using enum Ut::EOpenMode;
-	switch (m_eOpenMode) {
+	switch (m_dos.eOpenMode) {
 	case OPEN_PROC:
 		hdi.spnData = ReadProcData(hdi);
 		break;
@@ -385,7 +377,7 @@ void CDataLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
 void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 {
 	using enum Ut::EOpenMode;
-	switch (m_eOpenMode) {
+	switch (m_dos.eOpenMode) {
 	case OPEN_DEVICE:
 		WriteDeviceData(hdi);
 		break;
@@ -401,16 +393,14 @@ void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 	}
 }
 
-auto CDataLoader::OpenFile(const Ut::DATAOPEN& dos)->std::expected<void, DWORD>
+auto CDataLoader::OpenFile()->std::expected<void, DWORD>
 {
-	m_wstrDataPath = dos.wstrDataPath;
-	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //File name.
-
-	m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+	m_wstrFileName = m_dos.wstrDataPath.substr(m_dos.wstrDataPath.find_last_of(L'\\') + 1); //File name.
+	m_hHandle = CreateFileW(m_dos.wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
 		nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (m_hHandle == INVALID_HANDLE_VALUE) {
-		if (m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+		if (m_hHandle = CreateFileW(m_dos.wstrDataPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
 			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);	m_hHandle == INVALID_HANDLE_VALUE) {
 			return std::unexpected(GetLastError());
 		}
@@ -449,15 +439,14 @@ auto CDataLoader::OpenFile(const Ut::DATAOPEN& dos)->std::expected<void, DWORD>
 	return { };
 }
 
-auto CDataLoader::OpenDevice(const Ut::DATAOPEN& dos)->std::expected<void, DWORD>
+auto CDataLoader::OpenDevice()->std::expected<void, DWORD>
 {
-	m_wstrDataPath = dos.wstrDataPath;
-	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //File name.
-	m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+	m_wstrFileName = m_dos.wstrDataPath.substr(m_dos.wstrDataPath.find_last_of(L'\\') + 1); //File name.
+	m_hHandle = CreateFileW(m_dos.wstrDataPath.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
 		nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (m_hHandle == INVALID_HANDLE_VALUE) {
-		if (m_hHandle = CreateFileW(m_wstrDataPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+		if (m_hHandle = CreateFileW(m_dos.wstrDataPath.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
 			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);	m_hHandle == INVALID_HANDLE_VALUE) {
 			return std::unexpected(GetLastError());
 		}
@@ -499,10 +488,9 @@ auto CDataLoader::OpenDevice(const Ut::DATAOPEN& dos)->std::expected<void, DWORD
 	return { };
 }
 
-auto CDataLoader::OpenProcess(const Ut::DATAOPEN& dos)->std::expected<void, DWORD>
+auto CDataLoader::OpenProcess()->std::expected<void, DWORD>
 {
-	m_wstrFileName = dos.wstrDataPath; //Process name.
-	m_dwProcID = dos.dwProcID;
+	m_wstrFileName = m_dos.wstrDataPath; //Process name.
 	if (m_hHandle = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetProcID()); m_hHandle == nullptr) {
 		return std::unexpected(GetLastError());
 	}

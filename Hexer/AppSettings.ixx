@@ -323,7 +323,7 @@ public:
 		bool            fMultipleInst { }; //0-Single, 1-Multiple.
 		DWORD           dwRFLSize { };
 		EStartup        eStartup { };
-		Ut::EFileIOMode eFileIOMode { };
+		Ut::EDataIOMode eFileIOMode { };
 		bool            fWindowsMenu { }; //1-Show, 0-Don't show.
 	};
 	struct HEXCTRLSETTINGS {
@@ -511,7 +511,7 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 		refGeneral.eStartup = static_cast<EStartup>(dwStartup);
 		DWORD dwFileIOMode { };
 		regSettings.QueryDWORDValue(L"GeneralFileIOMode", dwFileIOMode);
-		refGeneral.eFileIOMode = static_cast<Ut::EFileIOMode>(dwFileIOMode);
+		refGeneral.eFileIOMode = static_cast<Ut::EDataIOMode>(dwFileIOMode);
 		DWORD dwWindowsMenu { };
 		regSettings.QueryDWORDValue(L"GeneralWindowsMenu", dwWindowsMenu);
 		refGeneral.fWindowsMenu = dwWindowsMenu;
@@ -882,7 +882,7 @@ auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
 {
 	static const GENERALSETTINGS defs { .fMultipleInst { false }, .dwRFLSize { 20 }, .eStartup { EStartup::DO_NOTHING },
-		.eFileIOMode { Ut::EFileIOMode::FILE_MMAP }, .fWindowsMenu { false } };
+		.eFileIOMode { Ut::EDataIOMode::FILE_MMAP }, .fWindowsMenu { false } };
 	return defs;
 }
 

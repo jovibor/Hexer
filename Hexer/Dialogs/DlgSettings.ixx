@@ -212,7 +212,7 @@ void CDlgSettingsGeneral::SaveSettings()
 	refSett.dwRFLSize = GetPropValueDWORD(std::to_underlying(dwRFLSize));
 	refSett.eStartup = static_cast<CAppSettings::EStartup>(GetPropOptDataDWORD(std::to_underlying(eStartup)));
 	refSett.fWindowsMenu = GetPropOptDataDWORD(std::to_underlying(fWindowsMenu));
-	refSett.eFileIOMode = static_cast<Ut::EFileIOMode>(GetPropOptDataDWORD(std::to_underlying(eFileIOMode)));
+	refSett.eFileIOMode = static_cast<Ut::EDataIOMode>(GetPropOptDataDWORD(std::to_underlying(eFileIOMode)));
 	m_fModified = false;
 }
 
@@ -303,9 +303,9 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	const auto& refIO = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Files I/O Mode:", L""),
 		std::to_underlying(GROUP_IO), std::to_underlying(eFileIOMode));
 	const auto pPropFileIO = static_cast<CHexerPropGridProp*>(refIO.pProp);
-	pPropFileIO->AddOptionEx(L"Memory Mapping", std::to_underlying(Ut::EFileIOMode::FILE_MMAP));
-	pPropFileIO->AddOptionEx(L"Disk I/O Buffered", std::to_underlying(Ut::EFileIOMode::FILE_IOBUFF));
-	pPropFileIO->AddOptionEx(L"Disk I/O Immediate", std::to_underlying(Ut::EFileIOMode::FILE_IOIMMEDIATE));
+	pPropFileIO->AddOptionEx(L"Memory Mapping", std::to_underlying(Ut::EDataIOMode::FILE_MMAP));
+	pPropFileIO->AddOptionEx(L"Disk I/O Buffered", std::to_underlying(Ut::EDataIOMode::DATA_IOBUFF));
+	pPropFileIO->AddOptionEx(L"Disk I/O Immediate", std::to_underlying(Ut::EDataIOMode::DATA_IOIMMEDIATE));
 	pPropFileIO->SetValueFromData(std::to_underlying(refSett.eFileIOMode));
 	pPropFileIO->AllowEdit(FALSE);
 

@@ -109,8 +109,8 @@ export namespace Ut {
 		OPEN_FILE, OPEN_DEVICE, OPEN_PROC, NEW_FILE
 	};
 
-	enum class EFileIOMode :std::uint8_t {
-		FILE_MMAP, FILE_IOBUFF, FILE_IOIMMEDIATE
+	enum class EDataIOMode : std::uint8_t {
+		FILE_MMAP, DATA_IOBUFF, DATA_IOIMMEDIATE
 	};
 
 	[[nodiscard]] auto GetNameFromEOpenMode(EOpenMode eOpenMode) -> std::wstring_view {
