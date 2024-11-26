@@ -22,8 +22,8 @@ static HWND g_hWndMain { };
 
 export namespace Ut {
 	constexpr auto HEXER_VERSION_MAJOR = 1;
-	constexpr auto HEXER_VERSION_MINOR = 2;
-	constexpr auto HEXER_VERSION_PATCH = 2;
+	constexpr auto HEXER_VERSION_MINOR = 3;
+	constexpr auto HEXER_VERSION_PATCH = 0;
 
 	constexpr UINT g_arrPanes[] { IDC_PANE_DATAINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGGER };
 
@@ -84,10 +84,6 @@ export namespace Ut {
 		return wstr;
 	}
 
-	[[nodiscard]] auto GetRWWstr(bool fRW) -> std::wstring_view {
-		return fRW ? L"RW" : L"RO";
-	}
-
 	struct HIDPIINFO {
 		int   iLOGPIXELSY { };
 		float flDPIScale { };
@@ -109,20 +105,55 @@ export namespace Ut {
 		OPEN_FILE, OPEN_DEVICE, OPEN_PROC, NEW_FILE
 	};
 
-	enum class EDataIOMode : std::uint8_t {
-		FILE_MMAP, DATA_IOBUFF, DATA_IOIMMEDIATE
+	enum class EDataAccessMode : std::uint8_t {
+		DA_RO, DA_RW_DEFAULT, DA_RW_INPLACE
 	};
 
-	[[nodiscard]] auto GetNameFromEOpenMode(EOpenMode eOpenMode) -> std::wstring_view {
+	enum class EDataIOMode : std::uint8_t {
+		DATA_MMAP, DATA_IOBUFF, DATA_IOIMMEDIATE
+	};
+
+	[[nodiscard]] auto GetWstrEOpenMode(EOpenMode eOpenMode) -> std::wstring_view {
 		using enum EOpenMode;
 		switch (eOpenMode) {
 		case OPEN_DEVICE:
 			return L"Device";
 		case OPEN_PROC:
 			return L"Process";
-		default:
+		case OPEN_FILE:
+		case NEW_FILE:
 			return L"File";
+		default:
+			return L"";
 		};
+	}
+
+	[[nodiscard]] auto GetWstrEDataAccessMode(EDataAccessMode eDAMode) -> std::wstring_view {
+		using enum EDataAccessMode;
+		switch (eDAMode) {
+		case DA_RO:
+			return L"Read Only";
+		case DA_RW_DEFAULT:
+			return L"Read/Write Default";
+		case DA_RW_INPLACE:
+			return L"Read/Write In-Place";
+		default:
+			return L"";
+		}
+	}
+
+	[[nodiscard]] auto GetWstrEDataIOMode(EDataIOMode eDataIOMode) -> std::wstring_view {
+		using enum EDataIOMode;
+		switch (eDataIOMode) {
+		case DATA_MMAP:
+			return L"Memory Mapped File";
+		case DATA_IOBUFF:
+			return L"Data IO Buffered";
+		case DATA_IOIMMEDIATE:
+			return L"Data IO Immediate";
+		default:
+			return L"";
+		}
 	}
 
 	[[nodiscard]] auto ResolveLNK(const wchar_t* pwszPath) -> std::wstring {
@@ -181,7 +212,8 @@ export namespace Ut {
 		std::uint64_t     ullDataSize { };
 		std::uint32_t     dwPageSize { };
 		EOpenMode         eOpenMode { };
-		bool              fMutable { };
+		EDataAccessMode   eDataAccessMode { };
+		EDataIOMode       eDataIOMode { };
 	};
 
 	//Custom messages.

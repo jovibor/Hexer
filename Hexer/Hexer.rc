@@ -96,8 +96,6 @@ IDR_TOOLBAR_MAIN TOOLBAR 32, 34
 BEGIN
     BUTTON      IDM_FILE_NEWFILE
     BUTTON      IDM_FILE_OPENFILE
-    SEPARATOR
-    BUTTON      IDM_EDIT_EDITMODE
 END
 
 
@@ -127,8 +125,6 @@ BEGIN
     END
     POPUP "&Edit"
     BEGIN
-        MENUITEM "Writable Mode",               IDM_EDIT_EDITMODE
-        MENUITEM SEPARATOR
         MENUITEM "&Undo\tCtrl+Z",               IDM_EDIT_UNDO
         MENUITEM "Redo",                        IDM_EDIT_REDO
         MENUITEM SEPARATOR
@@ -146,8 +142,22 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Toolbar",                     ID_VIEW_TOOLBAR
     END
+    POPUP "Data Access"
+    BEGIN
+        MENUITEM "Read Only",                   IDM_DA_RO
+        MENUITEM "Read/Write Default",          IDM_DA_RWDEFAULT
+        MENUITEM "Read/Write In-Place",         IDM_DA_RWINPLACE
+        MENUITEM SEPARATOR
+        POPUP "Data IO Mode"
+        BEGIN
+            MENUITEM "Memory Mapped File",          IDM_DA_DATAIO_MMAP
+            MENUITEM "Data IO Buffered",            IDM_DA_DATAIO_IOBUFF
+            MENUITEM "Data IO Immediate",           IDM_DA_DATAIO_IOIMMEDIATE
+        END
+    END
     POPUP "Tools"
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Settings...",                 IDM_TOOLS_SETTINGS
     END
     POPUP "&Window"
@@ -592,7 +602,6 @@ STRINGTABLE
 BEGIN
     IDM_FILE_NEWFILE        "Create new file...\nNew File"
     IDM_FILE_OPENFILE       "Open existing file...\nOpen File"
-    IDM_EDIT_EDITMODE       "Toggle Writable Mode\nWritable Mode"
 END
 
 STRINGTABLE

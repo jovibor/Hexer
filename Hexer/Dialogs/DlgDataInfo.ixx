@@ -29,7 +29,7 @@ private:
 	DECLARE_MESSAGE_MAP();
 private:
 	enum class EPropName : std::uint8_t {
-		DATA_PATH = 0x1, FILE_NAME, DATA_SIZE, PAGE_SIZE, IS_MUTABLE
+		DATA_PATH = 0x1, FILE_NAME, DATA_SIZE, PAGE_SIZE, ACCESS_MODE, IO_MODE
 	};
 	CHexerPropGridCtrl m_gridDataInfo;
 	std::vector<CMFCPropertyGridProperty*> m_vecPropsDataProps;
@@ -80,36 +80,42 @@ BOOL CDlgDataInfo::OnInitDialog()
 	m_gridDataInfo.SetFont(&m_fntFilePropsGrid);
 
 	using enum EPropName;
-	const auto pFilePath = new CMFCPropertyGridProperty(L"File path:", L"");
+	const auto pFilePath = new CMFCPropertyGridProperty(L"File Path:", L"");
 	pFilePath->SetData(static_cast<DWORD_PTR>(DATA_PATH));
 	pFilePath->AllowEdit(FALSE);
 	m_vecPropsDataProps.emplace_back(pFilePath);
 	m_gridDataInfo.AddProperty(pFilePath);
 
-	const auto pFileName = new CMFCPropertyGridProperty(L"File name:", L"");
+	const auto pFileName = new CMFCPropertyGridProperty(L"File Name:", L"");
 	pFileName->SetData(static_cast<DWORD_PTR>(FILE_NAME));
 	pFileName->AllowEdit(FALSE);
 	m_vecPropsDataProps.emplace_back(pFileName);
 	m_gridDataInfo.AddProperty(pFileName);
 
-	const auto pFileSize = new CMFCPropertyGridProperty(L"File size:", L"");
+	const auto pFileSize = new CMFCPropertyGridProperty(L"File Size:", L"");
 	pFileSize->SetData(static_cast<DWORD_PTR>(DATA_SIZE));
 	pFileSize->AllowEdit(FALSE);
 	m_vecPropsDataProps.emplace_back(pFileSize);
 	m_gridDataInfo.AddProperty(pFileSize);
 
-	const auto pPageSize = new CMFCPropertyGridProperty(L"Page size:", L"");
+	const auto pPageSize = new CMFCPropertyGridProperty(L"Page Size:", L"");
 	pPageSize->SetData(static_cast<DWORD_PTR>(PAGE_SIZE));
 	pPageSize->AllowEdit(FALSE);
 	m_vecPropsDataProps.emplace_back(pPageSize);
 	m_gridDataInfo.AddProperty(pPageSize);
 	pPageSize->Show(FALSE);
 
-	const auto pIsWritable = new CMFCPropertyGridProperty(L"Writable:", L"");
-	pIsWritable->SetData(static_cast<DWORD_PTR>(IS_MUTABLE));
-	pIsWritable->AllowEdit(FALSE);
-	m_vecPropsDataProps.emplace_back(pIsWritable);
-	m_gridDataInfo.AddProperty(pIsWritable);
+	const auto pAccessMode = new CMFCPropertyGridProperty(L"Access Mode:", L"");
+	pAccessMode->SetData(static_cast<DWORD_PTR>(ACCESS_MODE));
+	pAccessMode->AllowEdit(FALSE);
+	m_vecPropsDataProps.emplace_back(pAccessMode);
+	m_gridDataInfo.AddProperty(pAccessMode);
+
+	const auto pDataIOMode = new CMFCPropertyGridProperty(L"Data IO Mode:", L"");
+	pDataIOMode->SetData(static_cast<DWORD_PTR>(IO_MODE));
+	pDataIOMode->AllowEdit(FALSE);
+	m_vecPropsDataProps.emplace_back(pDataIOMode);
+	m_gridDataInfo.AddProperty(pDataIOMode);
 
 	UpdateGridData();
 
@@ -124,7 +130,7 @@ void CDlgDataInfo::UpdateGridData()
 {
 	const auto lmbSetValue = [&](CMFCPropertyGridProperty* pProp) {
 		using enum EPropName;
-		auto wstr = std::wstring { GetNameFromEOpenMode(m_dis.eOpenMode) };
+		auto wstr = std::wstring { Ut::GetWstrEOpenMode(m_dis.eOpenMode) };
 		switch (static_cast<EPropName>(pProp->GetData())) {
 		case DATA_PATH:
 			wstr += L" path:";
@@ -144,8 +150,11 @@ void CDlgDataInfo::UpdateGridData()
 		case PAGE_SIZE:
 			pProp->SetValue(std::format(L"{}", m_dis.dwPageSize).data());
 			break;
-		case IS_MUTABLE:
-			pProp->SetValue(std::format(L"{}", m_dis.fMutable).data());
+		case ACCESS_MODE:
+			pProp->SetValue(Ut::GetWstrEDataAccessMode(m_dis.eDataAccessMode).data());
+			break;
+		case IO_MODE:
+			pProp->SetValue(Ut::GetWstrEDataIOMode(m_dis.eDataIOMode).data());
 			break;
 		default:
 			break;

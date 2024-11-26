@@ -76,26 +76,31 @@
 #define IDM_FILE_OPENDEVICE             32792
 #define IDM_FILE_OPENPROCESS            32793
 #define IDM_FILE_PRINT                  32794
-#define IDM_EDIT_EDITMODE               32795
-#define IDM_EDIT_UNDO                   32796
-#define IDM_EDIT_REDO                   32797
-#define IDM_EDIT_COPYHEX                32798
-#define IDM_EDIT_PASTEHEX               32799
-#define IDM_VIEW_DATAINFO               32800
-#define IDM_VIEW_BKMMGR                 32801
-#define IDM_VIEW_DATAINTERP             32802
-#define IDM_VIEW_TEMPLMGR               32803
-#define IDM_VIEW_LOGGER                 32804
-#define IDM_VIEW_PROCMEMORY             32805
-#define IDM_TOOLS_SETTINGS              32806
-#define IDM_TOOLBAR_CUSTOMIZE           32807
+#define IDM_EDIT_UNDO                   32795
+#define IDM_EDIT_REDO                   32796
+#define IDM_EDIT_COPYHEX                32797
+#define IDM_EDIT_PASTEHEX               32798
+#define IDM_VIEW_DATAINFO               32799
+#define IDM_VIEW_BKMMGR                 32800
+#define IDM_VIEW_DATAINTERP             32801
+#define IDM_VIEW_TEMPLMGR               32802
+#define IDM_VIEW_LOGGER                 32803
+#define IDM_VIEW_PROCMEMORY             32804
+#define IDM_TOOLS_SETTINGS              32805
+#define IDM_TOOLBAR_CUSTOMIZE           32806
+#define IDM_DA_RO                       32807
+#define IDM_DA_RWDEFAULT                32808
+#define IDM_DA_RWINPLACE                32809
+#define IDM_DA_DATAIO_MMAP              32810
+#define IDM_DA_DATAIO_IOBUFF            32811
+#define IDM_DA_DATAIO_IOIMMEDIATE       32812
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        330
-#define _APS_NEXT_COMMAND_VALUE         32808
+#define _APS_NEXT_COMMAND_VALUE         32813
 #define _APS_NEXT_CONTROL_VALUE         330
 #define _APS_NEXT_SYMED_VALUE           330
 #endif

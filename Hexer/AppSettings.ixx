@@ -233,11 +233,11 @@ void CAppSettingsRFL::SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen&
 	reg.Create(HKEY_CURRENT_USER, pwszRegPath);
 	for (const auto& [idx, ref] : vecData | std::views::enumerate) {
 		if (ref.eOpenMode == OPEN_PROC) {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetNameFromEOpenMode(ref.eOpenMode)).data(),
+			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
 				std::format(L"ID:{};Name:{};", ref.dwProcID, ref.wstrDataPath).data());
 		}
 		else {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetNameFromEOpenMode(ref.eOpenMode)).data(),
+			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
 				ref.wstrDataPath.data());
 		}
 	}
@@ -264,11 +264,11 @@ void CAppSettingsRFL::RebuildRFLMenu()
 
 		std::wstring wstrMenu;
 		if (ref.eOpenMode == OPEN_PROC) {
-			wstrMenu = std::format(L"{} {}: {} (ID: {})", iIndex + 1, Ut::GetNameFromEOpenMode(ref.eOpenMode), ref.wstrDataPath,
+			wstrMenu = std::format(L"{} {}: {} (ID: {})", iIndex + 1, Ut::GetWstrEOpenMode(ref.eOpenMode), ref.wstrDataPath,
 				ref.dwProcID);
 		}
 		else {
-			wstrMenu = std::format(L"{} {}: {}", iIndex + 1, Ut::GetNameFromEOpenMode(ref.eOpenMode), ref.wstrDataPath);
+			wstrMenu = std::format(L"{} {}: {}", iIndex + 1, Ut::GetWstrEOpenMode(ref.eOpenMode), ref.wstrDataPath);
 		}
 
 		const auto iMenuID = m_iIDMenuFirst + iIndex;
@@ -320,11 +320,12 @@ public:
 		DO_NOTHING, RESTORE_LAST_OPENED, SHOW_FOD
 	};
 	struct GENERALSETTINGS {
-		bool            fMultipleInst { }; //0-Single, 1-Multiple.
-		DWORD           dwRFLSize { };
-		EStartup        eStartup { };
-		Ut::EDataIOMode eFileIOMode { };
-		bool            fWindowsMenu { }; //1-Show, 0-Don't show.
+		bool                fMultipleInst { }; //0-Single, 1-Multiple.
+		DWORD               dwRFLSize { };
+		EStartup            eStartup { };
+		Ut::EDataAccessMode eDataAccessMode { };
+		Ut::EDataIOMode     eDataIOMode { };
+		bool                fWindowsMenu { }; //1-Show, 0-Don't show.
 	};
 	struct HEXCTRLSETTINGS {
 		LOGFONTW stLogFont { };
@@ -509,12 +510,15 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 		DWORD dwStartup { };
 		regSettings.QueryDWORDValue(L"GeneralStartup", dwStartup);
 		refGeneral.eStartup = static_cast<EStartup>(dwStartup);
-		DWORD dwFileIOMode { };
-		regSettings.QueryDWORDValue(L"GeneralFileIOMode", dwFileIOMode);
-		refGeneral.eFileIOMode = static_cast<Ut::EDataIOMode>(dwFileIOMode);
 		DWORD dwWindowsMenu { };
 		regSettings.QueryDWORDValue(L"GeneralWindowsMenu", dwWindowsMenu);
 		refGeneral.fWindowsMenu = dwWindowsMenu;
+		DWORD dwDataAccessMode { };
+		regSettings.QueryDWORDValue(L"GeneralDataAccessMode", dwDataAccessMode);
+		refGeneral.eDataAccessMode = (std::min)(static_cast<Ut::EDataAccessMode>(dwDataAccessMode), Ut::EDataAccessMode::DA_RW_INPLACE);
+		DWORD dwDataIOMode { };
+		regSettings.QueryDWORDValue(L"GeneralDataIOMode", dwDataIOMode);
+		refGeneral.eDataIOMode = (std::min)(static_cast<Ut::EDataIOMode>(dwDataIOMode), Ut::EDataIOMode::DATA_IOIMMEDIATE);
 
 		//HexCtrl settings.
 		const std::wstring wstrKeyHexCtrl = wstrKeySettings + L"\\HexCtrl";
@@ -687,8 +691,9 @@ void CAppSettings::SaveSettings()
 	regSettings.SetDWORDValue(L"GeneralInstances", refGeneral.fMultipleInst);
 	regSettings.SetDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
 	regSettings.SetDWORDValue(L"GeneralStartup", std::to_underlying(refGeneral.eStartup));
-	regSettings.SetDWORDValue(L"GeneralFileIOMode", std::to_underlying(refGeneral.eFileIOMode));
 	regSettings.SetDWORDValue(L"GeneralWindowsMenu", refGeneral.fWindowsMenu);
+	regSettings.SetDWORDValue(L"GeneralDataAccessMode", std::to_underlying(refGeneral.eDataAccessMode));
+	regSettings.SetDWORDValue(L"GeneralDataIOMode", std::to_underlying(refGeneral.eDataIOMode));
 
 	//HexCtrl settings.
 	CRegKey regHexCtrl;
@@ -882,7 +887,8 @@ auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
 {
 	static const GENERALSETTINGS defs { .fMultipleInst { false }, .dwRFLSize { 20 }, .eStartup { EStartup::DO_NOTHING },
-		.eFileIOMode { Ut::EDataIOMode::FILE_MMAP }, .fWindowsMenu { false } };
+		.eDataAccessMode { Ut::EDataAccessMode::DA_RO }, .eDataIOMode { Ut::EDataIOMode::DATA_MMAP },
+		.fWindowsMenu { false } };
 	return defs;
 }
 

@@ -21,9 +21,29 @@ IMPLEMENT_DYNCREATE(CHexerDoc, CDocument)
 BEGIN_MESSAGE_MAP(CHexerDoc, CDocument)
 END_MESSAGE_MAP()
 
+void CHexerDoc::ChangeDataAccessMode(Ut::EDataAccessMode eDataAccessMode)
+{
+	m_stDataLoader.ChangeDataAccessMode(eDataAccessMode);
+}
+
+void CHexerDoc::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
+{
+	m_stDataLoader.ChangeDataIOMode(eDataIOMode);
+}
+
 auto CHexerDoc::GetCacheSize()const->DWORD
 {
 	return m_stDataLoader.GetCacheSize();
+}
+
+auto CHexerDoc::GetDataAccessMode()const->Ut::EDataAccessMode
+{
+	return m_stDataLoader.GetDataAccessMode();
+}
+
+auto CHexerDoc::GetDataIOMode()const->Ut::EDataIOMode
+{
+	return m_stDataLoader.GetDataIOMode();
 }
 
 auto CHexerDoc::GetDataPath()const->const std::wstring&
@@ -63,7 +83,7 @@ auto CHexerDoc::GetMemPageSize()const->DWORD
 
 auto CHexerDoc::GetOpenMode()const->Ut::EOpenMode
 {
-	return m_eOpenMode;
+	return m_stDataLoader.GetOpenMode();
 }
 
 auto CHexerDoc::GetProcID()const->DWORD
@@ -81,23 +101,42 @@ auto CHexerDoc::GetIHexVirtData()->HEXCTRL::IHexVirtData*
 	return m_stDataLoader.GetIHexVirtData();
 }
 
-bool CHexerDoc::IsFileMutable()const
+bool CHexerDoc::IsDataAccessRO()
 {
-	return m_stDataLoader.IsMutable();
+	return GetDataAccessMode() == DA_RO;
+}
+
+bool CHexerDoc::IsDataAccessRW()
+{
+	return !IsDataAccessRO();
+}
+
+bool CHexerDoc::IsDataWritable()const
+{
+	return m_stDataLoader.IsDataWritable();
+}
+
+bool CHexerDoc::IsDevice()const
+{
+	return m_stDataLoader.IsDevice();
+}
+
+bool CHexerDoc::IsFile()const
+{
+	return m_stDataLoader.IsFile();
 }
 
 bool CHexerDoc::IsProcess()const
 {
-	return GetOpenMode() == Ut::EOpenMode::OPEN_PROC;
+	return m_stDataLoader.IsProcess();
 }
 
 bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 {
-	m_eOpenMode = dos.eOpenMode;
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 	auto& refSett = theApp.GetAppSettings();
-	if (!m_stDataLoader.Open(dos, refSett.GetGeneralSettings().eFileIOMode)) {
+	if (!m_stDataLoader.Open(dos, refSett.GetGeneralSettings().eDataAccessMode, refSett.GetGeneralSettings().eDataIOMode)) {
 		refSett.RFLRemoveFromList(dos);
 		return false;
 	}
@@ -120,7 +159,7 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 		default:
 			return 0;
 		}
-		}();
+	}();
 	m_hDocIcon = Ut::HICONfromHBITMAP(Ut::GetHBITMAP(iResID));
 	m_fOpened = true;
 
@@ -147,10 +186,10 @@ void CHexerDoc::OnCloseDocument()
 		std::wstring wstrInfo;
 		if (IsProcess()) {
 			wstrInfo = std::format(L"{} closed: {} (ID: {})",
-				Ut::GetNameFromEOpenMode(GetOpenMode()), GetFileName(), GetProcID());
+				Ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(), GetProcID());
 		}
 		else {
-			(((wstrInfo += Ut::GetNameFromEOpenMode(GetOpenMode())) += L" closed: ") += GetFileName());
+			(((wstrInfo += Ut::GetWstrEOpenMode(GetOpenMode())) += L" closed: ") += GetFileName());
 		}
 
 		Ut::Log::AddLogEntryInfo(wstrInfo);
@@ -185,7 +224,7 @@ auto CHexerDoc::GetDocTitle(const Ut::DATAOPEN& dos)->std::wstring
 
 	switch (dos.eOpenMode) {
 	case OPEN_DEVICE:
-		return std::format(L"{}: {}", Ut::GetNameFromEOpenMode(OPEN_DEVICE), dos.wstrDataPath.substr(nName + 1));
+		return std::format(L"{}: {}", Ut::GetWstrEOpenMode(OPEN_DEVICE), dos.wstrDataPath.substr(nName + 1));
 	default:
 		return dos.wstrDataPath.substr(nName + 1);
 	}

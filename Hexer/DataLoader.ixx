@@ -22,33 +22,39 @@ export class CDataLoader final : public HEXCTRL::IHexVirtData {
 public:
 	CDataLoader();
 	~CDataLoader();
+	void ChangeDataAccessMode(Ut::EDataAccessMode eDataAccessMode);
+	void ChangeDataIOMode(Ut::EDataIOMode eDataIOMode);
 	void Close();
 	[[nodiscard]] auto GetCacheSize()const->DWORD; //Cache size that is reported to the outside, for IHexCtrl.
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
+	[[nodiscard]] auto GetDataAccessMode()const->Ut::EDataAccessMode;
+	[[nodiscard]] auto GetDataIOMode()const->Ut::EDataIOMode;
 	[[nodiscard]] auto GetFileMMAPData()const->std::byte*;
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetMaxVirtOffset()const->std::uint64_t;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
+	[[nodiscard]] auto GetOpenMode()const->Ut::EOpenMode;
 	[[nodiscard]] auto GetProcID()const->DWORD;
 	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
 	[[nodiscard]] auto GetIHexVirtData() -> HEXCTRL::IHexVirtData*;
-	[[nodiscard]] bool IsMutable()const;
-	[[nodiscard]] bool Open(const Ut::DATAOPEN& dos, Ut::EDataIOMode eFileIOMode);
+	[[nodiscard]] bool IsDataWritable()const;
+	[[nodiscard]] bool IsDevice()const;
+	[[nodiscard]] bool IsFile()const;
+	[[nodiscard]] bool IsProcess()const;
+	[[nodiscard]] bool Open(const Ut::DATAOPEN& dos, Ut::EDataAccessMode eDataAccessMode, Ut::EDataIOMode eDataIOMode);
 private:
 	void FlushCache();
 	[[nodiscard]] auto GetDeviceAlign()const->DWORD;
 	[[nodiscard]] auto GetInternalCacheSize()const->DWORD; //The real cache size used internally.
+	void InitIOMMAP(bool fInit);
 	void InitInternalCache(DWORD dwAlign = 32U);
-	[[nodiscard]] bool IsDevice()const;
-	[[nodiscard]] bool IsFile()const;
-	[[nodiscard]] bool IsFileMMAP()const;
-	[[nodiscard]] bool IsFileIOIMMEDIATE()const;
+	[[nodiscard]] bool IsDataIOImmediate()const;
+	[[nodiscard]] bool IsDataIOMMAP()const;
 	[[nodiscard]] bool IsModified()const;
-	[[nodiscard]] bool IsProcess()const;
 	void LogLastError(std::wstring_view wsvSource, DWORD dwErr = 0)const;
 	[[nodiscard]] auto NewFile() -> std::expected<void, DWORD>;
-	void OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)override;
 	void OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)override;
+	void OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)override;
 	void OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)override;
 	[[nodiscard]] auto OpenDevice() -> std::expected<void, DWORD>;
 	[[nodiscard]] auto OpenFile() -> std::expected<void, DWORD>;
@@ -72,7 +78,8 @@ private:
 	std::uint64_t m_ullMaxVirtOffset { }; //Maximum virtual address of a process.
 	DWORD m_dwPageSize { };        //System Virtual page size.
 	DWORD m_dwDeviceAlign { 1 };   //Alignment that the offset and the size must be aligned on, for the ReadFile on Device.
-	Ut::EDataIOMode m_eFileIOMode { };
+	Ut::EDataAccessMode m_eDataAccessMode { }; //Current data access mode.
+	Ut::EDataIOMode m_eDataIOMode { };         //Current data IO mode.
 	bool m_fMutable { false };     //Is data opened as RW or RO?
 	bool m_fModified { false };    //Data was modified.
 	bool m_fCacheZeroed { false }; //If cache is set with zeros or not.
@@ -90,13 +97,42 @@ CDataLoader::~CDataLoader()
 	Close();
 }
 
+void CDataLoader::ChangeDataAccessMode(Ut::EDataAccessMode eDataAccessMode)
+{
+	if (eDataAccessMode == GetDataAccessMode())
+		return;
+
+	m_eDataAccessMode = eDataAccessMode;
+}
+
+void CDataLoader::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
+{
+	//Processes and Devices only work in DATA_IOIMMEDIATE mode, so changing mode 
+	//for them is pointless. Also, if setting the currently used mode we do nothing.
+	if (!IsFile() || eDataIOMode == GetDataIOMode())
+		return;
+
+	using enum Ut::EDataIOMode;
+	m_eDataIOMode = eDataIOMode;
+	switch (eDataIOMode) {
+	case DATA_MMAP:
+		InitIOMMAP(true);
+		break;
+	case DATA_IOBUFF:
+	case DATA_IOIMMEDIATE:
+		InitIOMMAP(false);
+		InitInternalCache();
+		break;
+	default:
+		break;
+	}
+}
+
 void CDataLoader::Close()
 {
 	if (IsFile()) {
-		if (IsFileMMAP()) {
-			FlushViewOfFile(m_lpMapBase, 0);
-			UnmapViewOfFile(m_lpMapBase);
-			CloseHandle(m_hMapObject);
+		if (IsDataIOMMAP()) {
+			InitIOMMAP(false);
 		}
 		else {
 			FlushCache();
@@ -130,6 +166,16 @@ auto CDataLoader::GetDataSize()const->std::uint64_t
 	return static_cast<std::uint64_t>(m_stDataSize.QuadPart);
 }
 
+auto CDataLoader::GetDataAccessMode()const->Ut::EDataAccessMode
+{
+	return m_eDataAccessMode;
+}
+
+auto CDataLoader::GetDataIOMode()const->Ut::EDataIOMode
+{
+	return m_eDataIOMode;
+}
+
 auto CDataLoader::GetFileMMAPData()const->std::byte*
 {
 	return static_cast<std::byte*>(m_lpMapBase);
@@ -150,6 +196,11 @@ auto CDataLoader::GetMemPageSize()const->DWORD
 	return m_dwPageSize;
 }
 
+auto CDataLoader::GetOpenMode()const->Ut::EOpenMode
+{
+	return m_dos.eOpenMode;
+}
+
 auto CDataLoader::GetProcID()const->DWORD
 {
 	return m_dos.dwProcID;
@@ -162,15 +213,31 @@ auto CDataLoader::GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORM
 
 auto CDataLoader::GetIHexVirtData()->HEXCTRL::IHexVirtData*
 {
-	return (IsFile() && IsFileMMAP()) ? nullptr : this;
+	return (IsFile() && IsDataIOMMAP()) ? nullptr : this;
 }
 
-bool CDataLoader::IsMutable()const
+bool CDataLoader::IsDevice()const
+{
+	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_DEVICE;
+}
+
+bool CDataLoader::IsFile()const
+{
+	using enum Ut::EOpenMode;
+	return m_dos.eOpenMode == OPEN_FILE || m_dos.eOpenMode == NEW_FILE;
+}
+
+bool CDataLoader::IsDataWritable()const
 {
 	return m_fMutable;
 }
 
-bool CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::EDataIOMode eFileIOMode)
+bool CDataLoader::IsProcess()const
+{
+	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_PROC;
+}
+
+bool CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::EDataAccessMode eDataAccessMode, Ut::EDataIOMode eDataIOMode)
 {
 	assert(m_hHandle == nullptr);
 	if (m_hHandle != nullptr) { //Already opened.
@@ -178,7 +245,8 @@ bool CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::EDataIOMode eFileIOMode)
 	}
 
 	m_dos = dos;
-	m_eFileIOMode = eFileIOMode;
+	m_eDataAccessMode = eDataAccessMode;
+	m_eDataIOMode = eDataIOMode;
 
 	using enum Ut::EOpenMode;
 	std::expected<void, DWORD> expOpen;
@@ -200,15 +268,15 @@ bool CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::EDataIOMode eFileIOMode)
 	}
 
 	if (!expOpen) {
-		const auto wstrLog = std::format(L"{} open failed: {} \r\n{}", Ut::GetNameFromEOpenMode(dos.eOpenMode), GetFileName(),
+		const auto wstrLog = std::format(L"{} open failed: {} \r\n{}", Ut::GetWstrEOpenMode(dos.eOpenMode), GetFileName(),
 			Ut::GetLastErrorWstr(expOpen.error()));
 		MessageBoxW(AfxGetMainWnd()->m_hWnd, wstrLog.data(), L"Opening error", MB_ICONERROR);
 		Ut::Log::AddLogEntryError(wstrLog);
 		return false;
 	}
 
-	const auto wstrLog = std::format(L"{} opened: {} ({})", Ut::GetNameFromEOpenMode(dos.eOpenMode), GetFileName(),
-		Ut::GetRWWstr(IsMutable()));
+	const auto wstrLog = std::format(L"{} opened: {} ({})", Ut::GetWstrEOpenMode(dos.eOpenMode), GetFileName(),
+		Ut::GetWstrEDataAccessMode(Ut::EDataAccessMode::DA_RO));
 	Ut::Log::AddLogEntryInfo(wstrLog);
 
 	return true;
@@ -248,42 +316,64 @@ auto CDataLoader::GetInternalCacheSize()const->DWORD
 	return 1024UL * 1024UL; //1MB cache size.
 }
 
+void CDataLoader::InitIOMMAP(bool fInit)
+{
+	if (fInit) {
+		if (m_hMapObject != nullptr || m_lpMapBase != nullptr) {
+			Ut::Log::AddLogEntryError(L"File already mapped.");
+			return;
+		}
+
+		if (m_hMapObject = CreateFileMappingW(m_hHandle, nullptr, IsDataWritable() ? PAGE_READWRITE : PAGE_READONLY,
+			0, 0, nullptr);	m_hMapObject == nullptr) {
+			const auto err = GetLastError();
+			LogLastError(L"CreateFileMappingW", err);
+			CloseHandle(m_hHandle);
+			return;
+		}
+
+		if (m_lpMapBase = MapViewOfFile(m_hMapObject, IsDataWritable() ? FILE_MAP_WRITE : FILE_MAP_READ, 0, 0, 0);
+			m_lpMapBase == nullptr) {
+			const auto err = GetLastError();
+			LogLastError(L"MapViewOfFile", err);
+			CloseHandle(m_hMapObject);
+			CloseHandle(m_hHandle);
+			return;
+		}
+
+		m_pCache.reset();
+	}
+	else {
+		FlushViewOfFile(m_lpMapBase, 0);
+		UnmapViewOfFile(m_lpMapBase);
+		CloseHandle(m_hMapObject);
+		m_lpMapBase = nullptr;
+		m_hMapObject = nullptr;
+	}
+}
+
 void CDataLoader::InitInternalCache(DWORD dwAlign)
 {
 	m_pCache.reset(static_cast<std::byte*>(_aligned_malloc(GetInternalCacheSize(), dwAlign)));
+	m_ullOffsetCurr = 0;
+	m_ullSizeCurr = 0;
 }
 
-bool CDataLoader::IsDevice()const
-{
-	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_DEVICE;
-}
-
-bool CDataLoader::IsFile()const
-{
-	using enum Ut::EOpenMode;
-	return m_dos.eOpenMode == OPEN_FILE || m_dos.eOpenMode == NEW_FILE;
-}
-
-bool CDataLoader::IsFileMMAP()const
-{
-	return m_eFileIOMode == Ut::EDataIOMode::FILE_MMAP;
-}
-
-bool CDataLoader::IsFileIOIMMEDIATE()const
+bool CDataLoader::IsDataIOImmediate()const
 {
 	//If true then any data change will be written back to the file immediately.
 	//Otherwise, the whole cache will be written, but only when it needs to be refilled.
-	return m_eFileIOMode == Ut::EDataIOMode::DATA_IOIMMEDIATE;
+	return GetDataIOMode() == Ut::EDataIOMode::DATA_IOIMMEDIATE;
+}
+
+bool CDataLoader::IsDataIOMMAP()const
+{
+	return GetDataIOMode() == Ut::EDataIOMode::DATA_MMAP;
 }
 
 bool CDataLoader::IsModified()const
 {
 	return m_fModified;
-}
-
-bool CDataLoader::IsProcess()const
-{
-	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_PROC;
 }
 
 void CDataLoader::LogLastError(std::wstring_view wsvSource, DWORD dwErr)const
@@ -326,6 +416,19 @@ auto CDataLoader::NewFile()->std::expected<void, DWORD>
 	return { };
 }
 
+void CDataLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
+{
+	using enum Ut::EOpenMode;
+	switch (m_dos.eOpenMode) {
+	case OPEN_PROC:
+		hdi.spnData = ReadProcData(hdi);
+		break;
+	default:
+		hdi.spnData = ReadFileData(hdi);
+		break;
+	}
+}
+
 void CDataLoader::OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)
 {
 	if (!IsProcess()) //Virtual address space only for processes.
@@ -361,19 +464,6 @@ void CDataLoader::OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)
 	}
 }
 
-void CDataLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
-{
-	using enum Ut::EOpenMode;
-	switch (m_dos.eOpenMode) {
-	case OPEN_PROC:
-		hdi.spnData = ReadProcData(hdi);
-		break;
-	default:
-		hdi.spnData = ReadFileData(hdi);
-		break;
-	}
-}
-
 void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 {
 	using enum Ut::EOpenMode;
@@ -404,6 +494,8 @@ auto CDataLoader::OpenFile()->std::expected<void, DWORD>
 			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);	m_hHandle == INVALID_HANDLE_VALUE) {
 			return std::unexpected(GetLastError());
 		}
+
+		m_eDataAccessMode = Ut::EDataAccessMode::DA_RO;
 	}
 	else {
 		m_fMutable = true;
@@ -414,23 +506,8 @@ auto CDataLoader::OpenFile()->std::expected<void, DWORD>
 		return std::unexpected(0);
 	}
 
-	if (IsFileMMAP()) {
-		if (m_hMapObject = CreateFileMappingW(m_hHandle, nullptr, IsMutable() ? PAGE_READWRITE : PAGE_READONLY, 0, 0, nullptr);
-			m_hMapObject == nullptr) {
-			const auto err = GetLastError();
-			LogLastError(L"CreateFileMappingW", err);
-			CloseHandle(m_hHandle);
-			return std::unexpected(err);
-		}
-
-		if (m_lpMapBase = MapViewOfFile(m_hMapObject, IsMutable() ? FILE_MAP_WRITE : FILE_MAP_READ, 0, 0, 0);
-			m_lpMapBase == nullptr) {
-			const auto err = GetLastError();
-			LogLastError(L"MapViewOfFile", err);
-			CloseHandle(m_hMapObject);
-			CloseHandle(m_hHandle);
-			return std::unexpected(err);
-		}
+	if (IsDataIOMMAP()) {
+		InitIOMMAP(true);
 	}
 	else {
 		InitInternalCache();
@@ -484,6 +561,7 @@ auto CDataLoader::OpenDevice()->std::expected<void, DWORD>
 
 	m_stDataSize.QuadPart = stLengthInfo.Length.QuadPart;
 	InitInternalCache(GetDeviceAlign());
+	m_eDataIOMode = Ut::EDataIOMode::DATA_IOIMMEDIATE;
 
 	return { };
 }
@@ -514,6 +592,7 @@ auto CDataLoader::OpenProcess()->std::expected<void, DWORD>
 	m_stDataSize.QuadPart = std::reduce(m_vecProcMemory.begin(), m_vecProcMemory.end(), 0ULL,
 		[](ULONGLONG ullSumm, const MEMORY_BASIC_INFORMATION& ref) { return ullSumm + ref.RegionSize; });
 	InitInternalCache();
+	m_eDataIOMode = Ut::EDataIOMode::DATA_IOIMMEDIATE;
 	m_fMutable = true;
 
 	return { };
@@ -583,9 +662,9 @@ auto CDataLoader::ReadProcData(const HEXCTRL::HEXDATAINFO& hdi)->HEXCTRL::SpanBy
 	assert(ullSizeAligned >= ullSize);
 	assert((ullSizeAligned - ullOffsetRemainder) >= ullSize);
 
-	std::uint64_t u64SizeRemain { ullSizeAligned };
-	std::uint64_t u64CacheOffset { 0ULL };   //Offset in the cache to write data to.
-	std::uint64_t u64RegsTotalSize { 0ULL }; //Total size of the commited regions of pages.
+	auto u64SizeRemain { ullSizeAligned };
+	auto u64CacheOffset { 0ULL };   //Offset in the cache to write data to.
+	auto u64RegsTotalSize { 0ULL }; //Total size of the commited regions of pages.
 	bool fVestige { false }; //Is there any remainder memory to acquire?
 
 	for (const auto& mbi : m_vecProcMemory) {
@@ -657,12 +736,14 @@ void CDataLoader::WriteDeviceData(const HEXCTRL::HEXDATAINFO& hdi)
 
 	if (WriteFile(m_hHandle, m_pCache.get() + ullOffsetFromCache, static_cast<DWORD>(ullSizeAlign), nullptr, nullptr) == FALSE) {
 		LogLastError(L"WriteFile");
+		//Some sectors may have Write Protection, whilst a Device or Volume by itself is writable.
+		//So no need to hard assert() here, as opposed to WriteFileData.
 	}
 }
 
 void CDataLoader::WriteFileData(const HEXCTRL::HEXDATAINFO& hdi)
 {
-	if (!IsFileIOIMMEDIATE()) {
+	if (!IsDataIOImmediate()) {
 		m_fModified = true;
 		return;
 	}

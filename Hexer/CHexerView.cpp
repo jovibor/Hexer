@@ -22,26 +22,33 @@ IMPLEMENT_DYNCREATE(CHexerView, CView)
 
 BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_COMMAND(IDM_FILE_PRINT, &CHexerView::OnFilePrint)
-	ON_COMMAND(IDM_EDIT_EDITMODE, &CHexerView::OnEditEditMode)
 	ON_COMMAND(IDM_EDIT_UNDO, &CHexerView::OnEditUndo)
 	ON_COMMAND(IDM_EDIT_REDO, &CHexerView::OnEditRedo)
 	ON_COMMAND(IDM_EDIT_COPYHEX, &CHexerView::OnEditCopyHex)
 	ON_COMMAND(IDM_EDIT_PASTEHEX, &CHexerView::OnEditPasteHex)
 	ON_COMMAND(IDM_VIEW_PROCMEMORY, &CHexerView::OnViewProcMemory)
+	ON_COMMAND(IDM_DA_RO, &CHexerView::OnDataAccessRO)
+	ON_COMMAND(IDM_DA_RWDEFAULT, &CHexerView::OnDataAccessRWDefault)
+	ON_COMMAND(IDM_DA_RWINPLACE, &CHexerView::OnDataAccessRWInPlace)
+	ON_COMMAND(IDM_DA_DATAIO_MMAP, &CHexerView::OnDataIOMMAP)
+	ON_COMMAND(IDM_DA_DATAIO_IOBUFF, &CHexerView::OnDataIOBuff)
+	ON_COMMAND(IDM_DA_DATAIO_IOIMMEDIATE, &CHexerView::OnDataIOImmediate)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGBKMMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_SETFONT, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlSetFont)
-	ON_UPDATE_COMMAND_UI(IDM_EDIT_EDITMODE, &CHexerView::OnUpdateEditEditMode)
 	ON_UPDATE_COMMAND_UI(IDM_VIEW_PROCMEMORY, &CHexerView::OnUpdateProcMemory)
+	ON_UPDATE_COMMAND_UI_RANGE(IDM_DA_RO, IDM_DA_RWINPLACE, &CHexerView::OnUpdateDataAccessMode)
+	ON_UPDATE_COMMAND_UI_RANGE(IDM_DA_DATAIO_MMAP, IDM_DA_DATAIO_IOIMMEDIATE, &CHexerView::OnUpdateDataIOMode)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 auto CHexerView::GetDataInfo()const->Ut::DATAINFO
 {
 	const auto pDoc = GetDocument();
-	return { .wsvDataPath = pDoc->GetDataPath(), .wsvFileName = pDoc->GetFileName(), .ullDataSize = pDoc->GetDataSize(),
-		.dwPageSize = GetHexCtrl()->GetPageSize(), .eOpenMode { pDoc->GetOpenMode() }, .fMutable = GetHexCtrl()->IsMutable() };
+	return { .wsvDataPath { pDoc->GetDataPath() }, .wsvFileName { pDoc->GetFileName() }, .ullDataSize { pDoc->GetDataSize() },
+		.dwPageSize { GetHexCtrl()->GetPageSize() }, .eOpenMode { pDoc->GetOpenMode() },
+		.eDataAccessMode { pDoc->GetDataAccessMode() }, .eDataIOMode { pDoc->GetDataIOMode() } };
 }
 
 auto CHexerView::GetDlgProcMemory()const->HWND
@@ -79,6 +86,43 @@ auto CHexerView::GetMainFrame()const->CMainFrame*
 	return static_cast<CMainFrame*>(AfxGetMainWnd());
 }
 
+void CHexerView::HexCtrlSetData(bool fAdjust)
+{
+	const auto pDoc = GetDocument();
+	const auto fMutable = pDoc->GetDataAccessMode() != Ut::EDataAccessMode::DA_RO;
+	GetHexCtrl()->SetData({ .spnData { pDoc->GetFileMMAPData(), pDoc->GetDataSize() },
+		.pHexVirtData { pDoc->GetIHexVirtData() }, .ullMaxVirtOffset { pDoc->GetMaxVirtOffset() },
+		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { fMutable } }, fAdjust);
+}
+
+void CHexerView::ChangeDataAccessMode(Ut::EDataAccessMode eDataAccesMode)
+{
+	const auto pDoc = GetDocument();
+	if (pDoc->GetDataAccessMode() == eDataAccesMode)
+		return;
+
+	pDoc->ChangeDataAccessMode(eDataAccesMode);
+	GetHexCtrl()->SetMutable(pDoc->IsDataAccessRW());
+	GetMainFrame()->UpdatePaneFileInfo();
+	const auto wstr = std::format(L"Data access changed: {} ({})", GetDocument()->GetFileName(),
+		GetWstrEDataAccessMode(eDataAccesMode));
+	Ut::Log::AddLogEntryInfo(wstr);
+}
+
+void CHexerView::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
+{
+	const auto pDoc = GetDocument();
+	if (pDoc->GetDataIOMode() == eDataIOMode)
+		return;
+
+	pDoc->ChangeDataIOMode(eDataIOMode);
+	HexCtrlSetData(true);
+	GetMainFrame()->UpdatePaneFileInfo();
+	const auto wstr = std::format(L"Data IO mode changed: {} ({})", GetDocument()->GetFileName(),
+		GetWstrEDataIOMode(eDataIOMode));
+	Ut::Log::AddLogEntryInfo(wstr);
+}
+
 auto CHexerView::GetChildFrame()const->CChildFrame*
 {
 	return static_cast<CChildFrame*>(GetParentFrame());
@@ -108,17 +152,38 @@ void CHexerView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDe
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
 }
 
-void CHexerView::OnDraw(CDC* /*pDC*/)
+void CHexerView::OnDataAccessRO()
 {
+	ChangeDataAccessMode(DA_RO);
 }
 
-void CHexerView::OnEditEditMode()
+void CHexerView::OnDataAccessRWDefault()
 {
-	const auto fNewAccess = !GetHexCtrl()->IsMutable();
-	GetHexCtrl()->SetMutable(fNewAccess);
-	GetMainFrame()->UpdatePaneFileInfo();
-	const auto pDoc = GetDocument();
-	Ut::Log::AddLogEntryInfo(L"Data access changed: " + pDoc->GetFileName() + std::wstring { fNewAccess ? L" (RW)" : L" (RO)" });
+	ChangeDataAccessMode(DA_RW_DEFAULT);
+}
+
+void CHexerView::OnDataAccessRWInPlace()
+{
+	ChangeDataAccessMode(DA_RW_INPLACE);
+}
+
+void CHexerView::OnDataIOMMAP()
+{
+	ChangeDataIOMode(DATA_MMAP);
+}
+
+void CHexerView::OnDataIOBuff()
+{
+	ChangeDataIOMode(DATA_IOBUFF);
+}
+
+void CHexerView::OnDataIOImmediate()
+{
+	ChangeDataIOMode(DATA_IOIMMEDIATE);
+}
+
+void CHexerView::OnDraw(CDC* /*pDC*/)
+{
 }
 
 void CHexerView::OnEditCopyHex()
@@ -182,8 +247,8 @@ void CHexerView::OnInitialUpdate()
 	const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlSettings();
 	pHex->Create({ .hWndParent { m_hWnd }, .pColors { &refHexSet.stClrs }, .pLogFont { &refHexSet.stLogFont },
 		.uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD }, .dwCapacity { refHexSet.dwCapacity },
-		.dwGroupSize { refHexSet.dwGroupSize }, .flScrollRatio { refHexSet.flScrollRatio }, .fScrollLines { refHexSet.fScrollLines },
-		.fInfoBar { refHexSet.fInfoBar }, .fOffsetHex { refHexSet.fOffsetHex } });
+		.dwGroupSize { refHexSet.dwGroupSize }, .flScrollRatio { refHexSet.flScrollRatio },
+		.fScrollLines { refHexSet.fScrollLines }, .fInfoBar { refHexSet.fInfoBar }, .fOffsetHex { refHexSet.fOffsetHex } });
 	pHex->SetCharsExtraSpace(refHexSet.dwCharsExtraSpace);
 	pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
 	pHex->SetPageSize(pDoc->IsProcess() ? pDoc->GetMemPageSize() : refHexSet.dwPageSize);
@@ -191,9 +256,8 @@ void CHexerView::OnInitialUpdate()
 	for (const auto& p : theApp.GetAppSettings().GetHexCtrlTemplates()) {
 		pHex->GetTemplates()->AddTemplate(*p);
 	}
-	pHex->SetData({ .spnData { pDoc->GetFileMMAPData(), pDoc->GetDataSize() },
-		.pHexVirtData { pDoc->GetIHexVirtData() }, .ullMaxVirtOffset { pDoc->GetMaxVirtOffset() },
-		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { pDoc->IsFileMutable() } });
+
+	HexCtrlSetData();
 }
 
 void CHexerView::OnSize(UINT nType, int cx, int cy)
@@ -229,16 +293,64 @@ void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
 	}
 }
 
-void CHexerView::OnUpdateEditEditMode(CCmdUI* pCmdUI)
+void CHexerView::OnUpdateDataAccessMode(CCmdUI* pCmdUI)
 {
-	if (GetDocument()->IsFileMutable()) {
-		pCmdUI->Enable(TRUE);
-		pCmdUI->SetCheck(GetHexCtrl()->IsMutable());
+	const auto pDoc = GetDocument();
+	const auto fRW = pDoc->IsDataWritable();
+	const auto eDAMode = pDoc->GetDataAccessMode();
+
+	bool fEnable { false };
+	bool fCheck { false };
+	using enum Ut::EDataAccessMode;
+	switch (pCmdUI->m_nID) {
+	case IDM_DA_RO:
+		fEnable = true;
+		fCheck = eDAMode == DA_RO;
+		break;
+	case IDM_DA_RWDEFAULT:
+		fEnable = false; //TODO: NYI.
+		fCheck = eDAMode == DA_RW_DEFAULT;
+		break;
+	case IDM_DA_RWINPLACE:
+		fEnable = fRW;
+		fCheck = eDAMode == DA_RW_INPLACE;
+		break;
+	default:
+		break;
 	}
-	else {
-		pCmdUI->Enable(FALSE);
-		pCmdUI->SetCheck(FALSE);
+
+	pCmdUI->Enable(fEnable);
+	pCmdUI->SetCheck(fCheck);
+}
+
+void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI)
+{
+	const auto pDoc = GetDocument();
+	const auto fIsFile = pDoc->IsFile();
+	const auto eDataIOMode = pDoc->GetDataIOMode();
+	bool fEnable { };
+	bool fCheck { };
+
+	using enum Ut::EDataIOMode;
+	switch (pCmdUI->m_nID) {
+	case IDM_DA_DATAIO_MMAP:
+		fEnable = fIsFile;
+		fCheck = eDataIOMode == DATA_MMAP;
+		break;
+	case IDM_DA_DATAIO_IOBUFF:
+		fEnable = fIsFile;
+		fCheck = eDataIOMode == DATA_IOBUFF;
+		break;
+	case IDM_DA_DATAIO_IOIMMEDIATE:
+		fEnable = true;
+		fCheck = eDataIOMode == DATA_IOIMMEDIATE;
+		break;
+	default:
+		break;
 	}
+
+	pCmdUI->Enable(fEnable);
+	pCmdUI->SetCheck(fCheck);
 }
 
 void CHexerView::OnUpdateProcMemory(CCmdUI* pCmdUI)

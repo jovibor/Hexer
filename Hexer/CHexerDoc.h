@@ -14,7 +14,11 @@ import Utility;
 
 class CHexerDoc final : public CDocument {
 public:
+	void ChangeDataAccessMode(Ut::EDataAccessMode eDataAccessMode);
+	void ChangeDataIOMode(Ut::EDataIOMode eDataIOMode);
 	[[nodiscard]] auto GetCacheSize()const->DWORD;
+	[[nodiscard]] auto GetDataAccessMode()const->Ut::EDataAccessMode;
+	[[nodiscard]] auto GetDataIOMode()const->Ut::EDataIOMode;
 	[[nodiscard]] auto GetDataPath()const->const std::wstring&;
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
 	[[nodiscard]] auto GetDocIcon()const->HICON;
@@ -26,7 +30,11 @@ public:
 	[[nodiscard]] auto GetProcID()const->DWORD;
 	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
 	[[nodiscard]] auto GetIHexVirtData() -> HEXCTRL::IHexVirtData*;
-	[[nodiscard]] bool IsFileMutable()const;
+	[[nodiscard]] bool IsDataAccessRO();
+	[[nodiscard]] bool IsDataAccessRW(); //Is data access currently set to RW or RO?
+	[[nodiscard]] bool IsDataWritable()const; //Is data opened writable or read only?
+	[[nodiscard]] bool IsDevice()const;
+	[[nodiscard]] bool IsFile()const;
 	[[nodiscard]] bool IsProcess()const;
 	[[nodiscard]] bool OnOpenDocument(const Ut::DATAOPEN& dos);
 	static auto GetUniqueDocName(const Ut::DATAOPEN& dos) -> std::wstring;
@@ -41,7 +49,6 @@ private:
 	CDataLoader m_stDataLoader;
 	std::wstring m_wstrDataPath;
 	std::wstring m_wstrFileName;
-	Ut::EOpenMode m_eOpenMode { }; //Document open mode.
 	HICON m_hDocIcon { };     //Document icon.
 	bool m_fOpened { false }; //Document was successfully opened or not.
 };
