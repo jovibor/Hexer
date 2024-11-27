@@ -336,6 +336,36 @@ auto CMainFrame::OnAppSettingsChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRE
 	return S_OK;
 }
 
+bool CMainFrame::OnBeforeClose()
+{
+	auto posTemplate = theApp.GetFirstDocTemplatePosition();
+	while (posTemplate != nullptr) {
+		auto pDocTemplate = theApp.GetNextDocTemplate(posTemplate);
+		if (pDocTemplate == nullptr)
+			break;
+
+		auto posDoc = pDocTemplate->GetFirstDocPosition();
+		while (posDoc != nullptr) {
+			auto pDoc = pDocTemplate->GetNextDoc(posDoc);
+			if (pDoc == nullptr)
+				break;
+
+			auto posView = pDoc->GetFirstViewPosition();
+			while (posView != nullptr) {
+				auto pView = static_cast<CHexerView*>(pDoc->GetNextView(posView));
+				if (pView == nullptr)
+					break;
+
+				if (!pView->OnBeforeClose()) {
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
 BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS)
 {
 	if (pCDS->dwData == 1) {
@@ -347,6 +377,9 @@ BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS)
 
 void CMainFrame::OnClose()
 {
+	if (!OnBeforeClose())
+		return;
+
 	m_fClosing = true;
 	SavePanesSettings();   //It's called either here or in the OnChildFrameCloseLast.
 	SaveHexCtrlSettings(); //It's called either here or in the OnChildFrameCloseLast.

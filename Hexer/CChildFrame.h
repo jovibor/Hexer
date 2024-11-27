@@ -12,6 +12,7 @@ namespace HEXCTRL { class IHexCtrl; }
 class CChildFrame final : public CMDIChildWndEx {
 public:
 	[[nodiscard]] auto GetHexerView()const->CHexerView*;
+	[[nodiscard]] bool OnBeforeClose();
 	void SetHexerView(CHexerView* pView);
 private:
 	auto GetFrameIcon()const->HICON override;

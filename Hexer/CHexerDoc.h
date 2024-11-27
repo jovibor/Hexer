@@ -14,10 +14,10 @@ import Utility;
 
 class CHexerDoc final : public CDocument {
 public:
-	void ChangeDataAccessMode(Ut::EDataAccessMode eDataAccessMode);
+	void ChangeDataAccessMode(Ut::DATAACCESS stDAC);
 	void ChangeDataIOMode(Ut::EDataIOMode eDataIOMode);
 	[[nodiscard]] auto GetCacheSize()const->DWORD;
-	[[nodiscard]] auto GetDataAccessMode()const->Ut::EDataAccessMode;
+	[[nodiscard]] auto GetDataAccessMode()const->Ut::DATAACCESS;
 	[[nodiscard]] auto GetDataIOMode()const->Ut::EDataIOMode;
 	[[nodiscard]] auto GetDataPath()const->const std::wstring&;
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
@@ -30,13 +30,17 @@ public:
 	[[nodiscard]] auto GetProcID()const->DWORD;
 	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
 	[[nodiscard]] auto GetIHexVirtData() -> HEXCTRL::IHexVirtData*;
+	[[nodiscard]] bool IsDataAccessRWINPLACE()const;
+	[[nodiscard]] bool IsDataAccessRWSAFE()const;
 	[[nodiscard]] bool IsDataAccessRO();
 	[[nodiscard]] bool IsDataAccessRW(); //Is data access currently set to RW or RO?
+	[[nodiscard]] bool IsDataOKForDASAFE()const;
 	[[nodiscard]] bool IsDataWritable()const; //Is data opened writable or read only?
 	[[nodiscard]] bool IsDevice()const;
 	[[nodiscard]] bool IsFile()const;
 	[[nodiscard]] bool IsProcess()const;
 	[[nodiscard]] bool OnOpenDocument(const Ut::DATAOPEN& dos);
+	void SaveDataToDisk();
 	static auto GetUniqueDocName(const Ut::DATAOPEN& dos) -> std::wstring;
 	static auto GetDocTitle(const Ut::DATAOPEN& dos) -> std::wstring;
 private:

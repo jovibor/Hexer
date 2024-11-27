@@ -96,6 +96,7 @@ IDR_TOOLBAR_MAIN TOOLBAR 32, 34
 BEGIN
     BUTTON      IDM_FILE_NEWFILE
     BUTTON      IDM_FILE_OPENFILE
+    BUTTON      IDM_FILE_SAVE
 END
 
 
@@ -116,6 +117,8 @@ BEGIN
         BEGIN
             MENUITEM "<IDM_FILE_RFL00>",            IDM_FILE_RFL00
         END
+        MENUITEM SEPARATOR
+        MENUITEM "&Save\tCtrl+S",               IDM_FILE_SAVE
         MENUITEM SEPARATOR
         MENUITEM "&Close",                      ID_FILE_CLOSE
         MENUITEM SEPARATOR
@@ -145,7 +148,7 @@ BEGIN
     POPUP "Data Access"
     BEGIN
         MENUITEM "Read Only",                   IDM_DA_RO
-        MENUITEM "Read/Write Default",          IDM_DA_RWDEFAULT
+        MENUITEM "Read/Write Safe",             IDM_DA_RWSAFE
         MENUITEM "Read/Write In-Place",         IDM_DA_RWINPLACE
         MENUITEM SEPARATOR
         POPUP "Data IO Mode"
@@ -157,7 +160,6 @@ BEGIN
     END
     POPUP "Tools"
     BEGIN
-        MENUITEM SEPARATOR
         MENUITEM "Settings...",                 IDM_TOOLS_SETTINGS
     END
     POPUP "&Window"
@@ -181,6 +183,7 @@ BEGIN
     "N",            ID_FILE_NEW,            VIRTKEY, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
     "D",            IDM_FILE_OPENDEVICE,    VIRTKEY, CONTROL, NOINVERT
+    "S",            IDM_FILE_SAVE,          VIRTKEY, CONTROL, NOINVERT
 END
 
 
@@ -621,6 +624,11 @@ END
 STRINGTABLE
 BEGIN
     AFX_IDS_APP_TITLE       "Hexer"
+END
+
+STRINGTABLE
+BEGIN
+    IDM_FILE_SAVE           "\nSave"
 END
 
 #endif    // English (United States) resources

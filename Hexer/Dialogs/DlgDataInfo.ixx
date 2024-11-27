@@ -151,10 +151,10 @@ void CDlgDataInfo::UpdateGridData()
 			pProp->SetValue(std::format(L"{}", m_dis.dwPageSize).data());
 			break;
 		case ACCESS_MODE:
-			pProp->SetValue(Ut::GetWstrEDataAccessMode(m_dis.eDataAccessMode).data());
+			pProp->SetValue(Ut::GetWstrDATAACCESS(m_dis.stDAC));
 			break;
 		case IO_MODE:
-			pProp->SetValue(Ut::GetWstrEDataIOMode(m_dis.eDataIOMode).data());
+			pProp->SetValue(Ut::GetWstrEDataIOMode(m_dis.eDataIOMode));
 			break;
 		default:
 			break;

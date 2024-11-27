@@ -320,12 +320,12 @@ public:
 		DO_NOTHING, RESTORE_LAST_OPENED, SHOW_FOD
 	};
 	struct GENERALSETTINGS {
-		bool                fMultipleInst { }; //0-Single, 1-Multiple.
-		DWORD               dwRFLSize { };
-		EStartup            eStartup { };
-		Ut::EDataAccessMode eDataAccessMode { };
-		Ut::EDataIOMode     eDataIOMode { };
-		bool                fWindowsMenu { }; //1-Show, 0-Don't show.
+		bool            fMultipleInst { }; //0-Single, 1-Multiple.
+		DWORD           dwRFLSize { };
+		EStartup        eStartup { };
+		Ut::DATAACCESS  stDAC { };
+		Ut::EDataIOMode eDataIOMode { };
+		bool            fWindowsMenu { }; //1-Show, 0-Don't show.
 	};
 	struct HEXCTRLSETTINGS {
 		LOGFONTW stLogFont { };
@@ -515,7 +515,7 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 		refGeneral.fWindowsMenu = dwWindowsMenu;
 		DWORD dwDataAccessMode { };
 		regSettings.QueryDWORDValue(L"GeneralDataAccessMode", dwDataAccessMode);
-		refGeneral.eDataAccessMode = (std::min)(static_cast<Ut::EDataAccessMode>(dwDataAccessMode), Ut::EDataAccessMode::DA_RW_INPLACE);
+		refGeneral.stDAC = (std::min)(dwDataAccessMode, static_cast<DWORD>(Ut::EDataAccessMode::ACCESS_INPLACE));
 		DWORD dwDataIOMode { };
 		regSettings.QueryDWORDValue(L"GeneralDataIOMode", dwDataIOMode);
 		refGeneral.eDataIOMode = (std::min)(static_cast<Ut::EDataIOMode>(dwDataIOMode), Ut::EDataIOMode::DATA_IOIMMEDIATE);
@@ -692,7 +692,7 @@ void CAppSettings::SaveSettings()
 	regSettings.SetDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
 	regSettings.SetDWORDValue(L"GeneralStartup", std::to_underlying(refGeneral.eStartup));
 	regSettings.SetDWORDValue(L"GeneralWindowsMenu", refGeneral.fWindowsMenu);
-	regSettings.SetDWORDValue(L"GeneralDataAccessMode", std::to_underlying(refGeneral.eDataAccessMode));
+	regSettings.SetDWORDValue(L"GeneralDataAccess", refGeneral.stDAC);
 	regSettings.SetDWORDValue(L"GeneralDataIOMode", std::to_underlying(refGeneral.eDataIOMode));
 
 	//HexCtrl settings.
@@ -887,8 +887,7 @@ auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
 {
 	static const GENERALSETTINGS defs { .fMultipleInst { false }, .dwRFLSize { 20 }, .eStartup { EStartup::DO_NOTHING },
-		.eDataAccessMode { Ut::EDataAccessMode::DA_RO }, .eDataIOMode { Ut::EDataIOMode::DATA_MMAP },
-		.fWindowsMenu { false } };
+		.stDAC { 0 }, .eDataIOMode { Ut::EDataIOMode::DATA_MMAP }, .fWindowsMenu { false } };
 	return defs;
 }
 

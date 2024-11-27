@@ -171,7 +171,7 @@ enum class CDlgSettingsGeneral::EGroup : std::uint8_t {
 };
 
 enum class CDlgSettingsGeneral::EName : std::uint8_t {
-	fMultipleInst, dwRFLSize, eStartup, fWindowsMenu, eDataAccessMode, eDataIOMode
+	fMultipleInst, dwRFLSize, eStartup, fWindowsMenu, stDAC, eDataIOMode
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsGeneral, CDialogEx)
@@ -195,7 +195,7 @@ void CDlgSettingsGeneral::ResetToDefaults()
 	SetPropValueDWORD(std::to_underlying(dwRFLSize), refDefs.dwRFLSize);
 	SetPropOptValueByData(std::to_underlying(eStartup), std::to_underlying(refDefs.eStartup));
 	SetPropOptValueByData(std::to_underlying(fWindowsMenu), refDefs.fWindowsMenu);
-	SetPropOptValueByData(std::to_underlying(eDataAccessMode), std::to_underlying(refDefs.eDataAccessMode));
+	SetPropOptValueByData(std::to_underlying(stDAC), refDefs.stDAC);
 	SetPropOptValueByData(std::to_underlying(eDataIOMode), std::to_underlying(refDefs.eDataIOMode));
 	m_grid.SetRedraw(TRUE);
 	m_grid.RedrawWindow();
@@ -213,7 +213,7 @@ void CDlgSettingsGeneral::SaveSettings()
 	refSett.dwRFLSize = GetPropValueDWORD(std::to_underlying(dwRFLSize));
 	refSett.eStartup = static_cast<CAppSettings::EStartup>(GetPropOptDataDWORD(std::to_underlying(eStartup)));
 	refSett.fWindowsMenu = GetPropOptDataDWORD(std::to_underlying(fWindowsMenu));
-	refSett.eDataAccessMode = static_cast<Ut::EDataAccessMode>(GetPropOptDataDWORD(std::to_underlying(eDataAccessMode)));
+	refSett.stDAC = GetPropOptDataDWORD(std::to_underlying(stDAC));
 	refSett.eDataIOMode = static_cast<Ut::EDataIOMode>(GetPropOptDataDWORD(std::to_underlying(eDataIOMode)));
 	m_fModified = false;
 }
@@ -247,7 +247,7 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	m_grid.MarkModifiedProperties(TRUE, FALSE);
-	m_grid.EnableHeaderCtrl(TRUE, L"Property", L"Value");
+	m_grid.EnableHeaderCtrl(TRUE);
 	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 190 };
 	m_grid.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
 
@@ -302,21 +302,23 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	}
 	m_grid.AddProperty(pGeneral);
 
+	using enum Ut::EDataAccessMode;
 	const auto& refDataAccess = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Data Access Mode:", L""),
-	std::to_underlying(GROUP_IO), std::to_underlying(eDataAccessMode));
+	std::to_underlying(GROUP_IO), std::to_underlying(stDAC));
 	const auto pPropDataAccess = static_cast<CHexerPropGridProp*>(refDataAccess.pProp);
-	pPropDataAccess->AddOptionEx(L"Read Only", std::to_underlying(Ut::EDataAccessMode::DA_RO));
-	pPropDataAccess->AddOptionEx(L"Read/Write Default", std::to_underlying(Ut::EDataAccessMode::DA_RW_DEFAULT));
-	pPropDataAccess->AddOptionEx(L"Read/Write In-Place", std::to_underlying(Ut::EDataAccessMode::DA_RW_INPLACE));
-	pPropDataAccess->SetValueFromData(std::to_underlying(refSett.eDataAccessMode));
+	pPropDataAccess->AddOptionEx(Ut::GetWstrDATAACCESS({ 0 }), 0);
+	pPropDataAccess->AddOptionEx(Ut::GetWstrDATAACCESS({ 1 }), 1);
+	pPropDataAccess->AddOptionEx(Ut::GetWstrDATAACCESS({ 2 }), 2);
+	pPropDataAccess->SetValueFromData(refSett.stDAC);
 	pPropDataAccess->AllowEdit(FALSE);
 
+	using enum Ut::EDataIOMode;
 	const auto& refDataIO = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Data IO Mode:", L""),
 			std::to_underlying(GROUP_IO), std::to_underlying(eDataIOMode));
 	const auto pPropDataIO = static_cast<CHexerPropGridProp*>(refDataIO.pProp);
-	pPropDataIO->AddOptionEx(L"Memory Mapped File", std::to_underlying(Ut::EDataIOMode::DATA_MMAP));
-	pPropDataIO->AddOptionEx(L"Data IO Buffered", std::to_underlying(Ut::EDataIOMode::DATA_IOBUFF));
-	pPropDataIO->AddOptionEx(L"Data IO Immediate", std::to_underlying(Ut::EDataIOMode::DATA_IOIMMEDIATE));
+	pPropDataIO->AddOptionEx(Ut::GetWstrEDataIOMode(DATA_MMAP), std::to_underlying(DATA_MMAP));
+	pPropDataIO->AddOptionEx(Ut::GetWstrEDataIOMode(DATA_IOBUFF), std::to_underlying(DATA_IOBUFF));
+	pPropDataIO->AddOptionEx(Ut::GetWstrEDataIOMode(DATA_IOIMMEDIATE), std::to_underlying(DATA_IOIMMEDIATE));
 	pPropDataIO->SetValueFromData(std::to_underlying(refSett.eDataIOMode));
 	pPropDataIO->AllowEdit(FALSE);
 

@@ -9,6 +9,7 @@ module;
 #include "resource.h"
 #include "HexCtrl.h"
 #include <afxwin.h>
+#include <compare>
 #include <chrono>
 #include <optional>
 #include <string>
@@ -106,14 +107,40 @@ export namespace Ut {
 	};
 
 	enum class EDataAccessMode : std::uint8_t {
-		DA_RO, DA_RW_DEFAULT, DA_RW_INPLACE
+		ACCESS_SAFE = 0x1, ACCESS_INPLACE = 0x2
+	};
+
+	struct DATAACCESS {
+		constexpr DATAACCESS() = default;
+		constexpr DATAACCESS(DWORD dw) {
+			switch (dw) {
+			case 0:
+				fMutable = false;
+				break;
+			case 1:
+				fMutable = true;
+				eDataAccessMode = EDataAccessMode::ACCESS_SAFE;
+				break;
+			case 2:
+				fMutable = true;
+				eDataAccessMode = EDataAccessMode::ACCESS_INPLACE;
+				break;
+			default:
+				fMutable = false;
+				break;
+			}
+		};
+		EDataAccessMode eDataAccessMode { };
+		bool            fMutable { };
+		constexpr auto operator<=>(const DATAACCESS&)const = default;
+		constexpr operator DWORD()const { return fMutable ? std::to_underlying(eDataAccessMode) : 0; };
 	};
 
 	enum class EDataIOMode : std::uint8_t {
 		DATA_MMAP, DATA_IOBUFF, DATA_IOIMMEDIATE
 	};
 
-	[[nodiscard]] auto GetWstrEOpenMode(EOpenMode eOpenMode) -> std::wstring_view {
+	[[nodiscard]] constexpr auto GetWstrEOpenMode(EOpenMode eOpenMode) {
 		using enum EOpenMode;
 		switch (eOpenMode) {
 		case OPEN_DEVICE:
@@ -128,21 +155,23 @@ export namespace Ut {
 		};
 	}
 
-	[[nodiscard]] auto GetWstrEDataAccessMode(EDataAccessMode eDAMode) -> std::wstring_view {
+	[[nodiscard]] constexpr auto GetWstrDATAACCESS(DATAACCESS stDAC) {
 		using enum EDataAccessMode;
-		switch (eDAMode) {
-		case DA_RO:
+		if (!stDAC.fMutable) {
 			return L"Read Only";
-		case DA_RW_DEFAULT:
-			return L"Read/Write Default";
-		case DA_RW_INPLACE:
+		}
+
+		switch (stDAC.eDataAccessMode) {
+		case ACCESS_SAFE:
+			return L"Read/Write Safe";
+		case ACCESS_INPLACE:
 			return L"Read/Write In-Place";
 		default:
 			return L"";
 		}
 	}
 
-	[[nodiscard]] auto GetWstrEDataIOMode(EDataIOMode eDataIOMode) -> std::wstring_view {
+	[[nodiscard]] constexpr auto GetWstrEDataIOMode(EDataIOMode eDataIOMode) {
 		using enum EDataIOMode;
 		switch (eDataIOMode) {
 		case DATA_MMAP:
@@ -212,7 +241,7 @@ export namespace Ut {
 		std::uint64_t     ullDataSize { };
 		std::uint32_t     dwPageSize { };
 		EOpenMode         eOpenMode { };
-		EDataAccessMode   eDataAccessMode { };
+		DATAACCESS        stDAC { };
 		EDataIOMode       eDataIOMode { };
 	};
 

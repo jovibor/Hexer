@@ -21,6 +21,7 @@ import Utility;
 IMPLEMENT_DYNCREATE(CHexerView, CView)
 
 BEGIN_MESSAGE_MAP(CHexerView, CView)
+	ON_COMMAND(IDM_FILE_SAVE, &CHexerView::OnFileSave)
 	ON_COMMAND(IDM_FILE_PRINT, &CHexerView::OnFilePrint)
 	ON_COMMAND(IDM_EDIT_UNDO, &CHexerView::OnEditUndo)
 	ON_COMMAND(IDM_EDIT_REDO, &CHexerView::OnEditRedo)
@@ -28,15 +29,17 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_COMMAND(IDM_EDIT_PASTEHEX, &CHexerView::OnEditPasteHex)
 	ON_COMMAND(IDM_VIEW_PROCMEMORY, &CHexerView::OnViewProcMemory)
 	ON_COMMAND(IDM_DA_RO, &CHexerView::OnDataAccessRO)
-	ON_COMMAND(IDM_DA_RWDEFAULT, &CHexerView::OnDataAccessRWDefault)
-	ON_COMMAND(IDM_DA_RWINPLACE, &CHexerView::OnDataAccessRWInPlace)
+	ON_COMMAND(IDM_DA_RWSAFE, &CHexerView::OnDataAccessRWSAFE)
+	ON_COMMAND(IDM_DA_RWINPLACE, &CHexerView::OnDataAccessRWINPLACE)
 	ON_COMMAND(IDM_DA_DATAIO_MMAP, &CHexerView::OnDataIOMMAP)
 	ON_COMMAND(IDM_DA_DATAIO_IOBUFF, &CHexerView::OnDataIOBuff)
 	ON_COMMAND(IDM_DA_DATAIO_IOIMMEDIATE, &CHexerView::OnDataIOImmediate)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGBKMMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
+	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_SETDATA, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlSetData)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_SETFONT, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlSetFont)
+	ON_UPDATE_COMMAND_UI(IDM_FILE_SAVE, &CHexerView::OnUpdateFileSave)
 	ON_UPDATE_COMMAND_UI(IDM_VIEW_PROCMEMORY, &CHexerView::OnUpdateProcMemory)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_DA_RO, IDM_DA_RWINPLACE, &CHexerView::OnUpdateDataAccessMode)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_DA_DATAIO_MMAP, IDM_DA_DATAIO_IOIMMEDIATE, &CHexerView::OnUpdateDataIOMode)
@@ -48,7 +51,7 @@ auto CHexerView::GetDataInfo()const->Ut::DATAINFO
 	const auto pDoc = GetDocument();
 	return { .wsvDataPath { pDoc->GetDataPath() }, .wsvFileName { pDoc->GetFileName() }, .ullDataSize { pDoc->GetDataSize() },
 		.dwPageSize { GetHexCtrl()->GetPageSize() }, .eOpenMode { pDoc->GetOpenMode() },
-		.eDataAccessMode { pDoc->GetDataAccessMode() }, .eDataIOMode { pDoc->GetDataIOMode() } };
+		.stDAC { pDoc->GetDataAccessMode() }, .eDataIOMode { pDoc->GetDataIOMode() } };
 }
 
 auto CHexerView::GetDlgProcMemory()const->HWND
@@ -78,6 +81,27 @@ auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 	return { };
 }
 
+bool CHexerView::OnBeforeClose()
+{
+	if (m_fIsHexCtrlDataModified) {
+		const auto pDoc = GetDocument();
+		const auto wstr = std::format(L"\"{}\" is modified. Save changes?", pDoc->GetDataPath());
+		switch (MessageBoxW(wstr.data(), pDoc->GetFileName().data(), MB_YESNOCANCEL | MB_ICONQUESTION)) {
+		case IDYES:
+			SaveDataToDisk();
+			return true;
+		case IDNO:
+			return true;
+		case IDCANCEL:
+			return false;
+		default:
+			return true;
+		}
+	}
+
+	return true;
+}
+
 
 //Private methods.
 
@@ -89,23 +113,23 @@ auto CHexerView::GetMainFrame()const->CMainFrame*
 void CHexerView::HexCtrlSetData(bool fAdjust)
 {
 	const auto pDoc = GetDocument();
-	const auto fMutable = pDoc->GetDataAccessMode() != Ut::EDataAccessMode::DA_RO;
+	const auto fMutable = pDoc->IsDataAccessRW();
 	GetHexCtrl()->SetData({ .spnData { pDoc->GetFileMMAPData(), pDoc->GetDataSize() },
 		.pHexVirtData { pDoc->GetIHexVirtData() }, .ullMaxVirtOffset { pDoc->GetMaxVirtOffset() },
 		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { fMutable } }, fAdjust);
 }
 
-void CHexerView::ChangeDataAccessMode(Ut::EDataAccessMode eDataAccesMode)
+void CHexerView::ChangeDataAccessMode(Ut::DATAACCESS stDAC)
 {
 	const auto pDoc = GetDocument();
-	if (pDoc->GetDataAccessMode() == eDataAccesMode)
+	if (pDoc->GetDataAccessMode() == stDAC)
 		return;
 
-	pDoc->ChangeDataAccessMode(eDataAccesMode);
-	GetHexCtrl()->SetMutable(pDoc->IsDataAccessRW());
+	pDoc->ChangeDataAccessMode(stDAC);
+	HexCtrlSetData(true);
 	GetMainFrame()->UpdatePaneFileInfo();
 	const auto wstr = std::format(L"Data access changed: {} ({})", GetDocument()->GetFileName(),
-		GetWstrEDataAccessMode(eDataAccesMode));
+		Ut::GetWstrDATAACCESS(stDAC));
 	Ut::Log::AddLogEntryInfo(wstr);
 }
 
@@ -119,7 +143,7 @@ void CHexerView::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
 	HexCtrlSetData(true);
 	GetMainFrame()->UpdatePaneFileInfo();
 	const auto wstr = std::format(L"Data IO mode changed: {} ({})", GetDocument()->GetFileName(),
-		GetWstrEDataIOMode(eDataIOMode));
+		GetWstrEDataIOMode(pDoc->GetDataIOMode()));
 	Ut::Log::AddLogEntryInfo(wstr);
 }
 
@@ -154,17 +178,17 @@ void CHexerView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDe
 
 void CHexerView::OnDataAccessRO()
 {
-	ChangeDataAccessMode(DA_RO);
+	ChangeDataAccessMode({ 0 });
 }
 
-void CHexerView::OnDataAccessRWDefault()
+void CHexerView::OnDataAccessRWSAFE()
 {
-	ChangeDataAccessMode(DA_RW_DEFAULT);
+	ChangeDataAccessMode({ 1 });
 }
 
-void CHexerView::OnDataAccessRWInPlace()
+void CHexerView::OnDataAccessRWINPLACE()
 {
-	ChangeDataAccessMode(DA_RW_INPLACE);
+	ChangeDataAccessMode({ 2 });
 }
 
 void CHexerView::OnDataIOMMAP()
@@ -211,6 +235,11 @@ void CHexerView::OnFilePrint()
 	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_PRINT_DLG);
 }
 
+void CHexerView::OnFileSave()
+{
+	SaveDataToDisk();
+}
+
 void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	UINT uPaneID;
@@ -229,6 +258,13 @@ void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 
 	GetMainFrame()->ShowPane(uPaneID, true, true);
+}
+
+void CHexerView::OnHexCtrlSetData(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+{
+	if (GetDocument()->IsDataAccessRWSAFE()) {
+		m_fIsHexCtrlDataModified = true;
+	}
 }
 
 void CHexerView::OnHexCtrlSetFont(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
@@ -297,7 +333,7 @@ void CHexerView::OnUpdateDataAccessMode(CCmdUI* pCmdUI)
 {
 	const auto pDoc = GetDocument();
 	const auto fRW = pDoc->IsDataWritable();
-	const auto eDAMode = pDoc->GetDataAccessMode();
+	const auto stDAC = pDoc->GetDataAccessMode();
 
 	bool fEnable { false };
 	bool fCheck { false };
@@ -305,15 +341,15 @@ void CHexerView::OnUpdateDataAccessMode(CCmdUI* pCmdUI)
 	switch (pCmdUI->m_nID) {
 	case IDM_DA_RO:
 		fEnable = true;
-		fCheck = eDAMode == DA_RO;
+		fCheck = !stDAC.fMutable;
 		break;
-	case IDM_DA_RWDEFAULT:
-		fEnable = false; //TODO: NYI.
-		fCheck = eDAMode == DA_RW_DEFAULT;
+	case IDM_DA_RWSAFE:
+		fEnable = pDoc->IsDataOKForDASAFE();
+		fCheck = stDAC.fMutable && stDAC.eDataAccessMode == ACCESS_SAFE;
 		break;
 	case IDM_DA_RWINPLACE:
 		fEnable = fRW;
-		fCheck = eDAMode == DA_RW_INPLACE;
+		fCheck = stDAC.fMutable && stDAC.eDataAccessMode == ACCESS_INPLACE;
 		break;
 	default:
 		break;
@@ -327,22 +363,23 @@ void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI)
 {
 	const auto pDoc = GetDocument();
 	const auto fIsFile = pDoc->IsFile();
+	const auto fModeAllowed = pDoc->IsDataAccessRW() && !pDoc->IsDataAccessRWSAFE();
 	const auto eDataIOMode = pDoc->GetDataIOMode();
-	bool fEnable { };
-	bool fCheck { };
+	bool fEnable { false };
+	bool fCheck { false };
 
 	using enum Ut::EDataIOMode;
 	switch (pCmdUI->m_nID) {
 	case IDM_DA_DATAIO_MMAP:
-		fEnable = fIsFile;
+		fEnable = fModeAllowed && fIsFile;
 		fCheck = eDataIOMode == DATA_MMAP;
 		break;
 	case IDM_DA_DATAIO_IOBUFF:
-		fEnable = fIsFile;
+		fEnable = fModeAllowed && fIsFile;
 		fCheck = eDataIOMode == DATA_IOBUFF;
 		break;
 	case IDM_DA_DATAIO_IOIMMEDIATE:
-		fEnable = true;
+		fEnable = fModeAllowed;
 		fCheck = eDataIOMode == DATA_IOIMMEDIATE;
 		break;
 	default:
@@ -351,6 +388,11 @@ void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI)
 
 	pCmdUI->Enable(fEnable);
 	pCmdUI->SetCheck(fCheck);
+}
+
+void CHexerView::OnUpdateFileSave(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(m_fIsHexCtrlDataModified);
 }
 
 void CHexerView::OnUpdateProcMemory(CCmdUI* pCmdUI)
@@ -385,6 +427,15 @@ void CHexerView::SetPaneAlreadyLaunch(UINT uPaneID)
 	default:
 		break;
 	}
+}
+
+void CHexerView::SaveDataToDisk()
+{
+	if (!m_fIsHexCtrlDataModified)
+		return;
+
+	GetDocument()->SaveDataToDisk();
+	m_fIsHexCtrlDataModified = false;
 }
 
 void CHexerView::UpdateDlgBkmMgr()const

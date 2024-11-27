@@ -21,9 +21,9 @@ IMPLEMENT_DYNCREATE(CHexerDoc, CDocument)
 BEGIN_MESSAGE_MAP(CHexerDoc, CDocument)
 END_MESSAGE_MAP()
 
-void CHexerDoc::ChangeDataAccessMode(Ut::EDataAccessMode eDataAccessMode)
+void CHexerDoc::ChangeDataAccessMode(Ut::DATAACCESS stDAC)
 {
-	m_stDataLoader.ChangeDataAccessMode(eDataAccessMode);
+	m_stDataLoader.ChangeDataAccessMode(stDAC);
 }
 
 void CHexerDoc::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
@@ -36,7 +36,7 @@ auto CHexerDoc::GetCacheSize()const->DWORD
 	return m_stDataLoader.GetCacheSize();
 }
 
-auto CHexerDoc::GetDataAccessMode()const->Ut::EDataAccessMode
+auto CHexerDoc::GetDataAccessMode()const->Ut::DATAACCESS
 {
 	return m_stDataLoader.GetDataAccessMode();
 }
@@ -101,14 +101,31 @@ auto CHexerDoc::GetIHexVirtData()->HEXCTRL::IHexVirtData*
 	return m_stDataLoader.GetIHexVirtData();
 }
 
+bool CHexerDoc::IsDataAccessRWINPLACE() const
+{
+	const auto stDAC = GetDataAccessMode();
+	return stDAC.fMutable && stDAC.eDataAccessMode == Ut::EDataAccessMode::ACCESS_INPLACE;
+}
+
+bool CHexerDoc::IsDataAccessRWSAFE()const
+{
+	const auto stDAC = GetDataAccessMode();
+	return stDAC.fMutable && stDAC.eDataAccessMode == Ut::EDataAccessMode::ACCESS_SAFE;
+}
+
 bool CHexerDoc::IsDataAccessRO()
 {
-	return GetDataAccessMode() == DA_RO;
+	return !IsDataAccessRW();
 }
 
 bool CHexerDoc::IsDataAccessRW()
 {
-	return !IsDataAccessRO();
+	return GetDataAccessMode().fMutable;
+}
+
+bool CHexerDoc::IsDataOKForDASAFE()const
+{
+	return m_stDataLoader.IsDataOKForDASAFE();
 }
 
 bool CHexerDoc::IsDataWritable()const
@@ -136,8 +153,14 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 	auto& refSett = theApp.GetAppSettings();
-	if (!m_stDataLoader.Open(dos, refSett.GetGeneralSettings().eDataAccessMode, refSett.GetGeneralSettings().eDataIOMode)) {
+	if (const auto expOpen = m_stDataLoader.Open(dos, refSett.GetGeneralSettings().stDAC,
+		refSett.GetGeneralSettings().eDataIOMode); !expOpen) {
 		refSett.RFLRemoveFromList(dos);
+		const auto wstrLog = std::format(L"{} open failed: {} \r\n{}", Ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
+			Ut::GetLastErrorWstr(expOpen.error()));
+		MessageBoxW(AfxGetMainWnd()->m_hWnd, wstrLog.data(), L"Opening error", MB_ICONERROR);
+		Ut::Log::AddLogEntryError(wstrLog);
+
 		return false;
 	}
 
@@ -159,11 +182,19 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 		default:
 			return 0;
 		}
-	}();
+		}();
 	m_hDocIcon = Ut::HICONfromHBITMAP(Ut::GetHBITMAP(iResID));
+	const auto wstrLog = std::format(L"{} opened: {} ({})", Ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
+		Ut::GetWstrDATAACCESS(GetDataAccessMode()));
+	Ut::Log::AddLogEntryInfo(wstrLog);
 	m_fOpened = true;
 
 	return true;
+}
+
+void CHexerDoc::SaveDataToDisk()
+{
+	m_stDataLoader.SaveDataToDisk();
 }
 
 

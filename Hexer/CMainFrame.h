@@ -48,6 +48,7 @@ protected:
 	void HideAllPanes();
 	afx_msg auto OnAddLogEntry(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg auto OnAppSettingsChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
+	[[nodiscard]] bool OnBeforeClose();
 	afx_msg void OnClose();
 	BOOL OnCloseDockingPane(CDockablePane* pPane)override;
 	afx_msg BOOL OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS);

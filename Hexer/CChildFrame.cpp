@@ -30,6 +30,15 @@ auto CChildFrame::GetHexerView()const->CHexerView*
 	return m_pHexerView;
 }
 
+bool CChildFrame::OnBeforeClose()
+{
+	const auto pView = GetHexerView();;
+	if (pView == nullptr)
+		return true;
+
+	return pView->OnBeforeClose();
+}
+
 void CChildFrame::SetHexerView(CHexerView* pView)
 {
 	m_pHexerView = pView;
@@ -64,6 +73,10 @@ auto CChildFrame::GetHexCtrl()const->HEXCTRL::IHexCtrl*
 
 void CChildFrame::OnClose()
 {
+	if (!OnBeforeClose()) {
+		return;
+	}
+
 	m_fClosing = true;
 	CMDIChildWndEx::OnClose();
 }
