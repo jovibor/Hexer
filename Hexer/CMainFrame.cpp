@@ -333,29 +333,21 @@ auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 auto CMainFrame::OnAppSettingsChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
 {
 	theApp.NotifyTabsOnSettingsChange();
+	UpdatePaneFileInfo();
 	return S_OK;
 }
 
 bool CMainFrame::OnBeforeClose()
 {
-	auto posTemplate = theApp.GetFirstDocTemplatePosition();
-	while (posTemplate != nullptr) {
-		auto pDocTemplate = theApp.GetNextDocTemplate(posTemplate);
-		if (pDocTemplate == nullptr)
-			break;
-
-		auto posDoc = pDocTemplate->GetFirstDocPosition();
+	auto posTempl = theApp.GetFirstDocTemplatePosition();
+	while (posTempl != nullptr) {
+		const auto pDocTempl = theApp.GetNextDocTemplate(posTempl);
+		auto posDoc = pDocTempl->GetFirstDocPosition();
 		while (posDoc != nullptr) {
-			auto pDoc = pDocTemplate->GetNextDoc(posDoc);
-			if (pDoc == nullptr)
-				break;
-
+			const auto pDoc = pDocTempl->GetNextDoc(posDoc);
 			auto posView = pDoc->GetFirstViewPosition();
 			while (posView != nullptr) {
-				auto pView = static_cast<CHexerView*>(pDoc->GetNextView(posView));
-				if (pView == nullptr)
-					break;
-
+				const auto pView = static_cast<CHexerView*>(pDoc->GetNextView(posView));
 				if (!pView->OnBeforeClose()) {
 					return false;
 				}

@@ -134,17 +134,6 @@ BEGIN
         MENUITEM "&Copy as Hex Bytes\tCtrl+C",  IDM_EDIT_COPYHEX
         MENUITEM "&Paste as Hex Bytes\tCtrl+V", IDM_EDIT_PASTEHEX
     END
-    POPUP "&View"
-    BEGIN
-        MENUITEM "Data Information...",         IDM_VIEW_DATAINFO
-        MENUITEM "Bookmark Manager...",         IDM_VIEW_BKMMGR
-        MENUITEM "Data Interpreter...",         IDM_VIEW_DATAINTERP
-        MENUITEM "Template Manager...",         IDM_VIEW_TEMPLMGR
-        MENUITEM "Log Information...",          IDM_VIEW_LOGGER
-        MENUITEM "Process Memory...",           IDM_VIEW_PROCMEMORY
-        MENUITEM SEPARATOR
-        MENUITEM "Toolbar",                     ID_VIEW_TOOLBAR
-    END
     POPUP "Data Access"
     BEGIN
         MENUITEM "Read Only",                   IDM_DA_RO
@@ -157,6 +146,17 @@ BEGIN
             MENUITEM "Data IO Buffered",            IDM_DA_DATAIO_IOBUFF
             MENUITEM "Data IO Immediate",           IDM_DA_DATAIO_IOIMMEDIATE
         END
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "Data Information...",         IDM_VIEW_DATAINFO
+        MENUITEM "Bookmark Manager...",         IDM_VIEW_BKMMGR
+        MENUITEM "Data Interpreter...",         IDM_VIEW_DATAINTERP
+        MENUITEM "Template Manager...",         IDM_VIEW_TEMPLMGR
+        MENUITEM "Log Information...",          IDM_VIEW_LOGGER
+        MENUITEM "Process Memory...",           IDM_VIEW_PROCMEMORY
+        MENUITEM SEPARATOR
+        MENUITEM "Toolbar",                     ID_VIEW_TOOLBAR
     END
     POPUP "Tools"
     BEGIN
@@ -605,6 +605,7 @@ STRINGTABLE
 BEGIN
     IDM_FILE_NEWFILE        "Create new file...\nNew File"
     IDM_FILE_OPENFILE       "Open existing file...\nOpen File"
+    IDM_FILE_SAVE           "\nSave"
 END
 
 STRINGTABLE
@@ -624,11 +625,6 @@ END
 STRINGTABLE
 BEGIN
     AFX_IDS_APP_TITLE       "Hexer"
-END
-
-STRINGTABLE
-BEGIN
-    IDM_FILE_SAVE           "\nSave"
 END
 
 #endif    // English (United States) resources

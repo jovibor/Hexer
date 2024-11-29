@@ -29,10 +29,10 @@ private:
 	DECLARE_MESSAGE_MAP();
 private:
 	enum class EPropName : std::uint8_t {
-		DATA_PATH = 0x1, FILE_NAME, DATA_SIZE, PAGE_SIZE, ACCESS_MODE, IO_MODE
+		DATA_PATH = 0x1, DATA_NAME, DATA_SIZE, PAGE_SIZE, ACCESS_MODE, IO_MODE
 	};
 	CHexerPropGridCtrl m_gridDataInfo;
-	std::vector<CMFCPropertyGridProperty*> m_vecPropsDataProps;
+	std::vector<CHexerPropGridProp*> m_vecPropsDataProps;
 	CFont m_fntFilePropsGrid;
 	Ut::DATAINFO m_dis { };
 };
@@ -74,45 +74,51 @@ BOOL CDlgDataInfo::OnInitDialog()
 	const auto pFont = m_gridDataInfo.GetFont();
 	LOGFONTW lf { };
 	pFont->GetLogFont(&lf);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Ut::GetHiDPIInfo().iLOGPIXELSY) + 2;
-	lf.lfHeight = -MulDiv(lFontSize, Ut::GetHiDPIInfo().iLOGPIXELSY, 72);
+	constexpr wchar_t pwszFont[] { L"Microsoft Sans Serif" };
+	std::copy_n(pwszFont, std::size(pwszFont), lf.lfFaceName);
+	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Ut::GetHiDPIInfo().iLOGPIXELSY) + 1; //Convert font Height to point size.
+	lf.lfHeight = -MulDiv(lFontSize, Ut::GetHiDPIInfo().iLOGPIXELSY, 72); //Convert point size to font Height.
 	m_fntFilePropsGrid.CreateFontIndirectW(&lf);
 	m_gridDataInfo.SetFont(&m_fntFilePropsGrid);
 
 	using enum EPropName;
-	const auto pFilePath = new CMFCPropertyGridProperty(L"File Path:", L"");
-	pFilePath->SetData(static_cast<DWORD_PTR>(DATA_PATH));
-	pFilePath->AllowEdit(FALSE);
-	m_vecPropsDataProps.emplace_back(pFilePath);
-	m_gridDataInfo.AddProperty(pFilePath);
+	const auto pDataPath = new CHexerPropGridProp(L"", L"");
+	pDataPath->SetData(static_cast<DWORD_PTR>(DATA_PATH));
+	pDataPath->SetValueColor(RGB(0, 0, 250));
+	pDataPath->AllowEdit(FALSE);
+	m_vecPropsDataProps.emplace_back(pDataPath);
+	m_gridDataInfo.AddProperty(pDataPath);
 
-	const auto pFileName = new CMFCPropertyGridProperty(L"File Name:", L"");
-	pFileName->SetData(static_cast<DWORD_PTR>(FILE_NAME));
-	pFileName->AllowEdit(FALSE);
-	m_vecPropsDataProps.emplace_back(pFileName);
-	m_gridDataInfo.AddProperty(pFileName);
+	const auto pDataName = new CHexerPropGridProp(L"", L"");
+	pDataName->SetData(static_cast<DWORD_PTR>(DATA_NAME));
+	pDataName->SetValueColor(RGB(0, 0, 250));
+	pDataName->AllowEdit(FALSE);
+	m_vecPropsDataProps.emplace_back(pDataName);
+	m_gridDataInfo.AddProperty(pDataName);
 
-	const auto pFileSize = new CMFCPropertyGridProperty(L"File Size:", L"");
-	pFileSize->SetData(static_cast<DWORD_PTR>(DATA_SIZE));
-	pFileSize->AllowEdit(FALSE);
-	m_vecPropsDataProps.emplace_back(pFileSize);
-	m_gridDataInfo.AddProperty(pFileSize);
+	const auto pDataSize = new CHexerPropGridProp(L"", L"");
+	pDataSize->SetData(static_cast<DWORD_PTR>(DATA_SIZE));
+	pDataSize->SetValueColor(RGB(0, 0, 250));
+	pDataSize->AllowEdit(FALSE);
+	m_vecPropsDataProps.emplace_back(pDataSize);
+	m_gridDataInfo.AddProperty(pDataSize);
 
-	const auto pPageSize = new CMFCPropertyGridProperty(L"Page Size:", L"");
+	const auto pPageSize = new CHexerPropGridProp(L"Page Size:", L"");
 	pPageSize->SetData(static_cast<DWORD_PTR>(PAGE_SIZE));
+	pPageSize->SetValueColor(RGB(0, 0, 250));
 	pPageSize->AllowEdit(FALSE);
 	m_vecPropsDataProps.emplace_back(pPageSize);
 	m_gridDataInfo.AddProperty(pPageSize);
-	pPageSize->Show(FALSE);
 
-	const auto pAccessMode = new CMFCPropertyGridProperty(L"Access Mode:", L"");
+	const auto pAccessMode = new CHexerPropGridProp(L"Access Mode:", L"");
 	pAccessMode->SetData(static_cast<DWORD_PTR>(ACCESS_MODE));
 	pAccessMode->AllowEdit(FALSE);
 	m_vecPropsDataProps.emplace_back(pAccessMode);
 	m_gridDataInfo.AddProperty(pAccessMode);
 
-	const auto pDataIOMode = new CMFCPropertyGridProperty(L"Data IO Mode:", L"");
+	const auto pDataIOMode = new CHexerPropGridProp(L"Data IO Mode:", L"");
 	pDataIOMode->SetData(static_cast<DWORD_PTR>(IO_MODE));
+	pDataIOMode->SetValueColor(RGB(0, 0, 250));
 	pDataIOMode->AllowEdit(FALSE);
 	m_vecPropsDataProps.emplace_back(pDataIOMode);
 	m_gridDataInfo.AddProperty(pDataIOMode);
@@ -128,23 +134,20 @@ BOOL CDlgDataInfo::OnInitDialog()
 
 void CDlgDataInfo::UpdateGridData()
 {
-	const auto lmbSetValue = [&](CMFCPropertyGridProperty* pProp) {
+	const auto lmbSetValue = [&](CHexerPropGridProp* pProp) {
 		using enum EPropName;
 		auto wstr = std::wstring { Ut::GetWstrEOpenMode(m_dis.eOpenMode) };
 		switch (static_cast<EPropName>(pProp->GetData())) {
 		case DATA_PATH:
-			wstr += L" path:";
-			pProp->SetName(wstr.data(), FALSE);
+			pProp->SetName((wstr += L" path:").data(), FALSE);
 			pProp->SetValue(m_dis.wsvDataPath.data());
 			break;
-		case FILE_NAME:
-			wstr += L" name:";
-			pProp->SetName(wstr.data(), FALSE);
+		case DATA_NAME:
+			pProp->SetName((wstr += L" name:").data(), FALSE);
 			pProp->SetValue(m_dis.wsvFileName.data());
 			break;
 		case DATA_SIZE:
-			wstr += L" size:";
-			pProp->SetName(wstr.data(), FALSE);
+			pProp->SetName((wstr += L" size:").data(), FALSE);
 			pProp->SetValue(std::format(std::locale("en_US.UTF-8"), L"{:L} bytes", m_dis.ullDataSize).data());
 			break;
 		case PAGE_SIZE:
@@ -152,9 +155,32 @@ void CDlgDataInfo::UpdateGridData()
 			break;
 		case ACCESS_MODE:
 			pProp->SetValue(Ut::GetWstrDATAACCESS(m_dis.stDAC));
+			COLORREF clr;
+			if (!m_dis.stDAC.fMutable) {
+				clr = RGB(128, 128, 128);
+			}
+			else {
+				switch (m_dis.stDAC.eDataAccessMode) {
+				case ACCESS_SAFE:
+					clr = RGB(20, 200, 20);
+					break;
+				case ACCESS_INPLACE:
+					clr = RGB(200, 20, 20);
+					break;
+				default:
+					clr = 0xFFFFFFFFUL;
+					break;
+				}
+			}
+			pProp->SetValueColor(clr);
 			break;
 		case IO_MODE:
-			pProp->SetValue(Ut::GetWstrEDataIOMode(m_dis.eDataIOMode));
+			if (m_dis.stDAC.fMutable && m_dis.stDAC.eDataAccessMode == Ut::EDataAccessMode::ACCESS_INPLACE) {
+				pProp->SetValue(Ut::GetWstrEDataIOMode(m_dis.eDataIOMode));
+			}
+			else {
+				pProp->SetValue(L"—");
+			}
 			break;
 		default:
 			break;

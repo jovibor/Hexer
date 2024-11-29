@@ -372,15 +372,15 @@ void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI)
 	switch (pCmdUI->m_nID) {
 	case IDM_DA_DATAIO_MMAP:
 		fEnable = fModeAllowed && fIsFile;
-		fCheck = eDataIOMode == DATA_MMAP;
+		fCheck = fModeAllowed && eDataIOMode == DATA_MMAP;
 		break;
 	case IDM_DA_DATAIO_IOBUFF:
 		fEnable = fModeAllowed && fIsFile;
-		fCheck = eDataIOMode == DATA_IOBUFF;
+		fCheck = fModeAllowed && eDataIOMode == DATA_IOBUFF;
 		break;
 	case IDM_DA_DATAIO_IOIMMEDIATE:
 		fEnable = fModeAllowed;
-		fCheck = eDataIOMode == DATA_IOIMMEDIATE;
+		fCheck = fModeAllowed && eDataIOMode == DATA_IOIMMEDIATE;
 		break;
 	default:
 		break;
