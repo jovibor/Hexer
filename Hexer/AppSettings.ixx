@@ -39,13 +39,11 @@ public:
 	[[nodiscard]] static auto ReadRegData(const wchar_t* pwszRegPath) -> VecDataOpen;
 	[[nodiscard]] static void SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen& vecData);
 private:
-	[[nodiscard]] auto GetRegAppPath()const->const std::wstring&;
-	[[nodiscard]] auto GetRegRFLPath()const->std::wstring;
-	[[nodiscard]] auto GetRFLKeyName()const->const wchar_t*;
+	[[nodiscard]] auto GetRegRFLPath()const->const wchar_t*;
 	void RebuildRFLMenu();
 private:
 	VecDataOpen m_vecRFL; //Recent Files List data.
-	std::wstring m_wstrRegAppPath; //Application registry path.
+	const wchar_t* m_pwszRFLRegPath { };
 	HMENU m_hMenu { };
 	HBITMAP m_hBMPFile { };    //Bitmap for file icon.
 	HBITMAP m_hBMPDevice { };  //Bitmap for device icon.
@@ -80,7 +78,7 @@ auto CAppSettingsRFL::GetDataFromMenuID(UINT uID)const->Ut::DATAOPEN
 }
 
 void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
-	HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess, const std::wstring& wstrRegAppPath)
+	HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess, const std::wstring& wstrRFLRegPath)
 {
 	assert(IsMenu(hMenu));
 	if (!IsMenu(hMenu)) {
@@ -93,9 +91,9 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
 	m_hBMPFile = hBMPFile;
 	m_hBMPDevice = hBMPDevice;
 	m_hBMPProcess = hBMPProcess;
-	m_wstrRegAppPath = wstrRegAppPath;
+	m_pwszRFLRegPath = wstrRFLRegPath.data();
 	m_fInit = true;
-	m_vecRFL = ReadRegData(GetRegRFLPath().data());
+	m_vecRFL = ReadRegData(GetRegRFLPath());
 
 	RebuildRFLMenu();
 }
@@ -116,22 +114,12 @@ void CAppSettingsRFL::SaveSettings()
 	if (!m_fInit)
 		return;
 
-	SaveRegData(GetRegRFLPath().data(), m_vecRFL);
+	SaveRegData(GetRegRFLPath(), m_vecRFL);
 }
 
-auto CAppSettingsRFL::GetRFLKeyName()const->const wchar_t*
+auto CAppSettingsRFL::GetRegRFLPath()const->const wchar_t*
 {
-	return L"Recent Files List";
-}
-
-auto CAppSettingsRFL::GetRegAppPath()const->const std::wstring&
-{
-	return m_wstrRegAppPath;
-}
-
-auto CAppSettingsRFL::GetRegRFLPath()const->std::wstring
-{
-	return GetRegAppPath() + GetRFLKeyName();
+	return m_pwszRFLRegPath;
 }
 
 void CAppSettingsRFL::AddToListBeginning(const Ut::DATAOPEN& dos, VecDataOpen& vecData)
@@ -369,10 +357,11 @@ public:
 private:
 	[[nodiscard]] auto GetPanesSettings() -> PANESETTINGS&;
 	[[nodiscard]] auto GetPanesSettings()const->const PANESETTINGS&;
-	[[nodiscard]] auto GetRegAppPath()const->const std::wstring&;
-	[[nodiscard]] auto GetRegLOLPath()const->std::wstring; //Last Opened List.
-	[[nodiscard]] auto GetRegRFLPath()const->std::wstring; //Recent Files List.
-	[[nodiscard]] auto GetRegSettingsPath()const->std::wstring;
+	[[nodiscard]] auto GetAppName()const->const std::wstring&;
+	[[nodiscard]] auto GetRegLOLPath()const->const std::wstring&; //Last Opened List.
+	[[nodiscard]] auto GetRegRFLPath()const->const std::wstring&; //Recent Files List.
+	[[nodiscard]] auto GetRegMFCWorkspacePath()const->const std::wstring&;
+	[[nodiscard]] auto GetRegSettingsPath()const->const std::wstring&;
 	void LoadHexCtrlTemplates();
 	void ShowInWindowsContextMenu(bool fShow);
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
@@ -382,7 +371,7 @@ private:
 	PANESETTINGS m_stPaneSettings;      //"Panes" settings data.
 	GENERALSETTINGS m_stGeneralData;    //"General" settings data.
 	HEXCTRLSETTINGS m_stHexCtrlData;    //"HexCtrl" settings data.
-	std::wstring m_wstrRegAppPath;      //Application registry path.
+	std::wstring m_wstrAppName;         //Application name for registry paths.
 	VecDataOpen m_vecLOL;               //Last Opened Files list.
 	VecTemplates m_vecHexCtrlTemplates; //HexCtrl loaded templates.
 	bool m_fLoaded { false };           //LoadSettings has succeeded.
@@ -463,7 +452,7 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 	if (wsvAppName.empty())
 		return;
 
-	((m_wstrRegAppPath += L"Software\\") += wsvAppName) += L"\\";
+	m_wstrAppName = wsvAppName;
 
 	//Filling all the default settings first, then load from the registry.
 	GetGeneralSettings() = GetGeneralDefs();
@@ -647,7 +636,8 @@ void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile
 	if (!m_fLoaded)
 		return;
 
-	m_stRFL.Initialize(hMenu, iIDMenuFirst, GetGeneralSettings().dwRFLSize, hBMPFile, hBMPDevice, hBMPProcess, GetRegAppPath());
+	m_stRFL.Initialize(hMenu, iIDMenuFirst, GetGeneralSettings().dwRFLSize,
+		hBMPFile, hBMPDevice, hBMPProcess, GetRegRFLPath());
 }
 
 void CAppSettings::RFLRemoveFromList(const Ut::DATAOPEN& dos)
@@ -669,7 +659,7 @@ void CAppSettings::SaveSettings()
 
 	//Settings.
 	CRegKey regSettings;
-	const auto wstrKeySettings = GetRegSettingsPath();
+	const auto& wstrKeySettings = GetRegSettingsPath();
 	if (regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) != ERROR_SUCCESS) {
 		regSettings.Create(HKEY_CURRENT_USER, wstrKeySettings.data());
 	}
@@ -697,7 +687,7 @@ void CAppSettings::SaveSettings()
 
 	//HexCtrl settings.
 	CRegKey regHexCtrl;
-	const std::wstring wstrKeyHexCtrl = wstrKeySettings + L"\\HexCtrl";
+	const auto wstrKeyHexCtrl = wstrKeySettings + L"\\HexCtrl";
 	if (regHexCtrl.Open(HKEY_CURRENT_USER, wstrKeyHexCtrl.data()) != ERROR_SUCCESS) {
 		regHexCtrl.Create(HKEY_CURRENT_USER, wstrKeyHexCtrl.data());
 	}
@@ -807,24 +797,33 @@ auto CAppSettings::GetPanesSettings()const->const PANESETTINGS&
 	return m_stPaneSettings;
 }
 
-auto CAppSettings::GetRegAppPath()const->const std::wstring&
+auto CAppSettings::GetAppName()const->const std::wstring&
 {
-	return m_wstrRegAppPath;
+	return m_wstrAppName;
 }
 
-auto CAppSettings::GetRegLOLPath()const->std::wstring
+auto CAppSettings::GetRegLOLPath()const->const std::wstring&
 {
-	return GetRegAppPath() + L"Last Opened List";
+	static const auto wstrLOL = GetRegSettingsPath() + L"\\Last Opened List";
+	return wstrLOL;
 }
 
-auto CAppSettings::GetRegRFLPath() const -> std::wstring
+auto CAppSettings::GetRegRFLPath()const->const std::wstring&
 {
-	return GetRegAppPath() + L"Recent Files List";
+	static const auto wstrRFL = GetRegSettingsPath() + L"\\Recent Files List";
+	return wstrRFL;
 }
 
-auto CAppSettings::GetRegSettingsPath()const->std::wstring
+auto CAppSettings::GetRegMFCWorkspacePath()const->const std::wstring&
 {
-	return GetRegAppPath() + L"Settings";
+	static const auto wstrMFCWorkspace = L"Software\\" + GetAppName() + L"\\" + GetAppName() + L"\\" + L"Workspace";
+	return wstrMFCWorkspace;
+}
+
+auto CAppSettings::GetRegSettingsPath()const->const std::wstring&
+{
+	static const auto wstrSettings = L"Software\\" + GetAppName();
+	return wstrSettings;
 }
 
 void CAppSettings::LoadHexCtrlTemplates()

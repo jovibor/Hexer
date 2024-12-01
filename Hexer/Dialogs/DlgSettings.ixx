@@ -154,6 +154,7 @@ private:
 	[[nodiscard]] bool IsModified()const;
 	void OnCancel()override;
 	BOOL OnInitDialog()override;
+	void OnOK()override;
 	auto OnPropertyDataChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	enum class EGroup : std::uint8_t;
 	enum class EName : std::uint8_t;
@@ -333,6 +334,11 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	return TRUE;
 }
 
+void CDlgSettingsGeneral::OnOK()
+{
+	static_cast<CDialogEx*>(GetParentOwner())->GetDlgItem(IDOK)->SendMessageW(BM_CLICK);
+}
+
 auto CDlgSettingsGeneral::OnPropertyDataChanged(WPARAM wParam, LPARAM lParam)->LRESULT
 {
 	m_fModified = true;
@@ -356,6 +362,7 @@ private:
 	[[nodiscard]] bool IsModified()const;
 	void OnCancel()override;
 	BOOL OnInitDialog()override;
+	void OnOK()override;
 	auto OnPropertyDataChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	DECLARE_MESSAGE_MAP();
 private:
@@ -512,24 +519,24 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	auto& refSett = m_pAppSettings->GetHexCtrlSettings();
 
 	using enum EGroup; using enum EName;
-	const auto& refCapac = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Capacity:",
-		static_cast<_variant_t>(refSett.dwCapacity), 0, 0, 0, 0, L"0123456789"), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(dwCapacity));
+	const auto& refCapac = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Capacity:",
+		static_cast<_variant_t>(refSett.dwCapacity), 0, 0, 0, 0, L"0123456789"),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(dwCapacity));
 	refCapac.pProp->EnableSpinControl(TRUE, 1, 100);
 	refCapac.pProp->AllowEdit(TRUE);
 
-	const auto& refGroup = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Group Size:",
-		static_cast<_variant_t>(refSett.dwGroupSize), 0, 0, 0, 0, L"0123456789"), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(dwGroupSize));
+	const auto& refGroup = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Group Size:",
+		static_cast<_variant_t>(refSett.dwGroupSize), 0, 0, 0, 0, L"0123456789"),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(dwGroupSize));
 	refGroup.pProp->EnableSpinControl(TRUE, 1, 64);
 	refGroup.pProp->AllowEdit(TRUE);
 
-	const auto& refPageSize = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Page Size:",
-		static_cast<_variant_t>(refSett.dwPageSize), 0, 0, 0, 0, L"0x123456789AaBbCcDdEeFfGg"), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(dwPageSize));
+	const auto& refPageSize = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Page Size:",
+		static_cast<_variant_t>(refSett.dwPageSize), 0, 0, 0, 0, L"0x123456789AaBbCcDdEeFfGg"),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(dwPageSize));
 	refPageSize.pProp->AllowEdit(TRUE);
 
-	const auto& refUnprint = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Unprintable Char:",
+	const auto& refUnprint = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Unprintable Char:",
 		static_cast<_variant_t>(std::format(L"{}", refSett.wchUnprintable).data()), nullptr, 0, L"*", L"_"),
 		std::to_underlying(GROUP_GENERAL), std::to_underlying(wchUnprintable));
 	refUnprint.pProp->AllowEdit(TRUE);
@@ -540,8 +547,8 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	const auto pPropDateSepar = static_cast<CHexerPropGridProp*>(refDateSepar.pProp);
 	pPropDateSepar->AllowEdit(TRUE);
 
-	const auto& refDate = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Date Format:", L""), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(wstrDateFormat));
+	const auto& refDate = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Date Format:", L""),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(wstrDateFormat));
 	const auto pPropDate = static_cast<CHexerPropGridProp*>(refDate.pProp);
 	pPropDate->AddOptionEx(L"User default", 0xFFFFFFFFUL);
 	pPropDate->AddOptionEx(std::format(L"MM{0}DD{0}YYYY", refSett.wchDateSepar).data(), 0UL);
@@ -558,38 +565,38 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	pPropScroll->SetValueFromData(refSett.fScrollLines);
 	pPropScroll->AllowEdit(FALSE);
 
-	const auto& refScrollSize = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Scroll Size:",
-		static_cast<_variant_t>(refSett.flScrollRatio), 0, 0, 0, 0, L"0123456789."), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(flScrollRatio));
+	const auto& refScrollSize = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Scroll Size:",
+		static_cast<_variant_t>(refSett.flScrollRatio), 0, 0, 0, 0, L"0123456789."),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(flScrollRatio));
 	refScrollSize.pProp->AllowEdit(TRUE);
 
-	const auto& refInfoBar = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Show Info Bar:", L""), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(fInfoBar));
+	const auto& refInfoBar = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Show Info Bar:", L""),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(fInfoBar));
 	const auto pPropInfoBar = static_cast<CHexerPropGridProp*>(refInfoBar.pProp);
 	pPropInfoBar->AddOptionEx(L"Show", 1UL);
 	pPropInfoBar->AddOptionEx(L"Hide", 0UL);
 	pPropInfoBar->SetValueFromData(refSett.fInfoBar);
 	pPropInfoBar->AllowEdit(FALSE);
 
-	const auto& refOffsetMode = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Offset Mode:", L""), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(fOffsetHex));
+	const auto& refOffsetMode = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Offset Mode:", L""),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(fOffsetHex));
 	const auto pPropOffsetMode = static_cast<CHexerPropGridProp*>(refOffsetMode.pProp);
 	pPropOffsetMode->AddOptionEx(L"Hex", 1UL);
 	pPropOffsetMode->AddOptionEx(L"Decimal", 0UL);
 	pPropOffsetMode->SetValueFromData(refSett.fOffsetHex);
 	pPropOffsetMode->AllowEdit(FALSE);
 
-	const auto& refExtraSpace = m_vecGrid.emplace_back(new CMFCPropertyGridProperty(L"Chars Extra Space:",
-		static_cast<_variant_t>(refSett.dwCharsExtraSpace), 0, 0, 0, 0, L"0123456789"), std::to_underlying(GROUP_GENERAL),
-		std::to_underlying(dwCharsExtraSpace));
-	refExtraSpace.pProp->EnableSpinControl(TRUE, 1, 10);
+	const auto& refExtraSpace = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Chars Extra Space:",
+		static_cast<_variant_t>(refSett.dwCharsExtraSpace), 0, 0, 0, 0, L"0123456789"),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(dwCharsExtraSpace));
+	refExtraSpace.pProp->EnableSpinControl(TRUE, 0, 10);
 	refExtraSpace.pProp->AllowEdit(TRUE);
 
 	m_vecGrid.emplace_back(new CMFCPropertyGridFontProperty(L"Font:", refSett.stLogFont,
 		CF_EFFECTS | CF_FIXEDPITCHONLY | CF_FORCEFONTEXIST | CF_INITTOLOGFONTSTRUCT | CF_NOSIMULATIONS | CF_NOSCRIPTSEL),
 		std::to_underlying(GROUP_GENERAL), std::to_underlying(stLogFont));
 
-	const auto pGeneral = new CMFCPropertyGridProperty(L"General:");
+	const auto pGeneral = new CHexerPropGridProp(L"General:");
 	for (const auto& it : m_vecGrid) {
 		if (it.ui8Group == std::to_underlying(GROUP_GENERAL)) {
 			pGeneral->AddSubItem(it.pProp);
@@ -642,6 +649,11 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	m_grid.AddProperty(pColors);
 
 	return TRUE;
+}
+
+void CDlgSettingsHexCtrl::OnOK()
+{
+	static_cast<CDialogEx*>(GetParentOwner())->GetDlgItem(IDOK)->SendMessageW(BM_CLICK);
 }
 
 auto CDlgSettingsHexCtrl::OnPropertyDataChanged(WPARAM wParam, LPARAM lParam)->LRESULT
@@ -763,6 +775,7 @@ BOOL CDlgSettings::OnInitDialog()
 	pLayout->AddItem(m_pDlgSettingsGeneral->m_hWnd, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
 	pLayout->AddItem(IDOK, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100), CMFCDynamicLayout::SizeNone());
 	pLayout->AddItem(IDCANCEL, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100), CMFCDynamicLayout::SizeNone());
+	pLayout->AddItem(IDC_SETTINGS_APPLY, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100), CMFCDynamicLayout::SizeNone());
 	pLayout->AddItem(IDC_SETTINGS_DEFS, CMFCDynamicLayout::MoveVertical(100), CMFCDynamicLayout::SizeNone());
 
 	SetCurrentTab(ETabs::TAB_GENERAL); //Setting startup tab.

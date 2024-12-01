@@ -71,7 +71,7 @@ private:
 	inline static CFont m_fontMDIClient;
 	CMFCToolBar m_wndToolBar;
 	CWnd* m_pWndMBtnCurrDown { };
-	CHexerDockablePane m_paneFileInfo;
+	CHexerDockablePane m_paneDataInfo;
 	CHexerDockablePane m_paneBkmMgr;
 	CHexerDockablePane m_paneDataInterp;
 	CHexerDockablePane m_paneTemplMgr;

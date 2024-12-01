@@ -295,7 +295,7 @@ auto CMainFrame::GetPanesMap()->const std::unordered_map<UINT, CHexerDockablePan
 {
 	//PaneID <-> CHexerDockablePane* correspondence.
 	static const std::unordered_map<UINT, CHexerDockablePane*> umapPanes {
-		{ IDC_PANE_DATAINFO, &m_paneFileInfo }, { IDC_PANE_BKMMGR, &m_paneBkmMgr },
+		{ IDC_PANE_DATAINFO, &m_paneDataInfo }, { IDC_PANE_BKMMGR, &m_paneBkmMgr },
 		{ IDC_PANE_DATAINTERP, &m_paneDataInterp }, { IDC_PANE_TEMPLMGR, &m_paneTemplMgr },
 		{ IDC_PANE_LOGGER, &m_paneLogInfo }
 	};
@@ -320,7 +320,9 @@ bool CMainFrame::HasChildFrame()
 void CMainFrame::HideAllPanes()
 {
 	for (const auto [uKey, pPane] : GetPanesMap()) {
-		pPane->ShowPane(FALSE, FALSE, FALSE);
+		if (::IsWindow(pPane->m_hWnd)) {
+			pPane->ShowPane(FALSE, FALSE, FALSE);
+		}
 	}
 }
 
@@ -375,7 +377,7 @@ void CMainFrame::OnClose()
 	m_fClosing = true;
 	SavePanesSettings();   //It's called either here or in the OnChildFrameCloseLast.
 	SaveHexCtrlSettings(); //It's called either here or in the OnChildFrameCloseLast.
-	HideAllPanes(); //To disable panes from showing at the next app's start-up.
+	HideAllPanes();        //To disable panes from show up at the next app's launch.
 
 	CMDIFrameWndEx::OnClose();
 }
@@ -440,13 +442,13 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	CDockingManager::SetDockingMode(DT_SMART); //enable Visual Studio 2005 style docking window behavior
 	EnableAutoHidePanes(CBRS_ALIGN_ANY);	   //enable Visual Studio 2005 style docking window auto-hide behavior
 
-	//Pane "File Properties".
+	//Pane "Data Info".
 	CStringW strStr;
 	strStr.LoadStringW(IDC_PANE_DATAINFO);
-	m_paneFileInfo.Create(strStr, this, CRect(0, 0, 200, 400), TRUE, IDC_PANE_DATAINFO,
+	m_paneDataInfo.Create(strStr, this, CRect(0, 0, 200, 400), TRUE, IDC_PANE_DATAINFO,
 		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_RIGHT | CBRS_FLOAT_MULTI);
-	m_paneFileInfo.EnableDocking(CBRS_ALIGN_ANY);
-	DockPane(&m_paneFileInfo);
+	m_paneDataInfo.EnableDocking(CBRS_ALIGN_ANY);
+	DockPane(&m_paneDataInfo);
 
 	//Pane "Bookmark Manager".
 	strStr.LoadStringW(IDC_PANE_BKMMGR);
@@ -492,7 +494,7 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 	//Now we will recieve WM_LBUTTONDBLCLK messages for m_hWndMDIClient window.
 	WNDCLASSEXW wndClass { };
 	if (!::GetClassInfoExW(AfxGetInstanceHandle(), L"MdiClient", &wndClass)) {
-		MessageBoxW(L"GetClassInfo(MdiClient) failed");
+		MessageBoxW(L"GetClassInfoExW(MdiClient) failed");
 		return FALSE;
 	}
 
@@ -709,8 +711,8 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	const auto pDC = CDC::FromHandle(::GetDC(hWnd));
 	const auto iWidthNew = LOWORD(lParam);
 	auto iFontSizeMin = 10;
-	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, Ut::GetHiDPIInfo().iLOGPIXELSY, 72) }, .lfPitchAndFamily { FIXED_PITCH },
-		.lfFaceName { L"Consolas" } };
+	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, Ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
+		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } };
 
 	m_fontMDIClient.DeleteObject();
 	m_fontMDIClient.CreateFontIndirectW(&lf);

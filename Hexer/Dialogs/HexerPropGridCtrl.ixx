@@ -1,6 +1,7 @@
 module;
 #include <SDKDDKVer.h>
 #include <afxcontrolbars.h>
+#include <format>
 #include <string>
 #include <unordered_map>
 export module HexerPropGridCtrl;
@@ -25,6 +26,7 @@ export class CHexerPropGridProp final : public CMFCPropertyGridProperty {
 public:
 	using CMFCPropertyGridProperty::CMFCPropertyGridProperty; //All base class ctors.
 	BOOL AddOptionEx(LPCWSTR lpszOption, DWORD_PTR dwData);
+	auto FormatProperty() -> CString override;
 	void OnDrawValue(CDC* pDC, CRect rect)override;
 	void SetValueColor(COLORREF clr);
 	void SetValueFromData(DWORD_PTR dwData);
@@ -40,6 +42,20 @@ BOOL CHexerPropGridProp::AddOptionEx(LPCWSTR lpszOption, DWORD_PTR dwData)
 	m_umapData[lpszOption] = dwData;
 	return CMFCPropertyGridProperty::AddOption(lpszOption, TRUE);
 }
+
+auto CHexerPropGridProp::FormatProperty()->CString
+{
+	//Formatting output string for floats and doubles.
+	switch (GetValue().vt) {
+	case VT_R4: //float.
+		return std::format(L"{:.2f}", GetValue().fltVal).data();
+	case VT_R8: //double.
+		return std::format(L"{:.2f}", GetValue().dblVal).data();
+	default:
+		return CMFCPropertyGridProperty::FormatProperty();
+	}
+}
+
 
 void CHexerPropGridProp::OnDrawValue(CDC* pDC, CRect rect)
 {
