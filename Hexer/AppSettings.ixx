@@ -304,13 +304,13 @@ public:
 		PANESTATUS    stPSTemplMgr { };          //Pane status for the "Template Manager".
 		PANESTATUS    stPSLogInfo { };           //Pane status for the "Log Information".
 	};
-	enum class EStartup :std::uint8_t {
-		DO_NOTHING, RESTORE_LAST_OPENED, SHOW_FOD
+	enum class EOnStartup :std::uint8_t {
+		DO_NOTHING, RESTORE_LAST_OPENED, SHOW_NEW_FILE, SHOW_OPEN_FILE, SHOW_OPEN_DEVICE, SHOW_OPEN_PROC
 	};
 	struct GENERALSETTINGS {
 		bool            fMultipleInst { }; //0-Single, 1-Multiple.
 		DWORD           dwRFLSize { };
-		EStartup        eStartup { };
+		EOnStartup        eOnStartup { };
 		Ut::DATAACCESS  stDAC { };
 		Ut::EDataIOMode eDataIOMode { };
 		bool            fWindowsMenu { }; //1-Show, 0-Don't show.
@@ -498,7 +498,7 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 		regSettings.QueryDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
 		DWORD dwStartup { };
 		regSettings.QueryDWORDValue(L"GeneralStartup", dwStartup);
-		refGeneral.eStartup = static_cast<EStartup>(dwStartup);
+		refGeneral.eOnStartup = static_cast<EOnStartup>(dwStartup);
 		DWORD dwWindowsMenu { };
 		regSettings.QueryDWORDValue(L"GeneralWindowsMenu", dwWindowsMenu);
 		refGeneral.fWindowsMenu = dwWindowsMenu;
@@ -680,7 +680,7 @@ void CAppSettings::SaveSettings()
 	const auto& refGeneral = GetGeneralSettings();
 	regSettings.SetDWORDValue(L"GeneralInstances", refGeneral.fMultipleInst);
 	regSettings.SetDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
-	regSettings.SetDWORDValue(L"GeneralStartup", std::to_underlying(refGeneral.eStartup));
+	regSettings.SetDWORDValue(L"GeneralStartup", std::to_underlying(refGeneral.eOnStartup));
 	regSettings.SetDWORDValue(L"GeneralWindowsMenu", refGeneral.fWindowsMenu);
 	regSettings.SetDWORDValue(L"GeneralDataAccess", refGeneral.stDAC);
 	regSettings.SetDWORDValue(L"GeneralDataIOMode", std::to_underlying(refGeneral.eDataIOMode));
@@ -885,7 +885,7 @@ auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 
 auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
 {
-	static const GENERALSETTINGS defs { .fMultipleInst { false }, .dwRFLSize { 20 }, .eStartup { EStartup::DO_NOTHING },
+	static const GENERALSETTINGS defs { .fMultipleInst { false }, .dwRFLSize { 20 }, .eOnStartup { EOnStartup::DO_NOTHING },
 		.stDAC { 0 }, .eDataIOMode { Ut::EDataIOMode::DATA_MMAP }, .fWindowsMenu { false } };
 	return defs;
 }

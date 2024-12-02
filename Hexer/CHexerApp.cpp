@@ -349,7 +349,7 @@ BOOL CHexerApp::InitInstance()
 	//One when no child windows is opened, and one when any child window is opened.
 
 	const auto pMainFrame = new CMainFrame;
-	pMainFrame->LoadFrame(IDR_HEXER_FRAME); //Also used in the CMainFrame::PreCreateWindow.
+	pMainFrame->LoadFrame(IDR_HEXER_FRAME); //IDR_HEXER_FRAME is also used in the CMainFrame::PreCreateWindow.
 	m_pMainWnd = pMainFrame;
 	Ut::SetMainWnd(pMainFrame->m_hWnd);
 
@@ -378,15 +378,30 @@ BOOL CHexerApp::InitInstance()
 	//So that if we restore Last Opened Files and at the same time it was a file drop
 	//on a shortcut, the file dropped will de opened in the last tab.
 	const auto& refGeneral = GetAppSettings().GetGeneralSettings();
-	switch (refGeneral.eStartup) {
-	case CAppSettings::EStartup::DO_NOTHING:
+	switch (refGeneral.eOnStartup) {
+	case CAppSettings::EOnStartup::DO_NOTHING:
 		break;
-	case CAppSettings::EStartup::SHOW_FOD:
+	case CAppSettings::EOnStartup::SHOW_NEW_FILE:
+		if (!fHDROP) { //Not showing dialog if it was a drop.
+			OnFileNewFile();
+		}
+		break;
+	case CAppSettings::EOnStartup::SHOW_OPEN_FILE:
 		if (!fHDROP) { //Not showing dialog if it was a drop.
 			OnFileOpenFile();
 		}
 		break;
-	case CAppSettings::EStartup::RESTORE_LAST_OPENED:
+	case CAppSettings::EOnStartup::SHOW_OPEN_DEVICE:
+		if (!fHDROP) {
+			OnFileOpenDevice();
+		}
+		break;
+	case CAppSettings::EOnStartup::SHOW_OPEN_PROC:
+		if (!fHDROP) {
+			OnFileOpenProcess();
+		}
+		break;
+	case CAppSettings::EOnStartup::RESTORE_LAST_OPENED:
 		for (const auto& ref : GetAppSettings().GetLastOpenedList()) {
 			OpenDocumentCustom(ref);
 		}

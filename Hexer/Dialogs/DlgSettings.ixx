@@ -172,7 +172,7 @@ enum class CDlgSettingsGeneral::EGroup : std::uint8_t {
 };
 
 enum class CDlgSettingsGeneral::EName : std::uint8_t {
-	fMultipleInst, dwRFLSize, eStartup, fWindowsMenu, stDAC, eDataIOMode
+	fMultipleInst, dwRFLSize, eOnStartup, fWindowsMenu, stDAC, eDataIOMode
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsGeneral, CDialogEx)
@@ -194,7 +194,7 @@ void CDlgSettingsGeneral::ResetToDefaults()
 	const auto& refDefs = CAppSettings::GetGeneralDefs();
 	SetPropOptValueByData(std::to_underlying(fMultipleInst), refDefs.fMultipleInst);
 	SetPropValueDWORD(std::to_underlying(dwRFLSize), refDefs.dwRFLSize);
-	SetPropOptValueByData(std::to_underlying(eStartup), std::to_underlying(refDefs.eStartup));
+	SetPropOptValueByData(std::to_underlying(eOnStartup), std::to_underlying(refDefs.eOnStartup));
 	SetPropOptValueByData(std::to_underlying(fWindowsMenu), refDefs.fWindowsMenu);
 	SetPropOptValueByData(std::to_underlying(stDAC), refDefs.stDAC);
 	SetPropOptValueByData(std::to_underlying(eDataIOMode), std::to_underlying(refDefs.eDataIOMode));
@@ -212,7 +212,7 @@ void CDlgSettingsGeneral::SaveSettings()
 	auto& refSett = m_pAppSettings->GetGeneralSettings();
 	refSett.fMultipleInst = GetPropOptDataDWORD(std::to_underlying(fMultipleInst));
 	refSett.dwRFLSize = GetPropValueDWORD(std::to_underlying(dwRFLSize));
-	refSett.eStartup = static_cast<CAppSettings::EStartup>(GetPropOptDataDWORD(std::to_underlying(eStartup)));
+	refSett.eOnStartup = static_cast<CAppSettings::EOnStartup>(GetPropOptDataDWORD(std::to_underlying(eOnStartup)));
 	refSett.fWindowsMenu = GetPropOptDataDWORD(std::to_underlying(fWindowsMenu));
 	refSett.stDAC = GetPropOptDataDWORD(std::to_underlying(stDAC));
 	refSett.eDataIOMode = static_cast<Ut::EDataIOMode>(GetPropOptDataDWORD(std::to_underlying(eDataIOMode)));
@@ -273,12 +273,15 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	pPropInst->AllowEdit(FALSE);
 
 	const auto& refStartup = m_vecGrid.emplace_back(new CHexerPropGridProp(L"On Startup:", L""),
-		std::to_underlying(GROUP_GENERAL), std::to_underlying(eStartup));
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(eOnStartup));
 	const auto pPropStartup = static_cast<CHexerPropGridProp*>(refStartup.pProp);
-	pPropStartup->AddOptionEx(L"Do Nothing", std::to_underlying(CAppSettings::EStartup::DO_NOTHING));
-	pPropStartup->AddOptionEx(L"Restore Last Opened Files", std::to_underlying(CAppSettings::EStartup::RESTORE_LAST_OPENED));
-	pPropStartup->AddOptionEx(L"Show File Open Dialog", std::to_underlying(CAppSettings::EStartup::SHOW_FOD));
-	pPropStartup->SetValueFromData(std::to_underlying(refSett.eStartup));
+	pPropStartup->AddOptionEx(L"Do Nothing", std::to_underlying(CAppSettings::EOnStartup::DO_NOTHING));
+	pPropStartup->AddOptionEx(L"Restore Last Opened Files", std::to_underlying(CAppSettings::EOnStartup::RESTORE_LAST_OPENED));
+	pPropStartup->AddOptionEx(L"Show New File Dialog", std::to_underlying(CAppSettings::EOnStartup::SHOW_NEW_FILE));
+	pPropStartup->AddOptionEx(L"Show Open File Dialog", std::to_underlying(CAppSettings::EOnStartup::SHOW_OPEN_FILE));
+	pPropStartup->AddOptionEx(L"Show Open Device Dialog", std::to_underlying(CAppSettings::EOnStartup::SHOW_OPEN_DEVICE));
+	pPropStartup->AddOptionEx(L"Show Open Process Dialog", std::to_underlying(CAppSettings::EOnStartup::SHOW_OPEN_PROC));
+	pPropStartup->SetValueFromData(std::to_underlying(refSett.eOnStartup));
 	pPropStartup->AllowEdit(FALSE);
 
 	const auto& refRFLSize = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Recent Files List Size:",

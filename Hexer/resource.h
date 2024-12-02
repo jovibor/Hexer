@@ -4,7 +4,7 @@
 //
 #define IDD_ABOUTBOX                    100
 #define IDD_OPENDEVICE                  101
-#define IDD_OPENDISK                    102
+#define IDD_OPENDRIVE                   102
 #define IDD_OPENVOLUME                  103
 #define IDD_OPENPATH                    104
 #define IDD_OPENPROCESS                 105
@@ -29,8 +29,8 @@
 #define IDC_NEWFILE_EDIT_PATH           305
 #define IDC_NEWFILE_BTN_BROWSE          306
 #define IDC_OPENDEVICE_TAB              307
-#define IDC_OPENDISK_LIST_DISKS         308
-#define IDC_OPENVOLUME_LIST_VOLUMES     309
+#define IDC_OPENDRIVE_LIST              308
+#define IDC_OPENVOLUME_LIST             309
 #define IDC_OPENPATH_COMBO_PATH         310
 #define IDC_PANE_DATAINFO               311
 #define IDC_PANE_BKMMGR                 312

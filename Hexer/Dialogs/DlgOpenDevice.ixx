@@ -9,7 +9,9 @@ module;
 #include "resource.h"
 #include <afxdialogex.h>
 #include <Wbemidl.h>
+#include <algorithm>
 #include <comutil.h>
+#include <winioctl.h>
 #include <format>
 #include <memory>
 #include <ranges>
@@ -23,7 +25,7 @@ import Utility;
 
 //CDlgOpenDisk.
 
-class CDlgOpenDisk final : public CDialogEx {
+class CDlgOpenDrive final : public CDialogEx {
 	enum class EBusType :std::uint16_t {
 		TYPE_Unknown = 0, TYPE_SCSI = 1, TYPE_ATAPI = 2, TYPE_ATA = 3, TYPE_1394 = 4, TYPE_SSA = 5, TYPE_Fibre_Channel = 6,
 		TYPE_USB = 7, RAID = 8, TYPE_iSCSI = 9, TYPE_SAS = 10, TYPE_SATA = 11, TYPE_SD = 12, TYPE_MMC = 13,
@@ -44,13 +46,9 @@ class CDlgOpenDisk final : public CDialogEx {
 	enum class EMediaType :std::uint16_t {
 		TYPE_Unspecified = 0, TYPE_HDD = 3, TYPE_SSD = 4, TYPE_SCM = 5
 	};
-	const std::unordered_map<EMediaType, std::wstring_view> m_mapMediaType {
-		{ EMediaType::TYPE_Unspecified, L"Unspecified" }, { EMediaType::TYPE_HDD, L"HDD" },
-		{ EMediaType::TYPE_SSD, L"SSD" }, { EMediaType::TYPE_SCM, L"SCM" }
-	};
-	struct PHYSICALDISK {
+	struct PHYSICALDRIVE {
 		std::wstring  wstrFriendlyName;
-		std::wstring  wstrPath;
+		std::wstring  wstrDrivePath;
 		std::uint64_t ullSize { };
 		EBusType      eBusType { };
 		EMediaType    eMediaType { };
@@ -66,25 +64,25 @@ private:
 	afx_msg void OnListDblClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP();
-	[[nodiscard]] static auto GetPhysicalDisks(IWbemServices* pWbemServices) -> std::vector<PHYSICALDISK>;
+	[[nodiscard]] static auto GetPhysicalDrives(IWbemServices* pWbemServices) -> std::vector<PHYSICALDRIVE>;
 private:
-	CListCtrl m_list;
+	lex::IListExPtr m_pList { lex::CreateListEx() };
 	IWbemServices* m_pWbemServices { };
-	std::vector<PHYSICALDISK> m_vecPhysicalDisks;
+	std::vector<PHYSICALDRIVE> m_vecPhysicalDrives;
 	std::vector<std::wstring> m_vecPaths; //Paths to open.
 };
 
-BEGIN_MESSAGE_MAP(CDlgOpenDisk, CDialogEx)
-	ON_NOTIFY(NM_DBLCLK, IDC_OPENDISK_LIST_DISKS, &CDlgOpenDisk::OnListDblClick)
-	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENDISK_LIST_DISKS, &CDlgOpenDisk::OnListItemChanged)
+BEGIN_MESSAGE_MAP(CDlgOpenDrive, CDialogEx)
+	ON_NOTIFY(NM_DBLCLK, IDC_OPENDRIVE_LIST, &CDlgOpenDrive::OnListDblClick)
+	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENDRIVE_LIST, &CDlgOpenDrive::OnListItemChanged)
 END_MESSAGE_MAP()
 
-auto CDlgOpenDisk::GetPaths()->std::vector<std::wstring>&
+auto CDlgOpenDrive::GetPaths()->std::vector<std::wstring>&
 {
 	return m_vecPaths;
 }
 
-void CDlgOpenDisk::SetIWbemServices(IWbemServices* pWbemServices)
+void CDlgOpenDrive::SetIWbemServices(IWbemServices* pWbemServices)
 {
 	m_pWbemServices = pWbemServices;
 }
@@ -92,49 +90,53 @@ void CDlgOpenDisk::SetIWbemServices(IWbemServices* pWbemServices)
 
 //CDlgOpenDisk Private methods.
 
-void CDlgOpenDisk::DoDataExchange(CDataExchange* pDX)
+void CDlgOpenDrive::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_OPENDISK_LIST_DISKS, m_list);
 }
 
-BOOL CDlgOpenDisk::OnInitDialog()
+BOOL CDlgOpenDrive::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_list.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	m_list.InsertColumn(0, L"Disk", 0, 150);
-	m_list.InsertColumn(1, L"Size", 0, 70);
-	m_list.InsertColumn(2, L"Path", 0, 120);
-	m_list.InsertColumn(3, L"Media Type", 0, 80);
-	m_list.InsertColumn(4, L"Bus Type", 0, 100);
+	const std::unordered_map<EMediaType, std::wstring_view> umapMediaType {
+		{ EMediaType::TYPE_Unspecified, L"Unspecified" }, { EMediaType::TYPE_HDD, L"HDD" },
+		{ EMediaType::TYPE_SSD, L"SSD" }, { EMediaType::TYPE_SCM, L"SCM" }
+	};
 
-	m_vecPhysicalDisks = GetPhysicalDisks(m_pWbemServices);
+	m_pList->Create({ .pParent { this }, .uID { IDC_OPENDRIVE_LIST }, .dwWidthGrid { 0 }, .fDialogCtrl { true } });
+	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	m_pList->InsertColumn(0, L"Drive Name", 0, 150);
+	m_pList->InsertColumn(1, L"Size", 0, 70);
+	m_pList->InsertColumn(2, L"Path", 0, 120);
+	m_pList->InsertColumn(3, L"Media Type", 0, 80);
+	m_pList->InsertColumn(4, L"Bus Type", 0, 100);
+	m_vecPhysicalDrives = GetPhysicalDrives(m_pWbemServices);
 
-	for (const auto [idx, disk] : m_vecPhysicalDisks | std::views::enumerate) {
+	for (const auto [idx, disk] : m_vecPhysicalDrives | std::views::enumerate) {
 		const auto iidx = static_cast<int>(idx);
-		m_list.InsertItem(iidx, disk.wstrFriendlyName.data());
-		m_list.SetItemText(iidx, 1, std::format(L"{:.1f} GB", static_cast<double>(disk.ullSize) / 1024 / 1024 / 1024).data());
-		m_list.SetItemText(iidx, 2, disk.wstrPath.data());
-		if (m_mapMediaType.contains(disk.eMediaType)) {
-			m_list.SetItemText(iidx, 3, m_mapMediaType.at(disk.eMediaType).data());
+		m_pList->InsertItem(iidx, disk.wstrFriendlyName.data());
+		m_pList->SetItemText(iidx, 1, std::format(L"{:.1f} GB", static_cast<double>(disk.ullSize) / 1024 / 1024 / 1024).data());
+		m_pList->SetItemText(iidx, 2, disk.wstrDrivePath.data());
+		if (umapMediaType.contains(disk.eMediaType)) {
+			m_pList->SetItemText(iidx, 3, umapMediaType.at(disk.eMediaType).data());
 		}
 
 		if (m_mapBusType.contains(disk.eBusType)) {
-			m_list.SetItemText(iidx, 4, m_mapBusType.at(disk.eBusType).data());
+			m_pList->SetItemText(iidx, 4, m_mapBusType.at(disk.eBusType).data());
 		}
 	}
 
 	return TRUE;
 }
 
-void CDlgOpenDisk::OnOK()
+void CDlgOpenDrive::OnOK()
 {
 	m_vecPaths.clear();
 	int nItem { -1 };
-	for (auto i { 0UL }; i < m_list.GetSelectedCount(); ++i) {
-		nItem = m_list.GetNextItem(nItem, LVNI_SELECTED);
-		m_vecPaths.emplace_back(std::move(m_vecPhysicalDisks.at(nItem).wstrPath));
+	for (auto i { 0UL }; i < m_pList->GetSelectedCount(); ++i) {
+		nItem = m_pList->GetNextItem(nItem, LVNI_SELECTED);
+		m_vecPaths.emplace_back(std::move(m_vecPhysicalDrives.at(nItem).wstrDrivePath));
 	}
 
 	if (!m_vecPaths.empty()) {
@@ -142,12 +144,12 @@ void CDlgOpenDisk::OnOK()
 	}
 }
 
-void CDlgOpenDisk::OnCancel()
+void CDlgOpenDrive::OnCancel()
 {
 	static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDCANCEL);
 }
 
-void CDlgOpenDisk::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+void CDlgOpenDrive::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
 	if (const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 		pNMI->iItem >= 0 && pNMI->iSubItem >= 0) {
@@ -155,12 +157,12 @@ void CDlgOpenDisk::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CDlgOpenDisk::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
+void CDlgOpenDrive::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	GetDlgItem(IDOK)->EnableWindow(m_list.GetSelectedCount() > 0);
+	GetDlgItem(IDOK)->EnableWindow(m_pList->GetSelectedCount() > 0);
 }
 
-auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<PHYSICALDISK>
+auto CDlgOpenDrive::GetPhysicalDrives(IWbemServices* pWbemServices)->std::vector<PHYSICALDRIVE>
 {
 	if (pWbemServices == nullptr) {
 		return { };
@@ -170,7 +172,7 @@ auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<P
 	pWbemServices->ExecQuery(_bstr_t(L"WQL"), _bstr_t(L"SELECT * FROM MSFT_PhysicalDisk"),
 		WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, nullptr, &pMSFT_PhysicalDisk);
 
-	std::vector<PHYSICALDISK> vecRet;
+	std::vector<PHYSICALDRIVE> vecRet;
 	while (pMSFT_PhysicalDisk) {
 		IWbemClassObject* pStorage { };
 		ULONG uRet { 0 };
@@ -178,30 +180,30 @@ auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<P
 			break;
 		}
 
-		PHYSICALDISK stDisk;
+		PHYSICALDRIVE stDrive;
 		VARIANT varFriendlyName;
 		pStorage->Get(L"FriendlyName", 0, &varFriendlyName, nullptr, nullptr);
-		stDisk.wstrFriendlyName = varFriendlyName.bstrVal;
+		stDrive.wstrFriendlyName = varFriendlyName.bstrVal;
 
 		VARIANT varDeviceId;
 		pStorage->Get(L"DeviceId", 0, &varDeviceId, nullptr, nullptr);
-		stDisk.wstrPath = std::wstring { L"\\\\.\\PhysicalDrive" } + varDeviceId.bstrVal;
+		stDrive.wstrDrivePath = std::wstring { L"\\\\.\\PhysicalDrive" } + varDeviceId.bstrVal;
 
 		VARIANT varSize;
 		pStorage->Get(L"Size", 0, &varSize, nullptr, nullptr);
 		if (const auto opt = stn::StrToUInt64(varSize.bstrVal); opt) {
-			stDisk.ullSize = *opt;
+			stDrive.ullSize = *opt;
 		}
 
 		VARIANT varBusType;
 		pStorage->Get(L"BusType", 0, &varBusType, nullptr, nullptr);
-		stDisk.eBusType = static_cast<EBusType>(varBusType.uiVal);
+		stDrive.eBusType = static_cast<EBusType>(varBusType.uiVal);
 
 		VARIANT varMediaType;
 		pStorage->Get(L"MediaType", 0, &varMediaType, nullptr, nullptr);
-		stDisk.eMediaType = static_cast<EMediaType>(varMediaType.uiVal);
+		stDrive.eMediaType = static_cast<EMediaType>(varMediaType.uiVal);
 
-		vecRet.emplace_back(stDisk);
+		vecRet.emplace_back(stDrive);
 		pStorage->Release();
 	}
 
@@ -213,8 +215,9 @@ auto CDlgOpenDisk::GetPhysicalDisks(IWbemServices *pWbemServices)->std::vector<P
 
 class CDlgOpenVolume final : public CDialogEx {
 	struct VOLUME {
+		std::wstring  wstrDrivePath;
 		std::wstring  wstrDriveLetter;
-		std::wstring  wstrPath;
+		std::wstring  wstrVolumePath;
 		std::wstring  wstrFileSystem;
 		std::wstring  wstrFileSystemLabel;
 		std::wstring  wstrDriveType;
@@ -233,15 +236,15 @@ private:
 	DECLARE_MESSAGE_MAP();
 	[[nodiscard]] static auto GetVolumes(IWbemServices* pWbemServices) -> std::vector<VOLUME>;
 private:
-	CListCtrl m_list;
+	lex::IListExPtr m_pList { lex::CreateListEx() };
 	IWbemServices* m_pWbemServices { };
 	std::vector<VOLUME> m_vecVolumes;
 	std::vector<std::wstring> m_vecPaths; //Paths to open.
 };
 
 BEGIN_MESSAGE_MAP(CDlgOpenVolume, CDialogEx)
-	ON_NOTIFY(NM_DBLCLK, IDC_OPENVOLUME_LIST_VOLUMES, &CDlgOpenVolume::OnListDblClick)
-	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENVOLUME_LIST_VOLUMES, &CDlgOpenVolume::OnListItemChanged)
+	ON_NOTIFY(NM_DBLCLK, IDC_OPENVOLUME_LIST, &CDlgOpenVolume::OnListDblClick)
+	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENVOLUME_LIST, &CDlgOpenVolume::OnListItemChanged)
 END_MESSAGE_MAP()
 
 auto CDlgOpenVolume::GetPaths()->std::vector<std::wstring>&
@@ -260,31 +263,32 @@ void CDlgOpenVolume::SetIWbemServices(IWbemServices* pWbemServices)
 void CDlgOpenVolume::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_OPENVOLUME_LIST_VOLUMES, m_list);
 }
 
 BOOL CDlgOpenVolume::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-
-	m_list.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	m_list.InsertColumn(0, L"Drive", 0, 100);
-	m_list.InsertColumn(1, L"Label", 0, 100);
-	m_list.InsertColumn(2, L"Size", 0, 70);
-	m_list.InsertColumn(3, L"Type", 0, 100);
-	m_list.InsertColumn(4, L"File System", 0, 80);
-	m_list.InsertColumn(5, L"Path", 0, 300);
-
+	m_pList->Create({ .pParent { this }, .uID { IDC_OPENVOLUME_LIST }, .dwWidthGrid { 0 }, .fDialogCtrl { true } });
+	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	m_pList->InsertColumn(0, L"Drive Letter", 0, 80);
+	m_pList->InsertColumn(1, L"Physically In", 0, 110);
+	m_pList->InsertColumn(2, L"Label", 0, 100);
+	m_pList->InsertColumn(3, L"Size", 0, 70);
+	m_pList->InsertColumn(4, L"Drive Type", 0, 80);
+	m_pList->InsertColumn(5, L"File System", 0, 80);
+	m_pList->InsertColumn(6, L"Volume Path", 0, 300);
 	m_vecVolumes = GetVolumes(m_pWbemServices);
+	std::ranges::sort(m_vecVolumes, { }, &VOLUME::wstrDrivePath);
 
-	for (const auto [idx, vol] : m_vecVolumes | std::views::enumerate) {
+	for (const auto& [idx, vol] : m_vecVolumes | std::views::enumerate) {
 		const auto iidx = static_cast<int>(idx);
-		m_list.InsertItem(iidx, vol.wstrDriveLetter.data());
-		m_list.SetItemText(iidx, 1, vol.wstrFileSystemLabel.data());
-		m_list.SetItemText(iidx, 2, std::format(L"{:.1f} GB", static_cast<double>(vol.ullSize) / 1024 / 1024 / 1024).data());
-		m_list.SetItemText(iidx, 3, vol.wstrDriveType.data());
-		m_list.SetItemText(iidx, 4, vol.wstrFileSystem.data());
-		m_list.SetItemText(iidx, 5, vol.wstrPath.data());
+		m_pList->InsertItem(iidx, vol.wstrDriveLetter.data());
+		m_pList->SetItemText(iidx, 1, vol.wstrDrivePath.data());
+		m_pList->SetItemText(iidx, 2, vol.wstrFileSystemLabel.data());
+		m_pList->SetItemText(iidx, 3, std::format(L"{:.1f} GB", static_cast<double>(vol.ullSize) / 1024 / 1024 / 1024).data());
+		m_pList->SetItemText(iidx, 4, vol.wstrDriveType.data());
+		m_pList->SetItemText(iidx, 5, vol.wstrFileSystem.data());
+		m_pList->SetItemText(iidx, 6, vol.wstrVolumePath.data());
 	}
 
 	return TRUE;
@@ -294,9 +298,9 @@ void CDlgOpenVolume::OnOK()
 {
 	m_vecPaths.clear();
 	int nItem { -1 };
-	for (auto i { 0UL }; i < m_list.GetSelectedCount(); ++i) {
-		nItem = m_list.GetNextItem(nItem, LVNI_SELECTED);
-		auto& refPath = m_vecVolumes.at(nItem).wstrPath;
+	for (auto i { 0UL }; i < m_pList->GetSelectedCount(); ++i) {
+		nItem = m_pList->GetNextItem(nItem, LVNI_SELECTED);
+		auto& refPath = m_vecVolumes.at(nItem).wstrVolumePath;
 		if (refPath.ends_with(L'\\')) { //Remove a trailing slash to satisfy CreateFileW.
 			refPath = refPath.substr(0, refPath.size() - 1);
 		}
@@ -324,10 +328,10 @@ void CDlgOpenVolume::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 void CDlgOpenVolume::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	GetDlgItem(IDOK)->EnableWindow(m_list.GetSelectedCount() > 0);
+	GetDlgItem(IDOK)->EnableWindow(m_pList->GetSelectedCount() > 0);
 }
 
-auto CDlgOpenVolume::GetVolumes(IWbemServices *pWbemServices)->std::vector<VOLUME>
+auto CDlgOpenVolume::GetVolumes(IWbemServices* pWbemServices)->std::vector<VOLUME>
 {
 	if (pWbemServices == nullptr) {
 		return { };
@@ -345,42 +349,44 @@ auto CDlgOpenVolume::GetVolumes(IWbemServices *pWbemServices)->std::vector<VOLUM
 			break;
 		}
 
-		VOLUME stDisk;
+		VOLUME stVolume;
 		VARIANT varDriveLetter;
 		pStorage->Get(L"DriveLetter", 0, &varDriveLetter, nullptr, nullptr);
-		stDisk.wstrDriveLetter = std::wstring { varDriveLetter.uiVal } + L":\\";
+		if (varDriveLetter.uiVal > 0) {
+			(stVolume.wstrDriveLetter = static_cast<wchar_t>(varDriveLetter.uiVal)) += L":\\";
+		}
 
 		VARIANT varFileSystemLabel;
 		pStorage->Get(L"FileSystemLabel", 0, &varFileSystemLabel, nullptr, nullptr);
-		stDisk.wstrFileSystemLabel = varFileSystemLabel.bstrVal;
+		stVolume.wstrFileSystemLabel = varFileSystemLabel.bstrVal;
 
 		VARIANT varFileSystem;
 		pStorage->Get(L"FileSystem", 0, &varFileSystem, nullptr, nullptr);
-		stDisk.wstrFileSystem = varFileSystem.bstrVal;
+		stVolume.wstrFileSystem = varFileSystem.bstrVal;
 
 		VARIANT varDriveType;
 		pStorage->Get(L"DriveType", 0, &varDriveType, nullptr, nullptr);
 		switch (varDriveType.uintVal) {
 		case 0:
-			stDisk.wstrDriveType = L"Unknown";
+			stVolume.wstrDriveType = L"Unknown";
 			break;
 		case 1:
-			stDisk.wstrDriveType = L"Invalid Root Path";
+			stVolume.wstrDriveType = L"Invalid Root Path";
 			break;
 		case 2:
-			stDisk.wstrDriveType = L"Removable";
+			stVolume.wstrDriveType = L"Removable";
 			break;
 		case 3:
-			stDisk.wstrDriveType = L"Fixed";
+			stVolume.wstrDriveType = L"Fixed";
 			break;
 		case 4:
-			stDisk.wstrDriveType = L"Remote";
+			stVolume.wstrDriveType = L"Remote";
 			break;
 		case 5:
-			stDisk.wstrDriveType = L"CD-ROM";
+			stVolume.wstrDriveType = L"CD-ROM";
 			break;
 		case 6:
-			stDisk.wstrDriveType = L"RAM Disk";
+			stVolume.wstrDriveType = L"RAM Disk";
 			break;
 		default:
 			break;
@@ -388,16 +394,35 @@ auto CDlgOpenVolume::GetVolumes(IWbemServices *pWbemServices)->std::vector<VOLUM
 
 		VARIANT varPath;
 		pStorage->Get(L"Path", 0, &varPath, nullptr, nullptr);
-		stDisk.wstrPath = varPath.bstrVal;
+		stVolume.wstrVolumePath = varPath.bstrVal;
+
+		bool fwstrPath { false };
+		if (stVolume.wstrVolumePath.back() == L'\\') { //DeviceIoControl doesn't work with paths ending with slash.
+			stVolume.wstrVolumePath.back() = 0; //So temporary change slash to zero.
+			fwstrPath = true;
+		}
+		if (const auto hHandleVol = ::CreateFileW(stVolume.wstrVolumePath.data(),
+			GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr); hHandleVol) {
+			STORAGE_DEVICE_NUMBER stSDN { };
+			auto dwSizeOut = static_cast<DWORD>(sizeof(STORAGE_DEVICE_NUMBER));
+			if (DeviceIoControl(hHandleVol, IOCTL_STORAGE_GET_DEVICE_NUMBER, nullptr, 0, &stSDN,
+				dwSizeOut, &dwSizeOut, nullptr) != FALSE) {
+				stVolume.wstrDrivePath = std::format(L"\\\\.\\PhysicalDrive{}", stSDN.DeviceNumber);
+			}
+			CloseHandle(hHandleVol);
+		}
+		if (fwstrPath) {
+			stVolume.wstrVolumePath.back() = L'\\';
+		}
 
 		VARIANT varSize;
 		pStorage->Get(L"Size", 0, &varSize, nullptr, nullptr);
-		stDisk.ullSize = varSize.ullVal;
+		stVolume.ullSize = varSize.ullVal;
 		if (const auto opt = stn::StrToUInt64(varSize.bstrVal); opt) {
-			stDisk.ullSize = *opt;
+			stVolume.ullSize = *opt;
 		}
 
-		vecRet.emplace_back(stDisk);
+		vecRet.emplace_back(stVolume);
 		pStorage->Release();
 	}
 
@@ -477,7 +502,7 @@ private:
 private:
 	CTabCtrl m_tabMain;
 	CRect m_rcWnd; //Dialog rect to set minimum size in the OnGetMinMaxInfo.
-	std::unique_ptr<CDlgOpenDisk> m_pDlgDisk { std::make_unique<CDlgOpenDisk>() };
+	std::unique_ptr<CDlgOpenDrive> m_pDlgDisk { std::make_unique<CDlgOpenDrive>() };
 	std::unique_ptr<CDlgOpenVolume> m_pDlgVolume { std::make_unique<CDlgOpenVolume>() };
 	std::unique_ptr<CDlgOpenPath> m_pDlgPath { std::make_unique<CDlgOpenPath>() };
 	int m_iCurTab { }; //Current tab. To avoid call m_tabMain.GetCurSel after dialog destroyed.
@@ -526,7 +551,7 @@ BOOL CDlgOpenDevice::OnInitDialog()
 
 	GetWindowRect(m_rcWnd);
 
-	m_tabMain.InsertItem(0, L"Physical Disks");
+	m_tabMain.InsertItem(0, L"Physical Drives");
 	m_tabMain.InsertItem(1, L"Volumes");
 	m_tabMain.InsertItem(3, L"Path");
 	CRect rcTab;
@@ -546,7 +571,7 @@ BOOL CDlgOpenDevice::OnInitDialog()
 	}
 
 	m_pDlgDisk->SetIWbemServices(pWbemServices);
-	m_pDlgDisk->Create(IDD_OPENDISK, this);
+	m_pDlgDisk->Create(IDD_OPENDRIVE, this);
 	m_pDlgDisk->SetWindowPos(nullptr, rcTab.left, rcTab.bottom + 1, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 
 	m_pDlgVolume->SetIWbemServices(pWbemServices);
