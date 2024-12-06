@@ -9,8 +9,10 @@ module;
 #include "resource.h"
 #include "HexCtrl.h"
 #include <afxwin.h>
+#include <winioctl.h>
 #include <compare>
 #include <chrono>
+#include <expected>
 #include <optional>
 #include <string>
 export module Utility;
@@ -83,6 +85,49 @@ export namespace Ut {
 				dwErr > 0 ? dwErr : GetLastError(), 0, pData, static_cast<DWORD>(sSize), nullptr);
 			});
 		return wstr;
+	}
+
+	void ShowLastError(DWORD dwErr = 0) {
+		::MessageBoxW(0, Ut::GetLastErrorWstr(dwErr).data(), 0, 0);
+	}
+
+	[[nodiscard]] auto GetDeviceSize(HANDLE hHandle) -> std::expected<std::uint64_t, int> {
+		DISK_GEOMETRY stGeometry { };
+		if (DeviceIoControl(hHandle, IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &stGeometry, sizeof(stGeometry),
+			nullptr, nullptr) == FALSE) {
+			return std::unexpected(GetLastError());
+		}
+
+		switch (stGeometry.MediaType) {
+		case MEDIA_TYPE::Unknown:
+		case MEDIA_TYPE::RemovableMedia:
+		case MEDIA_TYPE::FixedMedia:
+		{
+			GET_LENGTH_INFORMATION stLengthInfo { };
+			DeviceIoControl(hHandle, IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &stLengthInfo,
+				sizeof(stLengthInfo), nullptr, nullptr);
+			return stLengthInfo.Length.QuadPart;
+		}
+		break;
+		default:
+			return stGeometry.Cylinders.QuadPart * stGeometry.TracksPerCylinder *
+				stGeometry.SectorsPerTrack * stGeometry.BytesPerSector;
+		}
+	}
+
+	[[nodiscard]] auto GetDeviceSize(const wchar_t* pwszPath) -> std::expected<std::uint64_t, int> {
+		//The GENERIC_READ is mandatory for the IOCTL_DISK_GET_LENGTH_INFO to work.
+		//IOCTL_DISK_GET_LENGTH_INFO requires admin elevation for system drives/volumes.
+		const auto hHandle = CreateFileW(pwszPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+			nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		if (hHandle == INVALID_HANDLE_VALUE) {
+			return std::unexpected(GetLastError());
+		}
+
+		const auto u64Size = GetDeviceSize(hHandle);
+		CloseHandle(hHandle);
+
+		return u64Size;
 	}
 
 	struct HIDPIINFO {

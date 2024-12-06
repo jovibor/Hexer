@@ -4,9 +4,9 @@
 //
 #define IDD_ABOUTBOX                    100
 #define IDD_OPENDEVICE                  101
-#define IDD_OPENDRIVE                   102
-#define IDD_OPENVOLUME                  103
-#define IDD_OPENPATH                    104
+#define IDD_OPENDEVICE_DRIVE            102
+#define IDD_OPENDEVICE_VOLUME           103
+#define IDD_OPENDEVICE_PATH             104
 #define IDD_OPENPROCESS                 105
 #define IDD_NEWFILE                     106
 #define IDD_SETTINGS                    107
@@ -29,28 +29,29 @@
 #define IDC_NEWFILE_EDIT_PATH           305
 #define IDC_NEWFILE_BTN_BROWSE          306
 #define IDC_OPENDEVICE_TAB              307
-#define IDC_OPENDRIVE_LIST              308
-#define IDC_OPENVOLUME_LIST             309
-#define IDC_OPENPATH_COMBO_PATH         310
-#define IDC_PANE_DATAINFO               311
-#define IDC_PANE_BKMMGR                 312
-#define IDC_PANE_DATAINTERP             313
-#define IDC_PANE_TEMPLMGR               314
-#define IDC_PANE_LOGGER                 315
-#define IDC_HEXCTRL_MAIN                316
-#define IDC_SETTINGS_TAB                317
-#define IDC_FILEINFO_GRID               318
-#define IDC_LOGINFO_LIST                319
-#define IDC_SETTINGSHEXCTRL_GRID        320
-#define IDC_SETTINGS_DEFS               321
-#define IDC_SETTINGSGENERAL_GRID        322
-#define IDC_ABOUT_STATIC_VERSION        323
-#define IDC_OPENPROCESS_LIST_PROCS      324
-#define IDC_OPENPROCESS_LIST_MODULES    325
-#define IDC_OPENPROCESS_BTN_REFRESH     326
-#define IDC_OPENPROCESS_STAT_INFO       327
-#define IDC_PROCMEMORY_LIST             328
-#define IDC_SETTINGS_APPLY              329
+#define IDC_OPENDEVICE_STATIC_INFO      308
+#define IDC_OPENDRIVE_LIST              309
+#define IDC_OPENVOLUME_LIST             310
+#define IDC_OPENPATH_COMBO_PATH         311
+#define IDC_PANE_DATAINFO               312
+#define IDC_PANE_BKMMGR                 313
+#define IDC_PANE_DATAINTERP             314
+#define IDC_PANE_TEMPLMGR               315
+#define IDC_PANE_LOGGER                 316
+#define IDC_HEXCTRL_MAIN                317
+#define IDC_SETTINGS_TAB                318
+#define IDC_FILEINFO_GRID               319
+#define IDC_LOGINFO_LIST                320
+#define IDC_SETTINGSHEXCTRL_GRID        321
+#define IDC_SETTINGS_DEFS               322
+#define IDC_SETTINGSGENERAL_GRID        323
+#define IDC_ABOUT_STATIC_VERSION        324
+#define IDC_OPENPROCESS_LIST_PROCS      325
+#define IDC_OPENPROCESS_LIST_MODULES    326
+#define IDC_OPENPROCESS_BTN_REFRESH     327
+#define IDC_OPENPROCESS_STAT_INFO       328
+#define IDC_PROCMEMORY_LIST             329
+#define IDC_SETTINGS_APPLY              330
 #define IDM_FILE_RFL00                  32770
 #define IDM_FILE_RFL01                  32771
 #define IDM_FILE_RFL02                  32772
@@ -102,7 +103,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        330
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         330
+#define _APS_NEXT_CONTROL_VALUE         331
 #define _APS_NEXT_SYMED_VALUE           330
 #endif
 #endif

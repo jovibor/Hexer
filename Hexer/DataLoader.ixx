@@ -655,33 +655,21 @@ auto CDataLoader::OpenDevice()->std::expected<void, DWORD>
 	}
 
 	DISK_GEOMETRY stGeometry { };
-	DWORD dwBytesRet { };
-	if (!DeviceIoControl(m_hHandle, IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &stGeometry, sizeof(stGeometry), &dwBytesRet, nullptr)) {
+	if (DeviceIoControl(m_hHandle, IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &stGeometry, sizeof(stGeometry),
+		nullptr, nullptr) == FALSE) {
 		const auto err = GetLastError();
 		LogLastError(L"DeviceIoControl(IOCTL_DISK_GET_DRIVE_GEOMETRY)", err);
 		return std::unexpected(err);
 	}
 
 	m_dwDeviceAlign = stGeometry.BytesPerSector;
-
-	GET_LENGTH_INFORMATION stLengthInfo { };
-	switch (stGeometry.MediaType) {
-	case MEDIA_TYPE::Unknown:
-	case MEDIA_TYPE::RemovableMedia:
-	case MEDIA_TYPE::FixedMedia:
-		if (!DeviceIoControl(m_hHandle, IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &stLengthInfo, sizeof(stLengthInfo), &dwBytesRet, nullptr)) {
-			const auto err = GetLastError();
-			LogLastError(L"DeviceIoControl(IOCTL_DISK_GET_LENGTH_INFO)", err);
-			return std::unexpected(err);
-		}
-		break;
-	default:
-		stLengthInfo.Length.QuadPart = stGeometry.Cylinders.QuadPart * stGeometry.TracksPerCylinder *
-			stGeometry.SectorsPerTrack * stGeometry.BytesPerSector;
-		break;
+	const auto expSize = Ut::GetDeviceSize(m_hHandle);
+	if (!expSize) {
+		LogLastError(L"GetDeviceSize", expSize.error());
+		return std::unexpected(expSize.error());
 	}
 
-	m_stDataSize.QuadPart = stLengthInfo.Length.QuadPart;
+	m_stDataSize.QuadPart = *expSize;
 	m_stDAC.eDataAccessMode = Ut::EDataAccessMode::ACCESS_INPLACE;
 	m_eDataIOMode = Ut::EDataIOMode::DATA_IOIMMEDIATE;
 	InitInternalCache(GetInternalCacheSize(), GetDeviceAlign());
@@ -746,7 +734,8 @@ auto CDataLoader::ReadFileData(const HEXCTRL::HEXDATAINFO& hdi)->HEXCTRL::SpanBy
 	assert(ullSizeAligned >= ullSize);
 	assert((ullSizeAligned - ullOffsetRemainder) >= ullSize);
 
-	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(ullOffsetAligned) } }, nullptr, FILE_BEGIN) == FALSE) {
+	if (SetFilePointerEx(m_hHandle, { .QuadPart { static_cast<LONGLONG>(ullOffsetAligned) } }, nullptr,
+		FILE_BEGIN) == FALSE) {
 		LogLastError(L"SetFilePointerEx");
 		assert(false);
 		return { };

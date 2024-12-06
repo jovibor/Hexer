@@ -676,12 +676,12 @@ public:
 private:
 	enum class ETabs : std::uint8_t; //All the tabs.
 	void DoDataExchange(CDataExchange* pDX)override;
+	auto OnAnyPropertyDataChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	void OnApply();
 	void OnCancel()override;
 	afx_msg void OnDefaults();
 	BOOL OnInitDialog()override;
 	void OnOK()override;
-	auto OnAnyPropertyDataChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg void OnTabSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	void SaveSettings();
 	void SetCurrentTab(ETabs eTab);
@@ -723,6 +723,14 @@ void CDlgSettings::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_SETTINGS_TAB, m_tabMain);
 }
 
+auto CDlgSettings::OnAnyPropertyDataChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
+{
+	GetDlgItem(IDC_SETTINGS_APPLY)->EnableWindow(TRUE);
+	m_fModified = true;
+
+	return TRUE;
+}
+
 void CDlgSettings::OnApply()
 {
 	SaveSettings();
@@ -762,7 +770,7 @@ BOOL CDlgSettings::OnInitDialog()
 
 	//Child dialogs coordinates.
 	const auto iX = rcTab.left;
-	const auto iY = rcTab.bottom;
+	const auto iY = rcTab.bottom + 1;
 	const auto iWidth = rcClient.Width();
 	const auto iHeight = rcOK.top - rcTab.Height() - (rcClient.bottom - rcOK.bottom);
 
@@ -790,14 +798,6 @@ void CDlgSettings::OnOK()
 {
 	SaveSettings();
 	CDialogEx::OnOK();
-}
-
-auto CDlgSettings::OnAnyPropertyDataChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
-{
-	GetDlgItem(IDC_SETTINGS_APPLY)->EnableWindow(TRUE);
-	m_fModified = true;
-
-	return TRUE;
 }
 
 void CDlgSettings::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
