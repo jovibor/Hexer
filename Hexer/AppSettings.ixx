@@ -34,6 +34,7 @@ public:
 	void Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess,
 		const std::wstring& wstrRegAppPath);
 	void RemoveFromList(const Ut::DATAOPEN& dos);
+	void SetRFLSize(DWORD dwRFLSize);
 	void SaveSettings();
 	[[nodiscard]] static void AddToListBeginning(const Ut::DATAOPEN& dos, VecDataOpen& vecData);
 	[[nodiscard]] static auto ReadRegData(const wchar_t* pwszRegPath) -> VecDataOpen;
@@ -42,13 +43,13 @@ private:
 	[[nodiscard]] auto GetRegRFLPath()const->const wchar_t*;
 	void RebuildRFLMenu();
 private:
-	VecDataOpen m_vecRFL; //Recent Files List data.
+	VecDataOpen m_vecRFL;      //Recent Files List data.
 	const wchar_t* m_pwszRFLRegPath { };
 	HMENU m_hMenu { };
 	HBITMAP m_hBMPFile { };    //Bitmap for file icon.
 	HBITMAP m_hBMPDevice { };  //Bitmap for device icon.
 	HBITMAP m_hBMPProcess { }; //Bitmap for process icon.
-	int m_iMaxEntry { };
+	DWORD m_dwRFLSize { };     //RFL maximum size.
 	int m_iIDMenuFirst { };
 	bool m_fInit { };
 };
@@ -56,9 +57,8 @@ private:
 void CAppSettingsRFL::AddToList(const Ut::DATAOPEN& dos)
 {
 	AddToListBeginning(dos, m_vecRFL);
-
-	if (m_vecRFL.size() > m_iMaxEntry) {
-		m_vecRFL.resize(m_iMaxEntry);
+	if (m_vecRFL.size() > m_dwRFLSize) {
+		m_vecRFL.resize(m_dwRFLSize);
 	}
 
 	RebuildRFLMenu();
@@ -87,13 +87,16 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
 
 	m_hMenu = hMenu;
 	m_iIDMenuFirst = iIDMenuFirst;
-	m_iMaxEntry = std::clamp(iMaxEntry, 0, 20);
+	m_dwRFLSize = std::clamp(iMaxEntry, 0, 20);
 	m_hBMPFile = hBMPFile;
 	m_hBMPDevice = hBMPDevice;
 	m_hBMPProcess = hBMPProcess;
 	m_pwszRFLRegPath = wstrRFLRegPath.data();
 	m_fInit = true;
 	m_vecRFL = ReadRegData(GetRegRFLPath());
+	if (m_vecRFL.size() > m_dwRFLSize) {
+		m_vecRFL.resize(m_dwRFLSize);
+	}
 
 	RebuildRFLMenu();
 }
@@ -106,6 +109,18 @@ void CAppSettingsRFL::RemoveFromList(const Ut::DATAOPEN& dos)
 
 	std::erase_if(m_vecRFL, [&dos](const Ut::DATAOPEN& refData) { return refData == dos; });
 	RebuildRFLMenu();
+}
+
+void CAppSettingsRFL::SetRFLSize(DWORD dwRFLSize)
+{
+	assert(m_fInit);
+	if (!m_fInit)
+		return;
+
+	m_dwRFLSize = dwRFLSize;
+	if (m_vecRFL.size() > m_dwRFLSize) {
+		m_vecRFL.resize(m_dwRFLSize);
+	}
 }
 
 void CAppSettingsRFL::SaveSettings()
@@ -150,18 +165,19 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 		DWORD dwDataSize { MAX_PATH * sizeof(wchar_t) };
 		iCode = RegEnumValueW(reg, dwIndex, buffName, &dwNameSize, nullptr, &dwDataType,
 			reinterpret_cast<LPBYTE>(&buffData), &dwDataSize);
+
 		if (iCode == ERROR_SUCCESS && dwDataType == REG_SZ) {
 			const auto wsvName = std::wstring_view { buffName };
+
 			using enum Ut::EOpenMode;
-			Ut::EOpenMode eOpenMode { OPEN_FILE }; //Default;
+			Ut::EOpenMode eOpenMode { };
 			if (const auto it = wsvName.find(L':'); it != std::wstring_view::npos) {
 				const auto wsvMode = wsvName.substr(it + 1);
-				if (wsvMode == L"Device") {
-					eOpenMode = OPEN_DEVICE;
-				}
-				else if (wsvMode == L"Process") {
-					eOpenMode = OPEN_PROC;
-				}
+				const auto optEOpenMode = Ut::GetEOpenModeWstr(wsvMode);
+				if (!optEOpenMode)
+					continue;
+
+				eOpenMode = *optEOpenMode;
 			}
 
 			Ut::DATAOPEN stDOS { .eOpenMode { eOpenMode } };
@@ -171,11 +187,13 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 				if (nID == std::wstring_view::npos) {
 					continue;
 				}
+
 				const auto nIDStart = nID + 3;
 				const auto nIDEnd = wsvData.find(L';', nIDStart);
 				if (nIDEnd == std::wstring_view::npos) {
 					continue;
 				}
+
 				const auto optID = stn::StrToUInt32(wsvData.substr(nIDStart, nIDEnd - nIDStart));
 				if (!optID) {
 					continue;
@@ -186,11 +204,13 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 				if (nName == std::wstring_view::npos) {
 					continue;
 				}
+
 				const auto nNameStart = nName + 5;
 				const auto nNameEnd = wsvData.find(L';', nNameStart);
 				if (nNameEnd == std::wstring_view::npos) {
 					continue;
 				}
+
 				stDOS.wstrDataPath = wsvData.substr(nNameStart, nNameEnd - nNameStart); //Process name.
 			}
 			else {
@@ -245,29 +265,30 @@ void CAppSettingsRFL::RebuildRFLMenu()
 		DeleteMenu(m_hMenu, 0, MF_BYPOSITION); //Removing all RFL menu items.
 	}
 
-	auto iIndex { 0 };
-	for (const auto& ref : m_vecRFL) {
-		if (iIndex >= m_iMaxEntry) //Adding not more than m_iMaxEntry.
+	for (const auto& [idx, refData] : m_vecRFL | std::views::enumerate) {
+		if (idx >= m_dwRFLSize) //Adding not more than m_dwRFLSize.
 			break;
 
 		std::wstring wstrMenu;
-		if (ref.eOpenMode == OPEN_PROC) {
-			wstrMenu = std::format(L"{} {}: {} (ID: {})", iIndex + 1, Ut::GetWstrEOpenMode(ref.eOpenMode), ref.wstrDataPath,
-				ref.dwProcID);
+		if (refData.eOpenMode == OPEN_PROC) {
+			wstrMenu = std::format(L"{} {}: {} (ID: {})", idx + 1, Ut::GetWstrEOpenMode(refData.eOpenMode), refData.wstrDataPath,
+				refData.dwProcID);
 		}
 		else {
-			wstrMenu = std::format(L"{} {}: {}", iIndex + 1, Ut::GetWstrEOpenMode(ref.eOpenMode), ref.wstrDataPath);
+			wstrMenu = std::format(L"{} {}: {}", idx + 1, Ut::GetWstrEOpenMode(refData.eOpenMode), refData.wstrDataPath);
 		}
 
-		const auto iMenuID = m_iIDMenuFirst + iIndex;
-		AppendMenuW(m_hMenu, MF_STRING, iMenuID, wstrMenu.data());
+		const auto uMenuID = static_cast<UINT>(m_iIDMenuFirst + idx);
+		AppendMenuW(m_hMenu, MF_STRING, uMenuID, wstrMenu.data());
 
 		HBITMAP hBmp { };
-		switch (ref.eOpenMode) {
+		switch (refData.eOpenMode) {
 		case OPEN_FILE:
 			hBmp = m_hBMPFile;
 			break;
-		case OPEN_DEVICE:
+		case OPEN_DRIVE:
+		case OPEN_VOLUME:
+		case OPEN_PATH:
 			hBmp = m_hBMPDevice;
 			break;
 		case OPEN_PROC:
@@ -278,9 +299,7 @@ void CAppSettingsRFL::RebuildRFLMenu()
 		}
 
 		const MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBmp } };
-		SetMenuItemInfoW(m_hMenu, iMenuID, FALSE, &mii);
-
-		++iIndex;
+		SetMenuItemInfoW(m_hMenu, uMenuID, FALSE, &mii);
 	}
 }
 
@@ -610,6 +629,7 @@ void CAppSettings::LOLRemoveFromList(const Ut::DATAOPEN& dos)
 void CAppSettings::OnSettingsChanged()
 {
 	ShowInWindowsContextMenu(m_stGeneralData.fWindowsMenu);
+	m_stRFL.SetRFLSize(m_stGeneralData.dwRFLSize);
 }
 
 void CAppSettings::RFLAddToList(const Ut::DATAOPEN& dos)

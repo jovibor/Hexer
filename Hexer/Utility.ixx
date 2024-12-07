@@ -148,7 +148,7 @@ export namespace Ut {
 	}
 
 	enum class EOpenMode : std::uint8_t {
-		OPEN_FILE, OPEN_DEVICE, OPEN_PROC, NEW_FILE
+		OPEN_FILE, OPEN_DRIVE, OPEN_VOLUME, OPEN_PATH, OPEN_PROC, NEW_FILE
 	};
 
 	enum class EDataAccessMode : std::uint8_t {
@@ -188,8 +188,12 @@ export namespace Ut {
 	[[nodiscard]] constexpr auto GetWstrEOpenMode(EOpenMode eOpenMode) {
 		using enum EOpenMode;
 		switch (eOpenMode) {
-		case OPEN_DEVICE:
-			return L"Device";
+		case OPEN_DRIVE:
+			return L"Drive";
+		case OPEN_VOLUME:
+			return L"Volume";
+		case OPEN_PATH:
+			return L"Path";
 		case OPEN_PROC:
 			return L"Process";
 		case OPEN_FILE:
@@ -198,6 +202,22 @@ export namespace Ut {
 		default:
 			return L"";
 		};
+	}
+
+	[[nodiscard]] constexpr auto GetEOpenModeWstr(std::wstring_view wsv) -> std::optional<EOpenMode> {
+		using enum EOpenMode;
+		if (wsv == L"Drive")
+			return OPEN_DRIVE;
+		if (wsv == L"Volume")
+			return OPEN_VOLUME;
+		if (wsv == L"Path")
+			return OPEN_PATH;
+		if (wsv == L"File")
+			return OPEN_FILE;
+		if (wsv == L"Process")
+			return OPEN_PROC;
+
+		return std::nullopt;
 	}
 
 	[[nodiscard]] constexpr auto GetWstrDATAACCESS(DATAACCESS stDAC) {

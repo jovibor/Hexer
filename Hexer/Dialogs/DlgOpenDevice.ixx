@@ -59,7 +59,7 @@ auto CDlgOpenDrive::GetOpenData()const->std::vector<Ut::DATAOPEN>
 	for (auto i { 0UL }; i < m_pList->GetSelectedCount(); ++i) {
 		nItem = m_pList->GetNextItem(nItem, LVNI_SELECTED);
 		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { m_pList->GetItemText(nItem, 2) },
-			.eOpenMode { Ut::EOpenMode::OPEN_DEVICE } });
+			.eOpenMode { Ut::EOpenMode::OPEN_DRIVE } });
 	}
 
 	return vec;
@@ -255,7 +255,7 @@ auto CDlgOpenVolume::GetOpenData()const->std::vector<Ut::DATAOPEN>
 			wstrVolPath = wstrVolPath.substr(0, wstrVolPath.size() - 1);
 		}
 
-		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { std::move(wstrVolPath) }, .eOpenMode { Ut::EOpenMode::OPEN_DEVICE } });
+		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { std::move(wstrVolPath) }, .eOpenMode { Ut::EOpenMode::OPEN_VOLUME } });
 	}
 
 	return vec;
@@ -447,7 +447,7 @@ auto CDlgOpenPath::GetOpenData()->std::vector<Ut::DATAOPEN>
 	CString cstrText;
 	m_stComboPath.GetWindowTextW(cstrText);
 
-	return { Ut::DATAOPEN { .wstrDataPath { cstrText }, .eOpenMode { Ut::EOpenMode::OPEN_DEVICE } } };
+	return { Ut::DATAOPEN { .wstrDataPath { cstrText }, .eOpenMode { Ut::EOpenMode::OPEN_PATH } } };
 }
 
 bool CDlgOpenPath::IsOK()

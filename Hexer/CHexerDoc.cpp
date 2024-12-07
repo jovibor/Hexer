@@ -175,7 +175,9 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 		case OPEN_FILE:
 		case NEW_FILE:
 			return IDB_FILE;
-		case OPEN_DEVICE:
+		case OPEN_DRIVE:
+		case OPEN_VOLUME:
+		case OPEN_PATH:
 			return IDB_DEVICE;
 		case OPEN_PROC:
 			return IDB_PROCESS;
@@ -254,8 +256,10 @@ auto CHexerDoc::GetDocTitle(const Ut::DATAOPEN& dos)->std::wstring
 	}
 
 	switch (dos.eOpenMode) {
-	case OPEN_DEVICE:
-		return std::format(L"{}: {}", Ut::GetWstrEOpenMode(OPEN_DEVICE), dos.wstrDataPath.substr(nName + 1));
+	case OPEN_DRIVE:
+	case OPEN_VOLUME:
+	case OPEN_PATH:
+		return std::format(L"{}: {}", Ut::GetWstrEOpenMode(dos.eOpenMode), dos.wstrDataPath.substr(nName + 1));
 	default:
 		return dos.wstrDataPath.substr(nName + 1);
 	}

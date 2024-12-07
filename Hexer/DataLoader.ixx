@@ -265,7 +265,8 @@ bool CDataLoader::IsDataOKForDASAFE()const
 
 bool CDataLoader::IsDevice()const
 {
-	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_DEVICE;
+	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_DRIVE || m_dos.eOpenMode == Ut::EOpenMode::OPEN_VOLUME
+		|| m_dos.eOpenMode == Ut::EOpenMode::OPEN_PATH;
 }
 
 bool CDataLoader::IsFile()const
@@ -300,7 +301,9 @@ auto CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::DATAACCESS stDAC, Ut::EDataI
 	switch (dos.eOpenMode) {
 	case OPEN_FILE:
 		return OpenFile();
-	case OPEN_DEVICE:
+	case OPEN_DRIVE:
+	case OPEN_VOLUME:
+	case OPEN_PATH:
 		return OpenDevice();
 	case OPEN_PROC:
 		return OpenProcess();
@@ -543,7 +546,9 @@ void CDataLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
 		hdi.spnData = ReadProcData(hdi);
 		break;
 	case OPEN_FILE:
-	case OPEN_DEVICE:
+	case OPEN_DRIVE:
+	case OPEN_VOLUME:
+	case OPEN_PATH:
 	case NEW_FILE:
 		hdi.spnData = ReadFileData(hdi);
 		break;
@@ -591,7 +596,9 @@ void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 {
 	using enum Ut::EOpenMode;
 	switch (m_dos.eOpenMode) {
-	case OPEN_DEVICE:
+	case OPEN_DRIVE:
+	case OPEN_VOLUME:
+	case OPEN_PATH:
 		WriteDeviceData(hdi);
 		break;
 	case OPEN_FILE:
