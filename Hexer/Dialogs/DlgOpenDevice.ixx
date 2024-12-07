@@ -32,7 +32,7 @@ class CDlgOpenDrive final : public CDialogEx {
 		std::wstring  wstrSize;
 	};
 public:
-	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>;
+	[[nodiscard]] auto GetOpenData()const->std::vector<Ut::DATAOPEN>;
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -52,13 +52,14 @@ BEGIN_MESSAGE_MAP(CDlgOpenDrive, CDialogEx)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENDRIVE_LIST, &CDlgOpenDrive::OnListItemChanged)
 END_MESSAGE_MAP()
 
-auto CDlgOpenDrive::GetPaths()->std::vector<std::wstring>
+auto CDlgOpenDrive::GetOpenData()const->std::vector<Ut::DATAOPEN>
 {
-	std::vector<std::wstring> vec;
+	std::vector<Ut::DATAOPEN> vec;
 	int nItem { -1 };
 	for (auto i { 0UL }; i < m_pList->GetSelectedCount(); ++i) {
 		nItem = m_pList->GetNextItem(nItem, LVNI_SELECTED);
-		vec.emplace_back(m_pList->GetItemText(nItem, 2)); //Drive Path column.
+		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { m_pList->GetItemText(nItem, 2) },
+			.eOpenMode { Ut::EOpenMode::OPEN_DEVICE } });
 	}
 
 	return vec;
@@ -223,7 +224,7 @@ class CDlgOpenVolume final : public CDialogEx {
 		std::wstring  wstrDriveType;
 	};
 public:
-	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>;
+	[[nodiscard]] auto GetOpenData()const->std::vector<Ut::DATAOPEN>;
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -243,9 +244,9 @@ BEGIN_MESSAGE_MAP(CDlgOpenVolume, CDialogEx)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENVOLUME_LIST, &CDlgOpenVolume::OnListItemChanged)
 END_MESSAGE_MAP()
 
-auto CDlgOpenVolume::GetPaths()->std::vector<std::wstring>
+auto CDlgOpenVolume::GetOpenData()const->std::vector<Ut::DATAOPEN>
 {
-	std::vector<std::wstring> vec;
+	std::vector<Ut::DATAOPEN> vec;
 	int nItem { -1 };
 	for (auto i { 0UL }; i < m_pList->GetSelectedCount(); ++i) {
 		nItem = m_pList->GetNextItem(nItem, LVNI_SELECTED);
@@ -254,7 +255,7 @@ auto CDlgOpenVolume::GetPaths()->std::vector<std::wstring>
 			wstrVolPath = wstrVolPath.substr(0, wstrVolPath.size() - 1);
 		}
 
-		vec.emplace_back(std::move(wstrVolPath));
+		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { std::move(wstrVolPath) }, .eOpenMode { Ut::EOpenMode::OPEN_DEVICE } });
 	}
 
 	return vec;
@@ -422,7 +423,7 @@ auto CDlgOpenVolume::GetDeviceVolumes()->std::vector<DEVICE_VOLUME>
 
 class CDlgOpenPath final : public CDialogEx {
 public:
-	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>;
+	[[nodiscard]] auto GetOpenData() -> std::vector<Ut::DATAOPEN>;
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -438,17 +439,15 @@ BEGIN_MESSAGE_MAP(CDlgOpenPath, CDialogEx)
 	ON_CBN_EDITUPDATE(IDC_OPENPATH_COMBO_PATH, &CDlgOpenPath::OnComboPathEdit)
 END_MESSAGE_MAP()
 
-auto CDlgOpenPath::GetPaths()->std::vector<std::wstring>
+auto CDlgOpenPath::GetOpenData()->std::vector<Ut::DATAOPEN>
 {
 	if (m_stComboPath.GetWindowTextLengthW() == 0)
 		return { };
 
 	CString cstrText;
 	m_stComboPath.GetWindowTextW(cstrText);
-	std::vector<std::wstring> vec;
-	vec.emplace_back(cstrText);
 
-	return vec;
+	return { Ut::DATAOPEN { .wstrDataPath { cstrText }, .eOpenMode { Ut::EOpenMode::OPEN_DEVICE } } };
 }
 
 bool CDlgOpenPath::IsOK()
@@ -488,7 +487,7 @@ export class CDlgOpenDevice final : public CDialogEx {
 public:
 	CDlgOpenDevice(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENDEVICE, pParent) { }
 	INT_PTR DoModal(int iTab = 0);
-	[[nodiscard]] auto GetPaths() -> std::vector<std::wstring>&;
+	[[nodiscard]] auto GetOpenData()const->const std::vector<Ut::DATAOPEN>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	afx_msg auto OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor) -> HBRUSH;
@@ -496,6 +495,7 @@ private:
 	void OnOK()override;
 	afx_msg void OnTabSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
+	BOOL PreTranslateMessage(MSG* pMsg)override;
 	void SetCurrentTab(int iTab);
 	DECLARE_MESSAGE_MAP();
 private:
@@ -504,8 +504,8 @@ private:
 	std::unique_ptr<CDlgOpenDrive> m_pDlgDrives { std::make_unique<CDlgOpenDrive>() };
 	std::unique_ptr<CDlgOpenVolume> m_pDlgVolumes { std::make_unique<CDlgOpenVolume>() };
 	std::unique_ptr<CDlgOpenPath> m_pDlgPath { std::make_unique<CDlgOpenPath>() };
-	std::vector<std::wstring> m_vecData;
-	int m_iCurTab { }; //Current tab. To avoid call m_tabMain.GetCurSel after dialog destroyed.
+	std::vector<Ut::DATAOPEN> m_vecOpenData;
+	int m_iCurTab { }; //Current tab ID.
 };
 
 
@@ -521,9 +521,9 @@ INT_PTR CDlgOpenDevice::DoModal(int iTab)
 	return CDialogEx::DoModal();
 }
 
-auto CDlgOpenDevice::GetPaths()->std::vector<std::wstring>&
+auto CDlgOpenDevice::GetOpenData()const->const std::vector<Ut::DATAOPEN>&
 {
-	return m_vecData;
+	return m_vecOpenData;
 }
 
 
@@ -604,21 +604,23 @@ void CDlgOpenDevice::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 
 void CDlgOpenDevice::OnOK()
 {
+	m_vecOpenData.clear();
+
 	switch (m_iCurTab) {
 	case 0:
-		m_vecData = m_pDlgDrives->GetPaths();
+		m_vecOpenData = m_pDlgDrives->GetOpenData();
 		break;
 	case 1:
-		m_vecData = m_pDlgVolumes->GetPaths();
+		m_vecOpenData = m_pDlgVolumes->GetOpenData();
 		break;
 	case 2:
-		m_vecData = m_pDlgPath->GetPaths();
+		m_vecOpenData = m_pDlgPath->GetOpenData();
 		break;
 	default:
 		break;
 	}
 
-	if (!m_vecData.empty()) {
+	if (!m_vecOpenData.empty()) {
 		CDialogEx::OnOK();
 	}
 }
@@ -626,6 +628,16 @@ void CDlgOpenDevice::OnOK()
 void CDlgOpenDevice::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
 	SetCurrentTab(m_tabMain.GetCurSel());
+}
+
+BOOL CDlgOpenDevice::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_RETURN) {
+		OnOK(); //To prevent triggering "Cancel" button on Enter press, when "Open" is disabled.
+		return FALSE;
+	}
+
+	return CDialogEx::PreTranslateMessage(pMsg);
 }
 
 void CDlgOpenDevice::SetCurrentTab(int iTab)

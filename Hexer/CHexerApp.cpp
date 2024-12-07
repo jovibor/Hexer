@@ -402,8 +402,8 @@ BOOL CHexerApp::InitInstance()
 		}
 		break;
 	case CAppSettings::EOnStartup::RESTORE_LAST_OPENED:
-		for (const auto& ref : GetAppSettings().GetLastOpenedList()) {
-			OpenDocumentCustom(ref);
+		for (const auto& refData : GetAppSettings().GetLastOpenedList()) {
+			OpenDocumentCustom(refData);
 		}
 		break;
 	default:
@@ -442,15 +442,15 @@ void CHexerApp::OnAppAbout()
 void CHexerApp::OnFileNewFile()
 {
 	if (CDlgNewFile dlg; dlg.DoModal() == IDOK) {
-		OpenDocumentCustom(dlg.GetNewFileInfo());
+		OpenDocumentCustom(dlg.GetOpenData());
 	}
 }
 
 void CHexerApp::OnFileOpenDevice()
 {
 	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
-		for (const auto& wstrPath : dlg.GetPaths()) {
-			OpenDocumentCustom({ .wstrDataPath { wstrPath }, .eOpenMode { Ut::EOpenMode::OPEN_DEVICE } });
+		for (const auto& refData : dlg.GetOpenData()) {
+			OpenDocumentCustom(refData);
 		}
 	}
 }
@@ -458,9 +458,8 @@ void CHexerApp::OnFileOpenDevice()
 void CHexerApp::OnFileOpenProcess()
 {
 	if (CDlgOpenProcess dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
-		for (const auto& ref : dlg.GetProcesses()) {
-			OpenDocumentCustom({ .wstrDataPath { ref.wstrProcName }, .dwProcID { ref.dwProcID },
-				.eOpenMode { Ut::EOpenMode::OPEN_PROC } });
+		for (const auto& refData : dlg.GetOpenData()) {
+			OpenDocumentCustom(refData);
 		}
 	}
 }

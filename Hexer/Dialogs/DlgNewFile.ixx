@@ -17,27 +17,29 @@ import Utility;
 export class CDlgNewFile final : public CDialogEx {
 public:
 	CDlgNewFile(CWnd* pParent = nullptr) : CDialogEx(IDD_NEWFILE, pParent) { }
-	[[nodiscard]] auto GetNewFileInfo()const->const Ut::DATAOPEN&;
+	[[nodiscard]] auto GetOpenData()const->const Ut::DATAOPEN&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
+	[[nodiscard]] bool IsOK()const;
 	BOOL OnInitDialog()override;
 	afx_msg void OnBtnBrowse();
-	afx_msg void OnChangeEditPath();
+	afx_msg void OnChangeEditPathAndSize();
+	void OnOK()override;
 	DECLARE_MESSAGE_MAP();
 private:
-	Ut::DATAOPEN m_stDOS;
-	CEdit m_stEditSize;
-	CEdit m_stEditPath;
 	CComboBox m_stComboMeasure;
-	virtual void OnOK();
+	CEdit m_stEditPath;
+	CEdit m_stEditSize;
+	Ut::DATAOPEN m_stDOS;
 };
 
 BEGIN_MESSAGE_MAP(CDlgNewFile, CDialogEx)
 	ON_BN_CLICKED(IDC_NEWFILE_BTN_BROWSE, &CDlgNewFile::OnBtnBrowse)
-	ON_EN_CHANGE(IDC_NEWFILE_EDIT_PATH, &CDlgNewFile::OnChangeEditPath)
+	ON_EN_CHANGE(IDC_NEWFILE_EDIT_PATH, &CDlgNewFile::OnChangeEditPathAndSize)
+	ON_EN_CHANGE(IDC_NEWFILE_EDIT_SIZE, &CDlgNewFile::OnChangeEditPathAndSize)
 END_MESSAGE_MAP()
 
-auto CDlgNewFile::GetNewFileInfo()const->const Ut::DATAOPEN&
+auto CDlgNewFile::GetOpenData()const->const Ut::DATAOPEN&
 {
 	return m_stDOS;
 }
@@ -48,9 +50,14 @@ auto CDlgNewFile::GetNewFileInfo()const->const Ut::DATAOPEN&
 void CDlgNewFile::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_NEWFILE_EDIT_SIZE, m_stEditSize);
 	DDX_Control(pDX, IDC_NEWFILE_EDIT_PATH, m_stEditPath);
+	DDX_Control(pDX, IDC_NEWFILE_EDIT_SIZE, m_stEditSize);
 	DDX_Control(pDX, IDC_NEWFILE_COMBO_MEASURE, m_stComboMeasure);
+}
+
+bool CDlgNewFile::IsOK()const
+{
+	return (m_stEditPath.GetWindowTextLengthW() > 0) && (m_stEditSize.GetWindowTextLengthW() > 0);
 }
 
 BOOL CDlgNewFile::OnInitDialog()
@@ -83,32 +90,26 @@ void CDlgNewFile::OnBtnBrowse()
 	}
 }
 
-void CDlgNewFile::OnChangeEditPath()
+void CDlgNewFile::OnChangeEditPathAndSize()
 {
-	GetDlgItem(IDOK)->EnableWindow(m_stEditPath.GetWindowTextLengthW() > 0);
+	GetDlgItem(IDOK)->EnableWindow(IsOK());
 }
 
 void CDlgNewFile::OnOK()
 {
-	m_stDOS.eOpenMode = Ut::EOpenMode::NEW_FILE;
-	CStringW wstr;
-	m_stEditPath.GetWindowTextW(wstr);
-	m_stDOS.wstrDataPath = wstr;
-
-	if (m_stEditSize.GetWindowTextLengthW() == 0) {
-		MessageBoxW(L"Enter the file size.", L"Size is empty", MB_ICONEXCLAMATION);
+	CStringW cwstrSize;
+	m_stEditSize.GetWindowTextW(cwstrSize);
+	const auto optSize = stn::StrToUInt64(cwstrSize.GetString());
+	if (!optSize || *optSize == 0) {
+		MessageBoxW(L"Enter correct file size.", L"Incorrect file size", MB_ICONERROR);
 		return;
 	}
 
-	m_stEditSize.GetWindowTextW(wstr);
-	if (const auto opt = stn::StrToUInt64(wstr.GetString()); opt) {
-		if (*opt == 0) {
-			MessageBoxW(L"File size can not be zero.", L"Size is zero", MB_ICONEXCLAMATION);
-			return;
-		}
-
-		m_stDOS.ullSizeNewFile = *opt * m_stComboMeasure.GetItemData(m_stComboMeasure.GetCurSel());
-	}
+	CStringW cwstrPath;
+	m_stEditPath.GetWindowTextW(cwstrPath);
+	m_stDOS.eOpenMode = Ut::EOpenMode::NEW_FILE;
+	m_stDOS.wstrDataPath = cwstrPath;
+	m_stDOS.ullSizeNewFile = *optSize * m_stComboMeasure.GetItemData(m_stComboMeasure.GetCurSel());
 
 	CDialogEx::OnOK();
 }

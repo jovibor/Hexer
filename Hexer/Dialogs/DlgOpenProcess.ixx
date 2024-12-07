@@ -24,7 +24,7 @@ public:
 	struct PROCS;
 	struct MODULES;
 	CDlgOpenProcess(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENPROCESS, pParent) { }
-	[[nodiscard]] auto GetProcesses() -> std::vector<PROCS>&;
+	[[nodiscard]] auto GetOpenData()const->const std::vector<Ut::DATAOPEN>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	void EnableDynamicLayoutHelper(bool fEnable);
@@ -51,8 +51,8 @@ private:
 	lex::IListExPtr m_pListProcs { lex::CreateListEx() };
 	lex::IListExPtr m_pListModules { lex::CreateListEx() };
 	std::vector<PROCS> m_vecProcs;
-	std::vector<PROCS> m_vecProcsToOpen;
 	std::vector<MODULES> m_vecModules;
+	std::vector<Ut::DATAOPEN> m_vecOpenData;
 	std::wstring m_wstrTTProcPath; //Tooltip for process image full path.
 	std::locale m_locale;
 	CButton m_btnOpen;
@@ -87,9 +87,9 @@ BEGIN_MESSAGE_MAP(CDlgOpenProcess, CDialogEx)
 	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
-auto CDlgOpenProcess::GetProcesses()->std::vector<PROCS>&
+auto CDlgOpenProcess::GetOpenData()const->const std::vector<Ut::DATAOPEN>&
 {
-	return m_vecProcsToOpen;
+	return m_vecOpenData;
 }
 
 void CDlgOpenProcess::DoDataExchange(CDataExchange* pDX)
@@ -387,7 +387,7 @@ void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
 	CDialogEx::OnMouseMove(nFlags, point);
 }
 
-BOOL CDlgOpenProcess::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
+BOOL CDlgOpenProcess::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
 	const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
 
@@ -406,13 +406,13 @@ void CDlgOpenProcess::OnOK()
 	if (!m_fProcReady)
 		return;
 
-	m_vecProcsToOpen.clear();
+	m_vecOpenData.clear();
 	int nItem { -1 };
 	for (auto i { 0UL }; i < m_pListProcs->GetSelectedCount(); ++i) {
 		nItem = m_pListProcs->GetNextItem(nItem, LVNI_SELECTED);
 		auto& ref = m_vecProcs[nItem];
-		m_vecProcsToOpen.emplace_back(PROCS { .wstrProcName { std::move(ref.wstrProcName) },
-			.dwProcID { ref.dwProcID }, .dwWorkingSet { ref.dwWorkingSet } });
+		m_vecOpenData.emplace_back(Ut::DATAOPEN { .wstrDataPath { std::move(ref.wstrProcName) },
+			.dwProcID { ref.dwProcID }, .eOpenMode { Ut::EOpenMode::OPEN_PROC } });
 	}
 
 	CDialogEx::OnOK();
