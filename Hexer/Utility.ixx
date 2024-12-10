@@ -1,6 +1,6 @@
 module;
 /*******************************************************************************
-* Copyright © 2023-2024 Jovibor https://github.com/jovibor/                    *
+* Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
@@ -21,7 +21,7 @@ export import StrToNum;
 export namespace stn = HEXCTRL::stn;
 export import ListEx;
 export namespace lex = HEXCTRL::LISTEX;
-static HWND g_hWndMain { };
+HWND g_hWndMain { };
 
 export namespace Ut {
 	constexpr auto HEXER_VERSION_MAJOR = 1;
@@ -88,36 +88,37 @@ export namespace Ut {
 	}
 
 	void ShowLastError(DWORD dwErr = 0) {
-		::MessageBoxW(0, Ut::GetLastErrorWstr(dwErr).data(), 0, 0);
+		::MessageBoxW(nullptr, Ut::GetLastErrorWstr(dwErr).data(), nullptr, 0);
 	}
 
 	[[nodiscard]] auto GetDeviceSize(HANDLE hHandle) -> std::expected<std::uint64_t, int> {
-		DISK_GEOMETRY stGeometry { };
-		if (DeviceIoControl(hHandle, IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &stGeometry, sizeof(stGeometry),
+		DISK_GEOMETRY stDG { };
+		if (DeviceIoControl(hHandle, IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &stDG, sizeof(stDG),
 			nullptr, nullptr) == FALSE) {
 			return std::unexpected(GetLastError());
 		}
 
-		switch (stGeometry.MediaType) {
+		switch (stDG.MediaType) {
 		case MEDIA_TYPE::Unknown:
 		case MEDIA_TYPE::RemovableMedia:
 		case MEDIA_TYPE::FixedMedia:
 		{
-			GET_LENGTH_INFORMATION stLengthInfo { };
-			DeviceIoControl(hHandle, IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &stLengthInfo,
-				sizeof(stLengthInfo), nullptr, nullptr);
-			return stLengthInfo.Length.QuadPart;
+			GET_LENGTH_INFORMATION stLI { };
+			if (DeviceIoControl(hHandle, IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &stLI,
+				sizeof(stLI), nullptr, nullptr) == FALSE) {
+				return std::unexpected(GetLastError());
+			}
+			return stLI.Length.QuadPart;
 		}
-		break;
 		default:
-			return stGeometry.Cylinders.QuadPart * stGeometry.TracksPerCylinder *
-				stGeometry.SectorsPerTrack * stGeometry.BytesPerSector;
+			return stDG.Cylinders.QuadPart * stDG.TracksPerCylinder *
+				stDG.SectorsPerTrack * stDG.BytesPerSector;
 		}
 	}
 
 	[[nodiscard]] auto GetDeviceSize(const wchar_t* pwszPath) -> std::expected<std::uint64_t, int> {
-		//The GENERIC_READ is mandatory for the IOCTL_DISK_GET_LENGTH_INFO to work.
-		//IOCTL_DISK_GET_LENGTH_INFO requires admin elevation for system drives/volumes.
+		//The GENERIC_READ flag is mandatory for the IOCTL_DISK_GET_LENGTH_INFO to work.
+		//The IOCTL_DISK_GET_LENGTH_INFO also requires elevation (Admin access) for some drives/volumes.
 		const auto hHandle = CreateFileW(pwszPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
 			nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 		if (hHandle == INVALID_HANDLE_VALUE) {
@@ -251,7 +252,7 @@ export namespace Ut {
 	}
 
 	[[nodiscard]] auto ResolveLNK(const wchar_t* pwszPath) -> std::wstring {
-		std::wstring_view wsv = pwszPath;
+		const std::wstring_view wsv = pwszPath;
 		if (!wsv.ends_with(L".lnk") && !wsv.ends_with(L".LNK")) {
 			return pwszPath;
 		}
@@ -301,12 +302,12 @@ export namespace Ut {
 	};
 
 	struct DATAINFO { //Data for the CDlgLogger dialog.
-		std::wstring_view wsvDataPath { };
-		std::wstring_view wsvFileName { };
+		std::wstring_view wsvDataPath;
+		std::wstring_view wsvFileName;
 		std::uint64_t     ullDataSize { };
 		std::uint32_t     dwPageSize { };
 		EOpenMode         eOpenMode { };
-		DATAACCESS        stDAC { };
+		DATAACCESS        stDAC;
 		EDataIOMode       eDataIOMode { };
 	};
 

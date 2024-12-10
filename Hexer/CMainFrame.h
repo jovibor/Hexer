@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright © 2023-2024 Jovibor https://github.com/jovibor/                    *
+* Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
@@ -26,6 +26,8 @@ public:
 	[[nodiscard]] bool IsAppClosing()const;
 	[[nodiscard]] bool IsPaneVisible(UINT uPaneID); //Is Pane visible even if pane's window itself is tabbed and hidden atm (not active).
 	[[nodiscard]] bool IsPaneActive(UINT uPaneID);  //Is Pane itself visible atm.
+	BOOL LoadFrame(UINT nIDResource, DWORD dwDefaultStyle = WS_OVERLAPPEDWINDOW | FWS_ADDTOTITLE,
+		CWnd* pParentWnd = NULL, CCreateContext* pContext = NULL)override;
 	void OnChildFrameActivate();
 	void OnChildFrameCloseLast();   //When the last child frame is closed.
 	void OnChildFrameDisactivate();

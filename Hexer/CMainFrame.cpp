@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright © 2023-2024 Jovibor https://github.com/jovibor/                    *
+* Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
@@ -326,6 +326,14 @@ void CMainFrame::HideAllPanes()
 	}
 }
 
+BOOL CMainFrame::LoadFrame(UINT nIDResource, DWORD dwDefaultStyle, CWnd* pParentWnd, CCreateContext* pContext)
+{
+	const auto ret = CMDIFrameWndEx::LoadFrame(nIDResource, dwDefaultStyle, pParentWnd, pContext);
+	HideAllPanes(); //Hide all panes on app's launch.
+
+	return ret;
+}
+
 auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 {
 	AddLogEntry(*reinterpret_cast<Ut::Log::LOGINFO*>(lParam));
@@ -377,7 +385,6 @@ void CMainFrame::OnClose()
 	m_fClosing = true;
 	SavePanesSettings();   //It's called either here or in the OnChildFrameCloseLast.
 	SaveHexCtrlSettings(); //It's called either here or in the OnChildFrameCloseLast.
-	HideAllPanes();        //To disable panes from show up at the next app's launch.
 
 	CMDIFrameWndEx::OnClose();
 }

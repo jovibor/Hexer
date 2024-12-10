@@ -1,6 +1,6 @@
 module;
 /*******************************************************************************
-* Copyright © 2023-2024 Jovibor https://github.com/jovibor/                    *
+* Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
@@ -29,7 +29,7 @@ class CDlgOpenDrive final : public CDialogEx {
 		std::wstring  wstrDrivePath;
 		std::wstring  wstrFriendlyName;
 		std::wstring  wstrBusType;
-		std::wstring  wstrSize;
+		std::uint64_t u64Size { };
 	};
 public:
 	[[nodiscard]] auto GetOpenData()const->std::vector<Ut::DATAOPEN>;
@@ -100,7 +100,7 @@ BOOL CDlgOpenDrive::OnInitDialog()
 	for (const auto& [idx, drive] : vecDrives | std::views::enumerate) {
 		const auto iidx = static_cast<int>(idx);
 		m_pList->InsertItem(iidx, drive.wstrFriendlyName.data());
-		m_pList->SetItemText(iidx, 1, drive.wstrSize.data());
+		m_pList->SetItemText(iidx, 1, std::format(L"{:.2f} GB", static_cast<double>(drive.u64Size) / 1024 / 1024 / 1024).data());
 		m_pList->SetItemText(iidx, 2, drive.wstrDrivePath.data());
 		m_pList->SetItemText(iidx, 3, drive.wstrBusType.data());
 	}
@@ -165,18 +165,18 @@ auto CDlgOpenDrive::GetDeviceDrives()->std::vector<DEVICE_DRIVE>
 		SetupDiGetDeviceInterfaceDetailW(hDevInfo, &stDID, pDIDD, dwSize, nullptr, nullptr);
 		DEVICE_DRIVE stDrive;
 
-		//Get Device info: Number, Size, Bus type.
+		//Get Drive info: Number, Bus type, Size.
 		if (const auto hDevice = CreateFileW(pDIDD->DevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE,
 			nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr); hDevice != INVALID_HANDLE_VALUE) {
 
-			//Device number.
+			//Drive number.
 			if (STORAGE_DEVICE_NUMBER stDevNumber { }; DeviceIoControl(hDevice, IOCTL_STORAGE_GET_DEVICE_NUMBER,
 				nullptr, 0, &stDevNumber, sizeof(stDevNumber), nullptr, nullptr) != FALSE) {
 				stDrive.wstrDrivePath = std::format(L"\\\\.\\PhysicalDrive{}", stDevNumber.DeviceNumber);
 			}
 
-			//Device Bus type.
-			STORAGE_PROPERTY_QUERY stSPQ { .PropertyId = StorageDeviceProperty, .QueryType = PropertyStandardQuery };
+			//Drive Bus type.
+			STORAGE_PROPERTY_QUERY stSPQ { .PropertyId { StorageDeviceProperty }, .QueryType { PropertyStandardQuery } };
 			STORAGE_DEVICE_DESCRIPTOR stSDD { };
 			if (DeviceIoControl(hDevice, IOCTL_STORAGE_QUERY_PROPERTY, &stSPQ, sizeof(stSPQ), &stSDD, sizeof(stSDD),
 				nullptr, nullptr) != FALSE) {
@@ -185,14 +185,12 @@ auto CDlgOpenDrive::GetDeviceDrives()->std::vector<DEVICE_DRIVE>
 				}
 			}
 
-			//Device size.
-			stDrive.wstrSize = std::format(L"{:.1f} GB",
-				static_cast<double>(Ut::GetDeviceSize(stDrive.wstrDrivePath.data()).value_or(0)) / 1024 / 1024 / 1024);
-
+			//Drive size.
+			stDrive.u64Size = Ut::GetDeviceSize(stDrive.wstrDrivePath.data()).value_or(0);
 			CloseHandle(hDevice);
 		}
 
-		//Device pretty/friendly name.
+		//Drive pretty/friendly name.
 		if (SP_DEVINFO_DATA stDD { .cbSize { sizeof(SP_DEVINFO_DATA) } };
 			SetupDiEnumDeviceInfo(hDevInfo, iMemberIndex, &stDD) != FALSE) {
 			wchar_t buffFrendlyName[MAX_PATH];
@@ -219,7 +217,7 @@ class CDlgOpenVolume final : public CDialogEx {
 		std::wstring  wstrMountPoint;
 		std::wstring  wstrFileSystem;
 		std::wstring  wstrLabel;
-		std::wstring  wstrSize;
+		std::uint64_t u64Size { };
 		std::wstring  wstrDrivePath;
 		std::wstring  wstrDriveType;
 	};
@@ -304,7 +302,7 @@ BOOL CDlgOpenVolume::OnInitDialog()
 		m_pList->InsertItem(iidx, vol.wstrMountPoint.data());
 		m_pList->SetItemText(iidx, 1, vol.wstrDrivePath.data());
 		m_pList->SetItemText(iidx, 2, vol.wstrLabel.data());
-		m_pList->SetItemText(iidx, 3, vol.wstrSize.data());
+		m_pList->SetItemText(iidx, 3, std::format(L"{:.2f} GB", static_cast<double>(vol.u64Size) / 1024 / 1024 / 1024).data());
 		m_pList->SetItemText(iidx, 4, vol.wstrDriveType.data());
 		m_pList->SetItemText(iidx, 5, vol.wstrFileSystem.data());
 		m_pList->SetItemText(iidx, 6, vol.wstrVolumePath.data());
@@ -405,8 +403,7 @@ auto CDlgOpenVolume::GetDeviceVolumes()->std::vector<DEVICE_VOLUME>
 		}
 
 		//Volume size.
-		stVolume.wstrSize = std::format(L"{:.1f} GB",
-				static_cast<double>(Ut::GetDeviceSize(stVolume.wstrVolumePath.data()).value_or(0)) / 1024 / 1024 / 1024);
+		stVolume.u64Size = Ut::GetDeviceSize(stVolume.wstrVolumePath.data()).value_or(0);
 
 		if (fwstrPath) {
 			stVolume.wstrVolumePath.back() = L'\\';
@@ -414,6 +411,8 @@ auto CDlgOpenVolume::GetDeviceVolumes()->std::vector<DEVICE_VOLUME>
 
 		vecRet.emplace_back(stVolume);
 	}
+
+	SetupDiDestroyDeviceInfoList(hDevInfo);
 
 	return vecRet;
 }
@@ -486,7 +485,7 @@ void CDlgOpenPath::OnOK()
 export class CDlgOpenDevice final : public CDialogEx {
 public:
 	CDlgOpenDevice(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENDEVICE, pParent) { }
-	INT_PTR DoModal(int iTab = 0);
+	INT_PTR DoModal(Ut::EOpenMode eTab = OPEN_DRIVE);
 	[[nodiscard]] auto GetOpenData()const->const std::vector<Ut::DATAOPEN>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -496,7 +495,9 @@ private:
 	afx_msg void OnTabSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	BOOL PreTranslateMessage(MSG* pMsg)override;
-	void SetCurrentTab(int iTab);
+	void SetCurrentTab(Ut::EOpenMode eTab);
+	[[nodiscard]] auto TabIDToName(int iTab)const->Ut::EOpenMode;
+	[[nodiscard]] auto TabNameToID(Ut::EOpenMode eTab)const->int;
 	DECLARE_MESSAGE_MAP();
 private:
 	CTabCtrl m_tabMain;
@@ -505,7 +506,7 @@ private:
 	std::unique_ptr<CDlgOpenVolume> m_pDlgVolumes { std::make_unique<CDlgOpenVolume>() };
 	std::unique_ptr<CDlgOpenPath> m_pDlgPath { std::make_unique<CDlgOpenPath>() };
 	std::vector<Ut::DATAOPEN> m_vecOpenData;
-	int m_iCurTab { }; //Current tab ID.
+	Ut::EOpenMode m_eCurTab { }; //Current tab name.
 };
 
 
@@ -515,9 +516,9 @@ BEGIN_MESSAGE_MAP(CDlgOpenDevice, CDialogEx)
 	ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
 
-INT_PTR CDlgOpenDevice::DoModal(int iTab)
+INT_PTR CDlgOpenDevice::DoModal(Ut::EOpenMode eTab)
 {
-	m_iCurTab = iTab;
+	m_eCurTab = eTab;
 	return CDialogEx::DoModal();
 }
 
@@ -550,9 +551,9 @@ BOOL CDlgOpenDevice::OnInitDialog()
 
 	GetWindowRect(m_rcWnd);
 
-	m_tabMain.InsertItem(0, L"Physical Drives");
-	m_tabMain.InsertItem(1, L"Volumes");
-	m_tabMain.InsertItem(3, L"Path");
+	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 0, L"Physical Drives", 0, std::to_underlying(OPEN_DRIVE));
+	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 1, L"Volumes", 0, std::to_underlying(OPEN_VOLUME));
+	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 2, L"Path", 0, std::to_underlying(OPEN_PATH));
 
 	CRect rcTab;
 	m_tabMain.GetItemRect(0, rcTab);
@@ -585,7 +586,7 @@ BOOL CDlgOpenDevice::OnInitDialog()
 	pLayout->AddItem(IDCANCEL, CMFCDynamicLayout::MoveHorizontalAndVertical(100, 100), CMFCDynamicLayout::SizeNone());
 	pLayout->AddItem(IDC_OPENDEVICE_STATIC_INFO, CMFCDynamicLayout::MoveVertical(100), CMFCDynamicLayout::SizeNone());
 
-	SetCurrentTab(m_iCurTab);
+	SetCurrentTab(m_eCurTab);
 
 	const auto hIcon = AfxGetApp()->LoadIconW(IDR_HEXER_FRAME);
 	SetIcon(hIcon, TRUE);
@@ -606,14 +607,14 @@ void CDlgOpenDevice::OnOK()
 {
 	m_vecOpenData.clear();
 
-	switch (m_iCurTab) {
-	case 0:
+	switch (m_eCurTab) {
+	case OPEN_DRIVE:
 		m_vecOpenData = m_pDlgDrives->GetOpenData();
 		break;
-	case 1:
+	case OPEN_VOLUME:
 		m_vecOpenData = m_pDlgVolumes->GetOpenData();
 		break;
-	case 2:
+	case OPEN_PATH:
 		m_vecOpenData = m_pDlgPath->GetOpenData();
 		break;
 	default:
@@ -627,7 +628,7 @@ void CDlgOpenDevice::OnOK()
 
 void CDlgOpenDevice::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	SetCurrentTab(m_tabMain.GetCurSel());
+	SetCurrentTab(TabIDToName(m_tabMain.GetCurSel()));
 }
 
 BOOL CDlgOpenDevice::PreTranslateMessage(MSG* pMsg)
@@ -640,26 +641,26 @@ BOOL CDlgOpenDevice::PreTranslateMessage(MSG* pMsg)
 	return CDialogEx::PreTranslateMessage(pMsg);
 }
 
-void CDlgOpenDevice::SetCurrentTab(int iTab)
+void CDlgOpenDevice::SetCurrentTab(Ut::EOpenMode eTab)
 {
-	m_iCurTab = iTab;
-	m_tabMain.SetCurSel(iTab);
+	m_eCurTab = eTab;
+	m_tabMain.SetCurSel(TabNameToID(eTab));
 
 	bool fEnableOK { };
-	switch (iTab) {
-	case 0:
+	switch (eTab) {
+	case OPEN_DRIVE:
 		m_pDlgVolumes->ShowWindow(SW_HIDE);
 		m_pDlgPath->ShowWindow(SW_HIDE);
 		m_pDlgDrives->ShowWindow(SW_SHOW);
 		fEnableOK = m_pDlgDrives->IsOK();
 		break;
-	case 1:
+	case OPEN_VOLUME:
 		m_pDlgDrives->ShowWindow(SW_HIDE);
 		m_pDlgPath->ShowWindow(SW_HIDE);
 		m_pDlgVolumes->ShowWindow(SW_SHOW);
 		fEnableOK = m_pDlgVolumes->IsOK();
 		break;
-	case 2:
+	case OPEN_PATH:
 		m_pDlgDrives->ShowWindow(SW_HIDE);
 		m_pDlgVolumes->ShowWindow(SW_HIDE);
 		m_pDlgPath->ShowWindow(SW_SHOW);
@@ -670,4 +671,24 @@ void CDlgOpenDevice::SetCurrentTab(int iTab)
 	}
 
 	GetDlgItem(IDOK)->EnableWindow(fEnableOK);
+}
+
+auto CDlgOpenDevice::TabIDToName(int iTab)const->Ut::EOpenMode
+{
+	TCITEMW tci { .mask { TCIF_PARAM } };
+	m_tabMain.GetItem(iTab, &tci);
+
+	return static_cast<Ut::EOpenMode>(tci.lParam);
+}
+
+auto CDlgOpenDevice::TabNameToID(Ut::EOpenMode eTab)const->int {
+	for (auto i { 0 }; i < m_tabMain.GetItemCount(); ++i) {
+		TCITEMW tci { .mask { TCIF_PARAM } };
+		m_tabMain.GetItem(i, &tci);
+		if (tci.lParam == std::to_underlying(eTab)) {
+			return i;
+		}
+	}
+
+	return -1;
 }
