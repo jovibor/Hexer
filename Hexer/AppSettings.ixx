@@ -31,11 +31,11 @@ public:
 	CAppSettingsRFL() = default;
 	void AddToList(const Ut::DATAOPEN& dos);
 	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const->Ut::DATAOPEN;
-	void Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess,
-		const std::wstring& wstrRegAppPath);
+	void Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry, HBITMAP hBMPFile, HBITMAP hBMPDevice,
+		HBITMAP hBMPProcess, const std::wstring& wstrRFLRegPath);
 	void RemoveFromList(const Ut::DATAOPEN& dos);
 	void SetRFLSize(DWORD dwRFLSize);
-	void SaveSettings();
+	void SaveSettings()const;
 	[[nodiscard]] static void AddToListBeginning(const Ut::DATAOPEN& dos, VecDataOpen& vecData);
 	[[nodiscard]] static auto ReadRegData(const wchar_t* pwszRegPath) -> VecDataOpen;
 	[[nodiscard]] static void SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen& vecData);
@@ -123,7 +123,7 @@ void CAppSettingsRFL::SetRFLSize(DWORD dwRFLSize)
 	}
 }
 
-void CAppSettingsRFL::SaveSettings()
+void CAppSettingsRFL::SaveSettings()const
 {
 	assert(m_fInit);
 	if (!m_fInit)
@@ -309,8 +309,8 @@ export class CAppSettings final {
 public:
 	using VecTemplates = std::vector<std::unique_ptr<HEXCTRL::HEXTEMPLATE>>;
 	struct PANESTATUS {
-		bool fIsVisible : 1{};
-		bool fIsActive : 1{};
+		bool fVisible : 1{};
+		bool fActive : 1{};
 	};
 	struct PANESETTINGS {
 		std::uint64_t ullPaneDataFileInfo { };   //Pane data for the "File Info".
@@ -370,16 +370,17 @@ public:
 	void RFLRemoveFromList(const Ut::DATAOPEN& dos);
 	void SaveSettings();
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
-	void SetPaneStatus(UINT uPaneID, bool fShow, bool fActive);
+	void SetPaneStatus(UINT uPaneID, bool fVisible, bool fActive);
 	[[nodiscard]] static auto GetGeneralDefs() -> const GENERALSETTINGS&;
 	[[nodiscard]] static auto GetHexCtrlDefs() -> const HEXCTRLSETTINGS&;
 private:
 	[[nodiscard]] auto GetPanesSettings() -> PANESETTINGS&;
 	[[nodiscard]] auto GetPanesSettings()const->const PANESETTINGS&;
 	[[nodiscard]] auto GetAppName()const->const std::wstring&;
+	[[nodiscard]] auto GetRegBasePath()const->const std::wstring&;
+	[[nodiscard]] auto GetRegHexCtrlSettingsPath()const->const std::wstring&;
 	[[nodiscard]] auto GetRegLOLPath()const->const std::wstring&; //Last Opened List.
 	[[nodiscard]] auto GetRegRFLPath()const->const std::wstring&; //Recent Files List.
-	[[nodiscard]] auto GetRegMFCWorkspacePath()const->const std::wstring&;
 	[[nodiscard]] auto GetRegSettingsPath()const->const std::wstring&;
 	void LoadHexCtrlTemplates();
 	void ShowInWindowsContextMenu(bool fShow);
@@ -478,8 +479,8 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 	GetHexCtrlSettings() = GetHexCtrlDefs();
 
 	//Settings.
-	const auto wstrKeySettings = GetRegSettingsPath();
-	if (CRegKey regSettings; regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) == ERROR_SUCCESS) {
+	const auto& refSettPath = GetRegSettingsPath();
+	if (CRegKey regSettings; regSettings.Open(HKEY_CURRENT_USER, refSettPath.data()) == ERROR_SUCCESS) {
 		//PaneStatus.
 		auto& refPanes = GetPanesSettings();
 		DWORD dwPaneStatusFileInfo { };
@@ -529,8 +530,8 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 		refGeneral.eDataIOMode = (std::min)(static_cast<Ut::EDataIOMode>(dwDataIOMode), Ut::EDataIOMode::DATA_IOIMMEDIATE);
 
 		//HexCtrl settings.
-		const std::wstring wstrKeyHexCtrl = wstrKeySettings + L"\\HexCtrl";
-		if (CRegKey regHexCtrl; regHexCtrl.Open(HKEY_CURRENT_USER, wstrKeyHexCtrl.data()) == ERROR_SUCCESS) {
+		const auto& refHexCtrlSettPath = GetRegHexCtrlSettingsPath();
+		if (CRegKey regHexCtrl; regHexCtrl.Open(HKEY_CURRENT_USER, refHexCtrlSettPath.data()) == ERROR_SUCCESS) {
 			//HexCtrl data.
 			auto& refSett = GetHexCtrlSettings();
 			regHexCtrl.QueryDWORDValue(L"HexCtrlCapacity", refSett.dwCapacity);
@@ -679,9 +680,9 @@ void CAppSettings::SaveSettings()
 
 	//Settings.
 	CRegKey regSettings;
-	const auto& wstrKeySettings = GetRegSettingsPath();
-	if (regSettings.Open(HKEY_CURRENT_USER, wstrKeySettings.data()) != ERROR_SUCCESS) {
-		regSettings.Create(HKEY_CURRENT_USER, wstrKeySettings.data());
+	const auto& refSettPath = GetRegSettingsPath();
+	if (regSettings.Open(HKEY_CURRENT_USER, refSettPath.data()) != ERROR_SUCCESS) {
+		regSettings.Create(HKEY_CURRENT_USER, refSettPath.data());
 	}
 
 	//PaneStatus.
@@ -707,9 +708,9 @@ void CAppSettings::SaveSettings()
 
 	//HexCtrl settings.
 	CRegKey regHexCtrl;
-	const auto wstrKeyHexCtrl = wstrKeySettings + L"\\HexCtrl";
-	if (regHexCtrl.Open(HKEY_CURRENT_USER, wstrKeyHexCtrl.data()) != ERROR_SUCCESS) {
-		regHexCtrl.Create(HKEY_CURRENT_USER, wstrKeyHexCtrl.data());
+	const auto& refHexCtrlSettPath = GetRegHexCtrlSettingsPath();
+	if (regHexCtrl.Open(HKEY_CURRENT_USER, refHexCtrlSettPath.data()) != ERROR_SUCCESS) {
+		regHexCtrl.Create(HKEY_CURRENT_USER, refHexCtrlSettPath.data());
 	}
 
 	//HexCtrl data.
@@ -779,24 +780,24 @@ void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
 	}
 }
 
-void CAppSettings::SetPaneStatus(UINT uPaneID, bool fShow, bool fActive)
+void CAppSettings::SetPaneStatus(UINT uPaneID, bool fVisible, bool fActive)
 {
 	auto& refPanes = GetPanesSettings();
 	switch (uPaneID) {
 	case IDC_PANE_DATAINFO:
-		refPanes.stPSFileInfo = { fShow, fActive };
+		refPanes.stPSFileInfo = { .fVisible { fVisible }, .fActive { fActive } };
 		break;
 	case IDC_PANE_BKMMGR:
-		refPanes.stPSBkmMgr = { fShow, fActive };
+		refPanes.stPSBkmMgr = { .fVisible { fVisible }, .fActive { fActive } };
 		break;
 	case IDC_PANE_DATAINTERP:
-		refPanes.stPSDataInterp = { fShow, fActive };
+		refPanes.stPSDataInterp = { .fVisible { fVisible }, .fActive { fActive } };
 		break;
 	case IDC_PANE_TEMPLMGR:
-		refPanes.stPSTemplMgr = { fShow, fActive };
+		refPanes.stPSTemplMgr = { .fVisible { fVisible }, .fActive { fActive } };
 		break;
 	case IDC_PANE_LOGGER:
-		refPanes.stPSLogInfo = { fShow, fActive };
+		refPanes.stPSLogInfo = { .fVisible { fVisible }, .fActive { fActive } };
 		break;
 	default:
 		break;
@@ -822,27 +823,33 @@ auto CAppSettings::GetAppName()const->const std::wstring&
 	return m_wstrAppName;
 }
 
+auto CAppSettings::GetRegBasePath()const->const std::wstring&
+{
+	static const auto wstrBase = L"Software\\" + GetAppName();
+	return wstrBase;
+}
+
+auto CAppSettings::GetRegHexCtrlSettingsPath()const->const std::wstring&
+{
+	static const auto wstrHexCtrlSett = GetRegSettingsPath() + L"\\HexCtrl";
+	return wstrHexCtrlSett;
+}
+
 auto CAppSettings::GetRegLOLPath()const->const std::wstring&
 {
-	static const auto wstrLOL = GetRegSettingsPath() + L"\\Last Opened List";
+	static const auto wstrLOL = GetRegBasePath() + L"\\Last Opened List";
 	return wstrLOL;
 }
 
 auto CAppSettings::GetRegRFLPath()const->const std::wstring&
 {
-	static const auto wstrRFL = GetRegSettingsPath() + L"\\Recent Files List";
+	static const auto wstrRFL = GetRegBasePath() + L"\\Recent Files List";
 	return wstrRFL;
-}
-
-auto CAppSettings::GetRegMFCWorkspacePath()const->const std::wstring&
-{
-	static const auto wstrMFCWorkspace = L"Software\\" + GetAppName() + L"\\" + GetAppName() + L"\\" + L"Workspace";
-	return wstrMFCWorkspace;
 }
 
 auto CAppSettings::GetRegSettingsPath()const->const std::wstring&
 {
-	static const auto wstrSettings = L"Software\\" + GetAppName();
+	static const auto wstrSettings = GetRegBasePath() + L"\\Settings";
 	return wstrSettings;
 }
 
@@ -900,7 +907,7 @@ void CAppSettings::ShowInWindowsContextMenu(bool fShow)
 auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 {
 	const std::bitset<32> bsPS(dw);
-	return { bsPS.test(0), bsPS.test(1) };
+	return { .fVisible { bsPS.test(0) }, .fActive { bsPS.test(1) } };
 }
 
 auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
@@ -923,8 +930,8 @@ auto CAppSettings::GetHexCtrlDefs()->const HEXCTRLSETTINGS&
 auto CAppSettings::PaneStatus2DWORD(PANESTATUS ps)->DWORD
 {
 	std::bitset<32> bs;
-	bs[0] = ps.fIsVisible;
-	bs[1] = ps.fIsActive;
+	bs[0] = ps.fVisible;
+	bs[1] = ps.fActive;
 
 	return bs.to_ulong();
 }

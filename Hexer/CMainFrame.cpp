@@ -94,8 +94,8 @@ void CMainFrame::OnChildFrameOpenFirst()
 	}
 
 	for (auto id : Ut::g_arrPanes) {
-		if (const auto ps = theApp.GetAppSettings().GetPaneStatus(id); ps.fIsVisible) {
-			ShowPane(id, true, ps.fIsActive);
+		if (const auto ps = theApp.GetAppSettings().GetPaneStatus(id); ps.fVisible) {
+			ShowPane(id, true, ps.fActive);
 		}
 	}
 }

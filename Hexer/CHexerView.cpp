@@ -300,11 +300,9 @@ void CHexerView::OnSize(UINT nType, int cx, int cy)
 {
 	CView::OnSize(nType, cx, cy);
 
-	if (!GetHexCtrl()->IsCreated()) {
-		return;
+	if (GetHexCtrl()->IsCreated()) {
+		GetHexCtrl()->SetWindowPos(m_hWnd, 0, 0, cx, cy);
 	}
-
-	::SetWindowPos(GetHexCtrl()->GetWndHandle(HEXCTRL::EHexWnd::WND_MAIN), m_hWnd, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_NOZORDER);
 }
 
 void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
