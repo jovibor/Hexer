@@ -232,12 +232,14 @@ void CAppSettingsRFL::SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen&
 {
 	using enum Ut::EOpenMode;
 	const auto wsv = std::wstring_view { pwszRegPath };
-	const auto wstrPath = std::wstring { wsv.substr(0, wsv.find_last_of(L'\\')) };
-	const auto wsvKeyName = wsv.substr(wsv.find_last_of(L'\\') + 1);
+	const auto wsvRegKeyName = wsv.substr(wsv.find_last_of(L'\\') + 1);
+	const auto wstrRegPathWithoutKey = std::wstring { wsv.substr(0, wsv.find_last_of(L'\\')) };
 
 	CRegKey reg;
-	reg.Open(HKEY_CURRENT_USER, wstrPath.data());
-	reg.RecurseDeleteKey(wsvKeyName.data()); //Remove all data in the key.
+	if (reg.Open(HKEY_CURRENT_USER, wstrRegPathWithoutKey.data()) == ERROR_SUCCESS) {
+		reg.RecurseDeleteKey(wsvRegKeyName.data()); //Remove all data in the key.
+	}
+
 	reg.Create(HKEY_CURRENT_USER, pwszRegPath);
 	for (const auto& [idx, ref] : vecData | std::views::enumerate) {
 		if (ref.eOpenMode == OPEN_PROC) {

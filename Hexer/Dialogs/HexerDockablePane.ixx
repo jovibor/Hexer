@@ -273,7 +273,7 @@ void CHexerDockablePane::OnSize(UINT nType, int cx, int cy)
 BOOL CHexerDockablePane::PreTranslateMessage(MSG* pMsg)
 {
 	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_ESCAPE) {
-		return FALSE; //To prevent App hang on pressing Esc on any Pane's title.
+		return FALSE; //To prevent App hanging on pressing Esc on any Pane's title.
 	}
 
 	return CDockablePane::PreTranslateMessage(pMsg);

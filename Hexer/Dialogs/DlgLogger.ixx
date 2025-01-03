@@ -59,7 +59,7 @@ void CDlgLogger::AddLogEntry(const Ut::Log::LOGINFO& li)
 {
 	m_vecData.emplace_back(li.tmloc, std::wstring { li.wsvMsg }, li.eType);
 
-	if (IsWindow(m_hWnd)) {
+	if (::IsWindow(m_hWnd)) {
 		m_List.SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOINVALIDATEALL);
 		m_List.EnsureVisible(m_List.GetItemCount() - 1, FALSE);
 	}

@@ -683,7 +683,7 @@ BOOL CDlgOpenDevice::PreTranslateMessage(MSG* pMsg)
 {
 	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_RETURN) {
 		OnOK(); //To prevent triggering "Cancel" button on Enter press, when "Open" is disabled.
-		return FALSE;
+		return TRUE;
 	}
 
 	return CDialogEx::PreTranslateMessage(pMsg);

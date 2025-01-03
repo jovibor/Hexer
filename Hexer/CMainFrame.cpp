@@ -570,6 +570,14 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 {
+	//PreTranslateMessage doesn't work in CHexerView for no reason.
+	//Messages for HexCtrl dialogs just do not reach it.
+	if (const auto pHex = GetHexCtrl(); pHex != nullptr) {
+		if (pHex->PreTranslateMsg(pMsg)) {
+			return TRUE;
+		}
+	}
+
 	switch (pMsg->message) {
 	case WM_MBUTTONDOWN: //Closing tabs with the middle mouse button.
 	{
