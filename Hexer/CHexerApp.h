@@ -5,8 +5,8 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #pragma once
+#include <afxcontrolbars.h>
 #include "HexCtrl.h"
-#include <afxwin.h>
 
 import Utility;
 import AppSettings;

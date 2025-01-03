@@ -7,8 +7,8 @@ module;
 *******************************************************************************/
 #include <SDKDDKVer.h>
 #include "resource.h"
-#include "HexCtrl.h"
 #include <afxwin.h>
+#include "HexCtrl.h"
 #include <winioctl.h>
 #include <compare>
 #include <chrono>

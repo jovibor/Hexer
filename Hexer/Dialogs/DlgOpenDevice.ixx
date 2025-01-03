@@ -36,29 +36,33 @@ public:
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
-	BOOL OnInitDialog()override;
 	void OnCancel()override;
+	void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
+	BOOL OnInitDialog()override;
 	afx_msg void OnListDblClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
+	void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	void OnOK()override;
 	DECLARE_MESSAGE_MAP();
 	[[nodiscard]] static auto GetDeviceDrives() -> std::vector<DEVICE_DRIVE>;
 private:
-	lex::IListExPtr m_pList { lex::CreateListEx() };
+	lex::CListEx m_List;
 };
 
 BEGIN_MESSAGE_MAP(CDlgOpenDrive, CDialogEx)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPENDRIVE_LIST, &CDlgOpenDrive::OnListDblClick)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENDRIVE_LIST, &CDlgOpenDrive::OnListItemChanged)
+	ON_WM_DRAWITEM()
+	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
 
 auto CDlgOpenDrive::GetOpenData()const->std::vector<Ut::DATAOPEN>
 {
 	std::vector<Ut::DATAOPEN> vec;
 	int nItem { -1 };
-	for (auto i { 0UL }; i < m_pList->GetSelectedCount(); ++i) {
-		nItem = m_pList->GetNextItem(nItem, LVNI_SELECTED);
-		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { m_pList->GetItemText(nItem, 2) },
+	for (auto i { 0UL }; i < m_List.GetSelectedCount(); ++i) {
+		nItem = m_List.GetNextItem(nItem, LVNI_SELECTED);
+		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { m_List.GetItemText(nItem, 2) },
 			.eOpenMode { Ut::EOpenMode::OPEN_DRIVE } });
 	}
 
@@ -67,7 +71,7 @@ auto CDlgOpenDrive::GetOpenData()const->std::vector<Ut::DATAOPEN>
 
 bool CDlgOpenDrive::IsOK()
 {
-	return m_pList->GetSelectedCount() > 0;
+	return m_List.GetSelectedCount() > 0;
 }
 
 
@@ -87,22 +91,22 @@ BOOL CDlgOpenDrive::OnInitDialog()
 	pLayout->Create(this);
 	pLayout->AddItem(IDC_OPENDRIVE_LIST, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
 
-	m_pList->Create({ .pParent { this }, .uID { IDC_OPENDRIVE_LIST }, .dwWidthGrid { 0 }, .fDialogCtrl { true } });
-	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	m_pList->InsertColumn(0, L"Drive Name", 0, 200);
-	m_pList->InsertColumn(1, L"Size", 0, 70);
-	m_pList->InsertColumn(2, L"Path", 0, 120);
-	m_pList->InsertColumn(3, L"Bus Type", 0, 100);
+	m_List.Create({ .hWndParent { m_hWnd }, .uID { IDC_OPENDRIVE_LIST }, .dwWidthGrid { 0 }, .fDialogCtrl { true } });
+	m_List.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	m_List.InsertColumn(0, L"Drive Name", 0, 200);
+	m_List.InsertColumn(1, L"Size", 0, 70);
+	m_List.InsertColumn(2, L"Path", 0, 120);
+	m_List.InsertColumn(3, L"Bus Type", 0, 100);
 
 	auto vecDrives = GetDeviceDrives();
 	std::ranges::sort(vecDrives, { }, &DEVICE_DRIVE::wstrDrivePath);
 
 	for (const auto& [idx, drive] : vecDrives | std::views::enumerate) {
 		const auto iidx = static_cast<int>(idx);
-		m_pList->InsertItem(iidx, drive.wstrFriendlyName.data());
-		m_pList->SetItemText(iidx, 1, std::format(L"{:.2f} GB", static_cast<double>(drive.u64Size) / 1024 / 1024 / 1024).data());
-		m_pList->SetItemText(iidx, 2, drive.wstrDrivePath.data());
-		m_pList->SetItemText(iidx, 3, drive.wstrBusType.data());
+		m_List.InsertItem(iidx, drive.wstrFriendlyName.data());
+		m_List.SetItemText(iidx, 1, std::format(L"{:.2f} GB", static_cast<double>(drive.u64Size) / 1024 / 1024 / 1024).data());
+		m_List.SetItemText(iidx, 2, drive.wstrDrivePath.data());
+		m_List.SetItemText(iidx, 3, drive.wstrBusType.data());
 	}
 
 	return TRUE;
@@ -123,7 +127,7 @@ void CDlgOpenDrive::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 void CDlgOpenDrive::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(m_pList->GetSelectedCount() > 0);
+	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(m_List.GetSelectedCount() > 0);
 }
 
 void CDlgOpenDrive::OnOK()
@@ -226,29 +230,33 @@ public:
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
-	BOOL OnInitDialog()override;
 	void OnCancel()override;
+	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
+	BOOL OnInitDialog()override;
 	afx_msg void OnListDblClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	void OnOK()override;
 	DECLARE_MESSAGE_MAP();
 	[[nodiscard]] static auto GetDeviceVolumes() -> std::vector<DEVICE_VOLUME>;
 private:
-	lex::IListExPtr m_pList { lex::CreateListEx() };
+	lex::CListEx m_List;
 };
 
 BEGIN_MESSAGE_MAP(CDlgOpenVolume, CDialogEx)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPENVOLUME_LIST, &CDlgOpenVolume::OnListDblClick)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENVOLUME_LIST, &CDlgOpenVolume::OnListItemChanged)
+	ON_WM_DRAWITEM()
+	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
 
 auto CDlgOpenVolume::GetOpenData()const->std::vector<Ut::DATAOPEN>
 {
 	std::vector<Ut::DATAOPEN> vec;
 	int nItem { -1 };
-	for (auto i { 0UL }; i < m_pList->GetSelectedCount(); ++i) {
-		nItem = m_pList->GetNextItem(nItem, LVNI_SELECTED);
-		std::wstring wstrVolPath = m_pList->GetItemText(nItem, 6).GetString(); //Volume Path column.
+	for (auto i { 0UL }; i < m_List.GetSelectedCount(); ++i) {
+		nItem = m_List.GetNextItem(nItem, LVNI_SELECTED);
+		auto wstrVolPath = m_List.GetItemText(nItem, 6); //Volume Path column.
 		if (wstrVolPath.ends_with(L'\\')) { //Remove trailing slash to satisfy CreateFileW in DataLoader.
 			wstrVolPath = wstrVolPath.substr(0, wstrVolPath.size() - 1);
 		}
@@ -261,7 +269,7 @@ auto CDlgOpenVolume::GetOpenData()const->std::vector<Ut::DATAOPEN>
 
 bool CDlgOpenVolume::IsOK()
 {
-	return m_pList->GetSelectedCount() > 0;
+	return m_List.GetSelectedCount() > 0;
 }
 
 
@@ -270,6 +278,21 @@ bool CDlgOpenVolume::IsOK()
 void CDlgOpenVolume::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+}
+
+void CDlgOpenVolume::OnCancel()
+{
+	static_cast<CDialogEx*>(GetParent())->EndDialog(IDCANCEL);
+}
+
+void CDlgOpenVolume::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+	if (nIDCtl == IDC_OPENVOLUME_LIST) {
+		m_List.DrawItem(lpDrawItemStruct);
+		return;
+	}
+
+	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }
 
 BOOL CDlgOpenVolume::OnInitDialog()
@@ -281,15 +304,15 @@ BOOL CDlgOpenVolume::OnInitDialog()
 	pLayout->Create(this);
 	pLayout->AddItem(IDC_OPENVOLUME_LIST, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
 
-	m_pList->Create({ .pParent { this }, .uID { IDC_OPENVOLUME_LIST }, .dwWidthGrid { 0 }, .fDialogCtrl { true } });
-	m_pList->SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	m_pList->InsertColumn(0, L"Mount Point", 0, 80);
-	m_pList->InsertColumn(1, L"Resides In", 0, 110);
-	m_pList->InsertColumn(2, L"Label", 0, 100);
-	m_pList->InsertColumn(3, L"Size", 0, 70);
-	m_pList->InsertColumn(4, L"Drive Type", 0, 80);
-	m_pList->InsertColumn(5, L"File System", 0, 80);
-	m_pList->InsertColumn(6, L"Volume Path", 0, 300);
+	m_List.Create({ .hWndParent { m_hWnd }, .uID { IDC_OPENVOLUME_LIST }, .dwWidthGrid { 0 }, .fDialogCtrl { true } });
+	m_List.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	m_List.InsertColumn(0, L"Mount Point", 0, 80);
+	m_List.InsertColumn(1, L"Resides In", 0, 110);
+	m_List.InsertColumn(2, L"Label", 0, 100);
+	m_List.InsertColumn(3, L"Size", 0, 70);
+	m_List.InsertColumn(4, L"Drive Type", 0, 80);
+	m_List.InsertColumn(5, L"File System", 0, 80);
+	m_List.InsertColumn(6, L"Volume Path", 0, 300);
 
 	auto vecVolumes = GetDeviceVolumes();
 	const auto rngTail = std::ranges::partition(vecVolumes, [](const DEVICE_VOLUME& ref) { return !ref.wstrMountPoint.empty(); });
@@ -299,21 +322,16 @@ BOOL CDlgOpenVolume::OnInitDialog()
 
 	for (const auto& [idx, vol] : vecVolumes | std::views::enumerate) {
 		const auto iidx = static_cast<int>(idx);
-		m_pList->InsertItem(iidx, vol.wstrMountPoint.data());
-		m_pList->SetItemText(iidx, 1, vol.wstrDrivePath.data());
-		m_pList->SetItemText(iidx, 2, vol.wstrLabel.data());
-		m_pList->SetItemText(iidx, 3, std::format(L"{:.2f} GB", static_cast<double>(vol.u64Size) / 1024 / 1024 / 1024).data());
-		m_pList->SetItemText(iidx, 4, vol.wstrDriveType.data());
-		m_pList->SetItemText(iidx, 5, vol.wstrFileSystem.data());
-		m_pList->SetItemText(iidx, 6, vol.wstrVolumePath.data());
+		m_List.InsertItem(iidx, vol.wstrMountPoint.data());
+		m_List.SetItemText(iidx, 1, vol.wstrDrivePath.data());
+		m_List.SetItemText(iidx, 2, vol.wstrLabel.data());
+		m_List.SetItemText(iidx, 3, std::format(L"{:.2f} GB", static_cast<double>(vol.u64Size) / 1024 / 1024 / 1024).data());
+		m_List.SetItemText(iidx, 4, vol.wstrDriveType.data());
+		m_List.SetItemText(iidx, 5, vol.wstrFileSystem.data());
+		m_List.SetItemText(iidx, 6, vol.wstrVolumePath.data());
 	}
 
 	return TRUE;
-}
-
-void CDlgOpenVolume::OnCancel()
-{
-	static_cast<CDialogEx*>(GetParent())->EndDialog(IDCANCEL);
 }
 
 void CDlgOpenVolume::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
@@ -326,7 +344,17 @@ void CDlgOpenVolume::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 void CDlgOpenVolume::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(m_pList->GetSelectedCount() > 0);
+	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(m_List.GetSelectedCount() > 0);
+}
+
+void CDlgOpenVolume::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
+{
+	if (nIDCtl == IDC_OPENVOLUME_LIST) {
+		m_List.MeasureItem(lpMeasureItemStruct);
+		return;
+	}
+
+	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
 void CDlgOpenVolume::OnOK()
@@ -545,6 +573,24 @@ auto CDlgOpenDevice::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH
 	return hbr;
 }
 
+void CDlgOpenDrive::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+	if (nIDCtl == IDC_OPENDRIVE_LIST) {
+		m_List.DrawItem(lpDrawItemStruct);
+		return;
+	}
+
+	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
+}
+
+void CDlgOpenDevice::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
+{
+	lpMMI->ptMinTrackSize.x = m_rcWnd.Width();
+	lpMMI->ptMinTrackSize.y = m_rcWnd.Height();
+
+	CDialogEx::OnGetMinMaxInfo(lpMMI);
+}
+
 BOOL CDlgOpenDevice::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -595,12 +641,14 @@ BOOL CDlgOpenDevice::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgOpenDevice::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
+void CDlgOpenDrive::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
 {
-	lpMMI->ptMinTrackSize.x = m_rcWnd.Width();
-	lpMMI->ptMinTrackSize.y = m_rcWnd.Height();
+	if (nIDCtl == IDC_OPENDRIVE_LIST) {
+		m_List.MeasureItem(lpMeasureItemStruct);
+		return;
+	}
 
-	CDialogEx::OnGetMinMaxInfo(lpMMI);
+	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
 void CDlgOpenDevice::OnOK()

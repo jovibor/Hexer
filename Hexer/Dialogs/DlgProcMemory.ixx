@@ -6,9 +6,9 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #include <SDKDDKVer.h>
-#include "HexCtrl.h"
 #include "resource.h"
 #include <afxdialogex.h>
+#include "HexCtrl.h"
 #include <cassert>
 #include <format>
 #include <string>
@@ -32,7 +32,7 @@ private:
 	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
 	DECLARE_MESSAGE_MAP();
 private:
-	lex::IListExPtr m_pListProcMem { lex::CreateListEx() };
+	lex::CListEx m_pListProcMem;
 	HEXCTRL::IHexCtrl* m_pHexCtrl { };
 	const std::vector<MEMORY_BASIC_INFORMATION>* m_pVecProcMemory { };
 };
@@ -60,12 +60,12 @@ BOOL CDlgProcMemory::OnInitDialog()
 
 	assert(m_pVecProcMemory != nullptr);
 
-	m_pListProcMem->CreateDialogCtrl(IDC_PROCMEMORY_LIST, this);
-	m_pListProcMem->InsertColumn(0, L"Address Range", LVCFMT_CENTER, 170);
-	m_pListProcMem->InsertColumn(1, L"Size", LVCFMT_CENTER, 70, -1, LVCFMT_CENTER);
-	m_pListProcMem->InsertColumn(2, L"Protection", LVCFMT_CENTER, 180);
-	m_pListProcMem->InsertColumn(3, L"Type", LVCFMT_CENTER, 100);
-	m_pListProcMem->SetItemCountEx(static_cast<int>(m_pVecProcMemory->size()));
+	m_pListProcMem.CreateDialogCtrl(IDC_PROCMEMORY_LIST, m_hWnd);
+	m_pListProcMem.InsertColumn(0, L"Address Range", LVCFMT_CENTER, 170);
+	m_pListProcMem.InsertColumn(1, L"Size", LVCFMT_CENTER, 70, -1, LVCFMT_CENTER);
+	m_pListProcMem.InsertColumn(2, L"Protection", LVCFMT_CENTER, 180);
+	m_pListProcMem.InsertColumn(3, L"Type", LVCFMT_CENTER, 100);
+	m_pListProcMem.SetItemCountEx(static_cast<int>(m_pVecProcMemory->size()));
 
 	const auto hIcon = AfxGetApp()->LoadIconW(IDR_HEXER_FRAME);
 	SetIcon(hIcon, TRUE);

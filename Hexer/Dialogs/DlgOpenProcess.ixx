@@ -21,8 +21,8 @@ import Utility;
 
 export class CDlgOpenProcess final : public CDialogEx {
 public:
-	struct PROCS;
-	struct MODULES;
+	struct PROCDATA;
+	struct MODULEDATA;
 	CDlgOpenProcess(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENPROCESS, pParent) { }
 	[[nodiscard]] auto GetOpenData()const->const std::vector<Ut::DATAOPEN>&;
 private:
@@ -30,6 +30,7 @@ private:
 	void EnableDynamicLayoutHelper(bool fEnable);
 	afx_msg void OnBnClickedRefresh();
 	afx_msg auto OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor) -> HBRUSH;
+	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
 	BOOL OnInitDialog()override;
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
@@ -41,6 +42,7 @@ private:
 	afx_msg void OnListProcsDblClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListProcsGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListProcsGetTooltip(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
 	void OnOK()override;
@@ -48,10 +50,10 @@ private:
 	void RefreshProcs();
 	DECLARE_MESSAGE_MAP();
 private:
-	lex::IListExPtr m_pListProcs { lex::CreateListEx() };
-	lex::IListExPtr m_pListModules { lex::CreateListEx() };
-	std::vector<PROCS> m_vecProcs;
-	std::vector<MODULES> m_vecModules;
+	lex::CListEx m_ListProcs;
+	lex::CListEx m_ListModules;
+	std::vector<PROCDATA> m_vecProcs;
+	std::vector<MODULEDATA> m_vecModules;
 	std::vector<Ut::DATAOPEN> m_vecOpenData;
 	std::wstring m_wstrTTProcPath; //Tooltip for process image full path.
 	std::locale m_locale;
@@ -62,13 +64,13 @@ private:
 	bool m_fProcReady { false };
 };
 
-struct CDlgOpenProcess::PROCS {
+struct CDlgOpenProcess::PROCDATA {
 	std::wstring wstrProcName;
 	DWORD        dwProcID { };
 	DWORD        dwWorkingSet { };
 };
 
-struct CDlgOpenProcess::MODULES {
+struct CDlgOpenProcess::MODULEDATA {
 	std::wstring wstrModName;
 	DWORD        dwWorkingSet { };
 };
@@ -82,8 +84,10 @@ BEGIN_MESSAGE_MAP(CDlgOpenProcess, CDialogEx)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPENPROCESS_LIST_PROCS, &CDlgOpenProcess::OnListProcsDblClick)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENPROCESS_LIST_PROCS, &CDlgOpenProcess::OnListProcsItemChanged)
 	ON_WM_CTLCOLOR()
+	ON_WM_DRAWITEM()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
+	ON_WM_MEASUREITEM()
 	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
@@ -146,23 +150,39 @@ auto CDlgOpenProcess::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH
 	return hbr;
 }
 
+void CDlgOpenProcess::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+	if (nIDCtl == IDC_OPENPROCESS_LIST_PROCS) {
+		m_ListProcs.DrawItem(lpDrawItemStruct);
+		return;
+	}
+	else if (nIDCtl == IDC_OPENPROCESS_LIST_MODULES) {
+		m_ListModules.DrawItem(lpDrawItemStruct);
+		return;
+	}
+
+	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
+}
+
 BOOL CDlgOpenProcess::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
 	m_locale = std::locale("en_US.UTF-8");
-	const lex::LISTEXCREATE lcs { .pParent { this }, .uID { IDC_OPENPROCESS_LIST_PROCS }, .dwTTStyleCell { TTS_NOANIMATE },
-		.dwTTShowDelay { 500 }, .dwTTShowTime { 3000 }, .ptTTOffset { 9, -20 }, .fDialogCtrl { true }, .fSortable { true } };
-	m_pListProcs->Create(lcs);
-	m_pListProcs->InsertColumn(0, L"№", 0, 40);
-	m_pListProcs->InsertColumn(1, L"Process Name", 0, 200);
-	m_pListProcs->InsertColumn(2, L"Process ID", 0, 70);
-	m_pListProcs->InsertColumn(3, L"Working Set", 0, 90);
-	m_pListProcs->SetColumnSortMode(0, false);
-	m_pListModules->CreateDialogCtrl(IDC_OPENPROCESS_LIST_MODULES, this);
-	m_pListModules->SetSortable(true);
-	m_pListModules->InsertColumn(0, L"Module Name", 0, 150);
-	m_pListModules->InsertColumn(1, L"Working Set", 0, 90);
+	const lex::LISTEXCREATE lcs { .hWndParent { m_hWnd }, .uID { IDC_OPENPROCESS_LIST_PROCS }, .dwTTStyleCell { TTS_NOANIMATE },
+		.dwTTDelayTime { 500 }, .dwTTShowTime { 3000 }, .ptTTOffset { 9, -20 }, .fDialogCtrl { true }, .fSortable { true } };
+	m_ListProcs.Create(lcs);
+	m_ListProcs.InsertColumn(0, L"№", 0, 40);
+	m_ListProcs.InsertColumn(1, L"Process Name", 0, 200);
+	m_ListProcs.InsertColumn(2, L"Process ID", 0, 70);
+	m_ListProcs.InsertColumn(3, L"Working Set", 0, 90);
+	m_ListProcs.SetColumnSortMode(0, false);
+
+	m_ListModules.CreateDialogCtrl(IDC_OPENPROCESS_LIST_MODULES, m_hWnd);
+	m_ListModules.SetSortable(true);
+	m_ListModules.InsertColumn(0, L"Module Name", 0, 150);
+	m_ListModules.InsertColumn(1, L"Working Set", 0, 90);
+
 	const auto hIcon = AfxGetApp()->LoadIconW(IDR_HEXER_FRAME);
 	SetIcon(hIcon, TRUE);
 	SetIcon(hIcon, FALSE);
@@ -195,6 +215,24 @@ void CDlgOpenProcess::OnLButtonUp(UINT nFlags, CPoint point)
 
 void CDlgOpenProcess::OnListModulesColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
+	const auto iColumn = m_ListModules.GetSortColumn();
+	const auto fAscending = m_ListModules.GetSortAscending();
+	std::sort(m_vecModules.begin(), m_vecModules.end(), [iColumn, fAscending](const MODULEDATA& lhs, const MODULEDATA& rhs) {
+		int iCompare { };
+		switch (iColumn) {
+		case 0: //Module Name.
+			iCompare = lhs.wstrModName.compare(rhs.wstrModName);
+			break;
+		case 1: //Working Set.
+			iCompare = lhs.dwWorkingSet < rhs.dwWorkingSet ? -1 : (lhs.dwWorkingSet > rhs.dwWorkingSet ? 1 : 0);
+			break;
+		default:
+			break;
+		}
+
+		return fAscending ? iCompare < 0 : iCompare > 0;
+		});
+	m_ListModules.RedrawWindow();
 }
 
 void CDlgOpenProcess::OnListModulesGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
@@ -224,21 +262,21 @@ void CDlgOpenProcess::OnListModulesDblClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResul
 
 void CDlgOpenProcess::OnListProcsColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	const auto iColumn = m_pListProcs->GetSortColumn();
-	const auto fAscending = m_pListProcs->GetSortAscending();
-	std::sort(m_vecProcs.begin(), m_vecProcs.end(), [iColumn, fAscending](const PROCS& st1, const PROCS& st2) {
+	const auto iColumn = m_ListProcs.GetSortColumn();
+	const auto fAscending = m_ListProcs.GetSortAscending();
+	std::sort(m_vecProcs.begin(), m_vecProcs.end(), [iColumn, fAscending](const PROCDATA& lhs, const PROCDATA& rhs) {
 		int iCompare { };
 		switch (iColumn) {
 		case 0:
 			break;
 		case 1: //Process Name.
-			iCompare = st1.wstrProcName.compare(st2.wstrProcName);
+			iCompare = lhs.wstrProcName.compare(rhs.wstrProcName);
 			break;
 		case 2: //Process ID.
-			iCompare = st1.dwProcID < st2.dwProcID ? -1 : (st1.dwProcID > st2.dwProcID ? 1 : 0);
+			iCompare = lhs.dwProcID < rhs.dwProcID ? -1 : (lhs.dwProcID > rhs.dwProcID ? 1 : 0);
 			break;
 		case 3: //Working Set.
-			iCompare = st1.dwWorkingSet < st2.dwWorkingSet ? -1 : (st1.dwWorkingSet > st2.dwWorkingSet ? 1 : 0);
+			iCompare = lhs.dwWorkingSet < rhs.dwWorkingSet ? -1 : (lhs.dwWorkingSet > rhs.dwWorkingSet ? 1 : 0);
 			break;
 		default:
 			break;
@@ -246,7 +284,7 @@ void CDlgOpenProcess::OnListProcsColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResu
 
 		return fAscending ? iCompare < 0 : iCompare > 0;
 		});
-	m_pListProcs->RedrawWindow();
+	m_ListProcs.RedrawWindow();
 }
 
 void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/)
@@ -259,8 +297,8 @@ void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/
 	const auto hProc = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_vecProcs[iItemID].dwProcID);
 	if (hProc == nullptr) {
 		OnProcReady(false);
-		m_pListModules->SetItemCountEx(0);
-		m_pListModules->RedrawWindow();
+		m_ListModules.SetItemCountEx(0);
+		m_ListModules.RedrawWindow();
 		m_vecModules.clear();
 		return;
 	}
@@ -282,8 +320,8 @@ void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/
 	}
 
 	CloseHandle(hProc);
-	m_pListModules->SetItemCountEx(static_cast<int>(m_vecModules.size()));
-	m_pListModules->RedrawWindow();
+	m_ListModules.SetItemCountEx(static_cast<int>(m_vecModules.size()));
+	m_ListModules.RedrawWindow();
 	OnProcReady(true);
 }
 
@@ -343,6 +381,20 @@ void CDlgOpenProcess::OnListProcsGetTooltip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	pTTI->stData.pwszText = m_wstrTTProcPath.data();
 }
 
+void CDlgOpenProcess::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
+{
+	if (nIDCtl == IDC_OPENPROCESS_LIST_PROCS) {
+		m_ListProcs.MeasureItem(lpMeasureItemStruct);
+		return;
+	}
+	else if (nIDCtl == IDC_OPENPROCESS_LIST_MODULES) {
+		m_ListModules.MeasureItem(lpMeasureItemStruct);
+		return;
+	}
+
+	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
+}
+
 void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
 {
 	static constexpr auto iResAreaHalfWidth = 6;   //Area where cursor turns into resizable (IDC_SIZEWE).
@@ -352,20 +404,20 @@ void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
 	static const auto hCurArrow = static_cast<HCURSOR>(LoadImageW(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_SHARED));
 
 	CRect rcList;
-	m_pListModules->GetWindowRect(rcList);
+	::GetWindowRect(m_ListModules.GetHWND(), rcList);
 	ScreenToClient(rcList);
 
 	if (m_fLMDownResize) {
 		CRect rcTree;
-		m_pListProcs->GetWindowRect(rcTree);
+		::GetWindowRect(m_ListProcs.GetHWND(), rcTree);
 		ScreenToClient(rcTree);
 		rcTree.right = point.x - iWidthBetweenLists;
 		rcList.left = point.x;
 		if (rcTree.Width() >= iMinLeftListWidth) {
 			auto hdwp = BeginDeferWindowPos(2); //Simultaneously resizing lists.
-			hdwp = DeferWindowPos(hdwp, m_pListProcs->m_hWnd, nullptr, rcTree.left, rcTree.top,
+			hdwp = DeferWindowPos(hdwp, m_ListProcs.GetHWND(), nullptr, rcTree.left, rcTree.top,
 				rcTree.Width(), rcTree.Height(), SWP_NOACTIVATE | SWP_NOZORDER);
-			hdwp = DeferWindowPos(hdwp, m_pListModules->m_hWnd, nullptr, rcList.left, rcList.top,
+			hdwp = DeferWindowPos(hdwp, m_ListModules.GetHWND(), nullptr, rcList.left, rcList.top,
 				rcList.Width(), rcList.Height(), SWP_NOACTIVATE | SWP_NOZORDER);
 			EndDeferWindowPos(hdwp);
 		}
@@ -397,6 +449,13 @@ BOOL CDlgOpenProcess::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 			return TRUE;
 		}
 	}
+	else if (pNMI->hdr.idFrom == IDC_OPENPROCESS_LIST_MODULES) {
+		if (pNMI->hdr.code == LVN_COLUMNCLICK) {
+			OnListModulesColumnClick(reinterpret_cast<NMHDR*>(lParam), pResult);
+			return TRUE;
+		}
+	}
+
 
 	return CDialogEx::OnNotify(wParam, lParam, pResult);
 }
@@ -408,8 +467,8 @@ void CDlgOpenProcess::OnOK()
 
 	m_vecOpenData.clear();
 	int nItem { -1 };
-	for (auto i { 0UL }; i < m_pListProcs->GetSelectedCount(); ++i) {
-		nItem = m_pListProcs->GetNextItem(nItem, LVNI_SELECTED);
+	for (auto i { 0UL }; i < m_ListProcs.GetSelectedCount(); ++i) {
+		nItem = m_ListProcs.GetNextItem(nItem, LVNI_SELECTED);
 		auto& ref = m_vecProcs[nItem];
 		m_vecOpenData.emplace_back(Ut::DATAOPEN { .wstrDataPath { std::move(ref.wstrProcName) },
 			.dwProcID { ref.dwProcID }, .eOpenMode { Ut::EOpenMode::OPEN_PROC } });
@@ -455,6 +514,6 @@ void CDlgOpenProcess::RefreshProcs()
 
 	WTSFreeMemoryExW(WTS_TYPE_CLASS::WTSTypeProcessInfoLevel1, pWPI, dwCount);
 
-	m_pListProcs->SetItemCountEx(static_cast<int>(m_vecProcs.size()));
-	m_pListProcs->RedrawWindow();
+	m_ListProcs.SetItemCountEx(static_cast<int>(m_vecProcs.size()));
+	m_ListProcs.RedrawWindow();
 }

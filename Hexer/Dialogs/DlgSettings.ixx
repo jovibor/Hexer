@@ -6,10 +6,10 @@ module;
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #include <SDKDDKVer.h>
-#include "HexCtrl.h"
 #include "resource.h"
 #include <afxdialogex.h>
 #include <afxpropertygridctrl.h>
+#include "HexCtrl.h"
 #include <comutil.h> //_variant_t.
 #include <cassert>
 #include <format>
