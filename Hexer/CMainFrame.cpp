@@ -79,7 +79,7 @@ void CMainFrame::OnChildFrameCloseLast()
 
 	SavePanesSettings();   //It's called either here or in the OnClose.
 	SaveHexCtrlSettings(); //It's called either here or in the OnClose.
-	HideAllPanes(); //To disable panes from showing at the next app's start-up.
+	HideAllPanes();        //To disable panes from showing at the next app's launch.
 }
 
 void CMainFrame::OnChildFrameDisactivate()
@@ -328,10 +328,7 @@ void CMainFrame::HideAllPanes()
 
 BOOL CMainFrame::LoadFrame(UINT nIDResource, DWORD dwDefaultStyle, CWnd* pParentWnd, CCreateContext* pContext)
 {
-	const auto ret = CMDIFrameWndEx::LoadFrame(nIDResource, dwDefaultStyle, pParentWnd, pContext);
-	HideAllPanes(); //Hide all panes on app's launch.
-
-	return ret;
+	return CMDIFrameWndEx::LoadFrame(nIDResource, dwDefaultStyle, pParentWnd, pContext);
 }
 
 auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
@@ -385,6 +382,7 @@ void CMainFrame::OnClose()
 	m_fClosing = true;
 	SavePanesSettings();   //It's called either here or in the OnChildFrameCloseLast.
 	SaveHexCtrlSettings(); //It's called either here or in the OnChildFrameCloseLast.
+	HideAllPanes();        //It's called either here or in the OnChildFrameCloseLast.
 
 	CMDIFrameWndEx::OnClose();
 }

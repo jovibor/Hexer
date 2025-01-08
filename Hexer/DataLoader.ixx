@@ -960,5 +960,5 @@ constexpr auto CDataLoader::GetInternalCacheSize()->DWORD
 
 constexpr auto CDataLoader::GetFileSizeForDASAFE()->DWORD
 {
-	return 1024 * 1024 * 10; //10MB.
+	return 1024 * 1024 * 50; //50MB.
 }
