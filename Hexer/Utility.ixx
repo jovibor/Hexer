@@ -293,6 +293,7 @@ export namespace Ut {
 
 	struct DATAOPEN { //Main data opening struct.
 		std::wstring  wstrDataPath; //Or Process name.
+		std::wstring  wstrFriendlyName; //Used mostly for devices' friendly name.
 		std::uint64_t ullSizeNewFile { };
 		DWORD         dwProcID { };
 		EOpenMode     eOpenMode { EOpenMode::OPEN_FILE };
@@ -304,6 +305,7 @@ export namespace Ut {
 	struct DATAINFO { //Data for the CDlgLogger dialog.
 		std::wstring_view wsvDataPath;
 		std::wstring_view wsvFileName;
+		std::wstring_view wsvFriendlyName;
 		std::uint64_t     ullDataSize { };
 		std::uint32_t     dwPageSize { };
 		EOpenMode         eOpenMode { };

@@ -62,7 +62,8 @@ auto CDlgOpenDrive::GetOpenData()const->std::vector<Ut::DATAOPEN>
 	int nItem { -1 };
 	for (auto i { 0UL }; i < m_List.GetSelectedCount(); ++i) {
 		nItem = m_List.GetNextItem(nItem, LVNI_SELECTED);
-		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { m_List.GetItemText(nItem, 2) },
+		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { m_List.GetItemText(nItem, 2 /*Path.*/) },
+			.wstrFriendlyName { m_List.GetItemText(nItem, 0 /*Drive name.*/) },
 			.eOpenMode { Ut::EOpenMode::OPEN_DRIVE } });
 	}
 
@@ -168,6 +169,9 @@ auto CDlgOpenDrive::GetDeviceDrives()->std::vector<DEVICE_DRIVE>
 		pDIDD->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 		SetupDiGetDeviceInterfaceDetailW(hDevInfo, &stDID, pDIDD, dwSize, nullptr, nullptr);
 		DEVICE_DRIVE stDrive;
+
+		//The pDIDD->DevicePath is a RAW Device path, such as:
+		// "\\?\scsi#disk&ven_samsung&prod_ssd_860_evo_1tb#4&38ab876e&0&010000#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}"
 
 		//Get Drive info: Number, Bus type, Size.
 		if (const auto hDevice = CreateFileW(pDIDD->DevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -391,8 +395,8 @@ auto CDlgOpenVolume::GetDeviceVolumes()->std::vector<DEVICE_VOLUME>
 		SetupDiGetDeviceInterfaceDetailW(hDevInfo, &stDID, pDIDD, dwSize, nullptr, nullptr);
 
 		//pDIDD->DevicePath is a RAW Volume path.
-		//To convert it to a \\?\Volume{GUID}\ form, add trailing slash first (\).
-		//Only then pass it to the GetVolumeNameForVolumeMountPointW function.
+		//To convert it to the "\\?\Volume{GUID}\" form, we add trailing slash to it first (\),
+		//and only then pass it to the GetVolumeNameForVolumeMountPointW function.
 		DEVICE_VOLUME stVolume { .wstrVolumePath { pDIDD->DevicePath } };
 		stVolume.wstrVolumePath += '\\';
 		wchar_t buffVolPath[MAX_PATH];

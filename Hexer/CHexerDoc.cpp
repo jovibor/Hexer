@@ -71,6 +71,11 @@ auto CHexerDoc::GetFileName()const->const std::wstring&
 	return m_wstrFileName;
 }
 
+auto CHexerDoc::GetFriendlyName()const->const std::wstring&
+{
+	return m_wstrFriendlyName;
+}
+
 auto CHexerDoc::GetMaxVirtOffset()const->std::uint64_t
 {
 	return m_stDataLoader.GetMaxVirtOffset();
@@ -152,6 +157,7 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 {
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
+	m_wstrFriendlyName = dos.wstrFriendlyName;
 	auto& refSett = theApp.GetAppSettings();
 	if (const auto expOpen = m_stDataLoader.Open(dos, refSett.GetGeneralSettings().stDAC,
 		refSett.GetGeneralSettings().eDataIOMode); !expOpen) {
@@ -184,7 +190,7 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 		default:
 			return 0;
 		}
-		}();
+	}();
 	m_hDocIcon = Ut::HICONfromHBITMAP(Ut::GetHBITMAP(iResID));
 	const auto wstrLog = std::format(L"{} opened: {} ({})", Ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
 		Ut::GetWstrDATAACCESS(GetDataAccessMode()));

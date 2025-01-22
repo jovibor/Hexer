@@ -24,6 +24,7 @@ public:
 	[[nodiscard]] auto GetDocIcon()const->HICON;
 	[[nodiscard]] auto GetFileMMAPData()const->std::byte*;
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
+	[[nodiscard]] auto GetFriendlyName()const->const std::wstring&;
 	[[nodiscard]] auto GetMaxVirtOffset()const->std::uint64_t;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
 	[[nodiscard]] auto GetOpenMode()const->Ut::EOpenMode;
@@ -53,6 +54,7 @@ private:
 	CDataLoader m_stDataLoader;
 	std::wstring m_wstrDataPath;
 	std::wstring m_wstrFileName;
+	std::wstring m_wstrFriendlyName;
 	HICON m_hDocIcon { };     //Document icon.
 	bool m_fOpened { false }; //Document was successfully opened or not.
 };

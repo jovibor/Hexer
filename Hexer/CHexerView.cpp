@@ -49,7 +49,8 @@ END_MESSAGE_MAP()
 auto CHexerView::GetDataInfo()const->Ut::DATAINFO
 {
 	const auto pDoc = GetDocument();
-	return { .wsvDataPath { pDoc->GetDataPath() }, .wsvFileName { pDoc->GetFileName() }, .ullDataSize { pDoc->GetDataSize() },
+	return { .wsvDataPath { pDoc->GetDataPath() }, .wsvFileName { pDoc->GetFileName() },
+		.wsvFriendlyName { pDoc->GetFriendlyName() }, .ullDataSize { pDoc->GetDataSize() },
 		.dwPageSize { GetHexCtrl()->GetPageSize() }, .eOpenMode { pDoc->GetOpenMode() },
 		.stDAC { pDoc->GetDataAccessMode() }, .eDataIOMode { pDoc->GetDataIOMode() } };
 }

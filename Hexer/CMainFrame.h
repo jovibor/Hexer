@@ -57,6 +57,7 @@ protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
 	afx_msg BOOL OnEraseMDIClientBackground(CDC* pDC)override;
+	auto OnGetTabTooltip(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg void OnUpdateRangePanes(CCmdUI* pCmdUI);
 	afx_msg void OnViewCustomize();
 	afx_msg void OnViewRangePanes(UINT uMenuID);

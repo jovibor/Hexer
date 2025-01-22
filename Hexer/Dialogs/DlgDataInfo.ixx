@@ -29,12 +29,12 @@ private:
 	DECLARE_MESSAGE_MAP();
 private:
 	enum class EPropName : std::uint8_t {
-		DATA_PATH = 0x1, DATA_NAME, DATA_SIZE, PAGE_SIZE, ACCESS_MODE, IO_MODE
+		DATA_PATH = 0x1, DATA_NAME, FRIENDLY_NAME, DATA_SIZE, PAGE_SIZE, ACCESS_MODE, IO_MODE
 	};
 	CHexerPropGridCtrl m_gridDataInfo;
 	std::vector<CHexerPropGridProp*> m_vecPropsDataProps;
 	CFont m_fntFilePropsGrid;
-	Ut::DATAINFO m_dis { };
+	Ut::DATAINFO m_dis;
 };
 
 BEGIN_MESSAGE_MAP(CDlgDataInfo, CDialogEx)
@@ -96,6 +96,13 @@ BOOL CDlgDataInfo::OnInitDialog()
 	m_vecPropsDataProps.emplace_back(pDataName);
 	m_gridDataInfo.AddProperty(pDataName);
 
+	const auto pFriendlyName = new CHexerPropGridProp(L"Friendly Name:", L"");
+	pFriendlyName->SetData(static_cast<DWORD_PTR>(FRIENDLY_NAME));
+	pFriendlyName->SetValueColor(RGB(0, 0, 250));
+	pFriendlyName->AllowEdit(FALSE);
+	m_vecPropsDataProps.emplace_back(pFriendlyName);
+	m_gridDataInfo.AddProperty(pFriendlyName);
+
 	const auto pDataSize = new CHexerPropGridProp(L"", L"");
 	pDataSize->SetData(static_cast<DWORD_PTR>(DATA_SIZE));
 	pDataSize->SetValueColor(RGB(0, 0, 250));
@@ -139,15 +146,18 @@ void CDlgDataInfo::UpdateGridData()
 		auto wstr = std::wstring { Ut::GetWstrEOpenMode(m_dis.eOpenMode) };
 		switch (static_cast<EPropName>(pProp->GetData())) {
 		case DATA_PATH:
-			pProp->SetName((wstr += L" path:").data(), FALSE);
+			pProp->SetName((wstr += L" Path:").data(), FALSE);
 			pProp->SetValue(m_dis.wsvDataPath.data());
 			break;
 		case DATA_NAME:
-			pProp->SetName((wstr += L" name:").data(), FALSE);
+			pProp->SetName((wstr += L" Name:").data(), FALSE);
 			pProp->SetValue(m_dis.wsvFileName.data());
 			break;
+		case FRIENDLY_NAME:
+			pProp->SetValue(m_dis.wsvFriendlyName.empty() ? L"—" : m_dis.wsvFriendlyName.data());
+			break;
 		case DATA_SIZE:
-			pProp->SetName((wstr += L" size:").data(), FALSE);
+			pProp->SetName((wstr += L" Size:").data(), FALSE);
 			pProp->SetValue(std::format(std::locale("en_US.UTF-8"), L"{:L} bytes", m_dis.ullDataSize).data());
 			break;
 		case PAGE_SIZE:

@@ -144,7 +144,8 @@ void CAppSettingsRFL::AddToListBeginning(const Ut::DATAOPEN& dos, VecDataOpen& v
 	std::erase_if(vecData, [&dos](const Ut::DATAOPEN& refData) { return refData == dos; });
 	const auto eOpenMode = dos.eOpenMode == NEW_FILE ? OPEN_FILE : dos.eOpenMode;
 	vecData.emplace(vecData.begin(), Ut::DATAOPEN {
-		.wstrDataPath { dos.wstrDataPath }, .dwProcID { dos.dwProcID }, .eOpenMode { eOpenMode } });
+		.wstrDataPath { dos.wstrDataPath }, .wstrFriendlyName { dos.wstrFriendlyName },
+		.dwProcID { dos.dwProcID }, .eOpenMode { eOpenMode } });
 }
 
 auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
@@ -163,7 +164,7 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 		DWORD dwNameSize { sizeof(buffName) / sizeof(wchar_t) };
 		DWORD dwDataType { };
 		DWORD dwDataSize { MAX_PATH * sizeof(wchar_t) };
-		iCode = RegEnumValueW(reg, dwIndex, buffName, &dwNameSize, nullptr, &dwDataType,
+		iCode = RegEnumValueW(reg, dwIndex++, buffName, &dwNameSize, nullptr, &dwDataType,
 			reinterpret_cast<LPBYTE>(&buffData), &dwDataSize);
 
 		if (iCode == ERROR_SUCCESS && dwDataType == REG_SZ) {
@@ -198,6 +199,7 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 				if (!optID) {
 					continue;
 				}
+
 				stDOS.dwProcID = *optID; //Process ID.
 
 				const auto nName = wsvData.find(L"Name:", nIDEnd + 1);
@@ -213,6 +215,33 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 
 				stDOS.wstrDataPath = wsvData.substr(nNameStart, nNameEnd - nNameStart); //Process name.
 			}
+			else if (eOpenMode == OPEN_DRIVE) {
+				const auto nPath = wsvData.find(L"Path:");
+				if (nPath == std::wstring_view::npos) {
+					continue;
+				}
+
+				const auto nPathStart = nPath + 5;
+				const auto nPathEnd = wsvData.find(L';', nPathStart);
+				if (nPathEnd == std::wstring_view::npos) {
+					continue;
+				}
+
+				stDOS.wstrDataPath = wsvData.substr(nPathStart, nPathEnd - nPathStart); //Path.
+
+				const auto nName = wsvData.find(L"FriendlyName:", nPathEnd + 1);
+				if (nName == std::wstring_view::npos) {
+					continue;
+				}
+
+				const auto nNameStart = nName + 13 /*length of "FriendlyName:"*/;
+				const auto nNameEnd = wsvData.find(L';', nNameStart);
+				if (nNameEnd == std::wstring_view::npos) {
+					continue;
+				}
+
+				stDOS.wstrFriendlyName = wsvData.substr(nNameStart, nNameEnd - nNameStart); //Friendly name.
+			}
 			else {
 				stDOS.wstrDataPath = wsvData;
 			}
@@ -220,7 +249,7 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 			vecRet.emplace_back(stDOS);
 		}
 
-		if (++dwIndex > 50) { //Sentinel.
+		if (dwIndex > 50) { //Sentinel.
 			break;
 		}
 	}
@@ -245,6 +274,10 @@ void CAppSettingsRFL::SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen&
 		if (ref.eOpenMode == OPEN_PROC) {
 			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
 				std::format(L"ID:{};Name:{};", ref.dwProcID, ref.wstrDataPath).data());
+		}
+		else if (ref.eOpenMode == OPEN_DRIVE) {
+			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
+				std::format(L"Path:{};FriendlyName:{};", ref.wstrDataPath, ref.wstrFriendlyName).data());
 		}
 		else {
 			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetWstrEOpenMode(ref.eOpenMode)).data(),

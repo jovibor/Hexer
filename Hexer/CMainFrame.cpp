@@ -22,6 +22,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnViewRangePanes)
 	ON_MESSAGE(Ut::WM_APP_SETTINGS_CHANGED, &CMainFrame::OnAppSettingsChanged)
 	ON_MESSAGE(Ut::WM_ADD_LOG_ENTRY, &CMainFrame::OnAddLogEntry)
+	ON_REGISTERED_MESSAGE(AFX_WM_ON_GET_TAB_TOOLTIP, &CMainFrame::OnGetTabTooltip)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnUpdateRangePanes)
 	ON_WM_CLOSE()
 	ON_WM_COPYDATA()
@@ -124,7 +125,7 @@ void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 void CMainFrame::UpdatePaneFileInfo()
 {
 	if (const auto pHex = GetHexerView(); pHex != nullptr) {
-		m_dlgDataInfo.SetDataInfo(GetHexerView()->GetDataInfo());
+		m_dlgDataInfo.SetDataInfo(pHex->GetDataInfo());
 	}
 }
 
@@ -418,6 +419,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	mdiTabParams.m_bFlatFrame = TRUE;
 	mdiTabParams.m_bEnableTabSwap = TRUE;
 	mdiTabParams.m_nTabBorderSize = 0;
+	mdiTabParams.m_bTabCustomTooltips = TRUE;
 	EnableMDITabbedGroups(TRUE, mdiTabParams);
 	EnableDocking(CBRS_ALIGN_ANY);
 	CPaneDivider::m_pSliderRTC = RUNTIME_CLASS(CHexerPaneDivider);
@@ -519,6 +521,26 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/)
 {
 	return TRUE;
+}
+
+auto CMainFrame::OnGetTabTooltip(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
+{
+	const auto pTTI = reinterpret_cast<CMFCTabToolTipInfo*>(lParam);
+	ASSERT(pTTI != NULL);
+	if (pTTI == nullptr)
+		return 0;
+
+	ASSERT_VALID(pTTI->m_pTabWnd);
+	if (!pTTI->m_pTabWnd->IsMDITab())
+		return 0;
+
+	const auto pFrame = DYNAMIC_DOWNCAST(CChildFrame, pTTI->m_pTabWnd->GetTabWnd(pTTI->m_nTabIndex));
+	if (pFrame == nullptr)
+		return 0;
+
+	pTTI->m_strText = pFrame->GetHexerView()->GetDataInfo().wsvFriendlyName.data();
+
+	return 0;
 }
 
 void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)
