@@ -306,12 +306,12 @@ void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/
 	m_vecModules.clear();
 	HMODULE arrHModules[1024];
 	DWORD dwCbNeeded { };
-	if (K32EnumProcessModules(hProc, arrHModules, sizeof(arrHModules), &dwCbNeeded)) {
+	if (::K32EnumProcessModules(hProc, arrHModules, sizeof(arrHModules), &dwCbNeeded)) {
 		const DWORD dwModsCount = dwCbNeeded / sizeof(HMODULE); //How many modules the hProc has.
 		for (auto i { 0UL }; i < dwModsCount; ++i) {
-			if (wchar_t arrModName[MAX_PATH]; K32GetModuleFileNameExW(hProc, arrHModules[i], arrModName, MAX_PATH)) {
+			if (wchar_t arrModName[MAX_PATH]; ::K32GetModuleFileNameExW(hProc, arrHModules[i], arrModName, MAX_PATH)) {
 				MODULEINFO mi;
-				K32GetModuleInformation(hProc, arrHModules[i], &mi, sizeof(MODULEINFO));
+				::K32GetModuleInformation(hProc, arrHModules[i], &mi, sizeof(MODULEINFO));
 				std::wstring_view wsvModPath { arrModName };
 				const auto wsvModName = wsvModPath.substr(wsvModPath.find_last_of(L'\\') + 1);
 				m_vecModules.emplace_back(wsvModName.data(), mi.SizeOfImage);
@@ -319,7 +319,7 @@ void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/
 		}
 	}
 
-	CloseHandle(hProc);
+	::CloseHandle(hProc);
 	m_ListModules.SetItemCountEx(static_cast<int>(m_vecModules.size()));
 	m_ListModules.RedrawWindow();
 	OnProcReady(true);
@@ -374,9 +374,9 @@ void CDlgOpenProcess::OnListProcsGetTooltip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 	m_wstrTTProcPath.resize_and_overwrite(MAX_PATH, [hProc](wchar_t* pData, std::size_t sSize) {
 		DWORD dwSize { static_cast<DWORD>(sSize) };
-		const auto ret = QueryFullProcessImageNameW(hProc, 0, pData, &dwSize);
+		const auto ret = ::QueryFullProcessImageNameW(hProc, 0, pData, &dwSize);
 		return ret ? dwSize : 0; });
-	CloseHandle(hProc);
+	::CloseHandle(hProc);
 
 	pTTI->stData.pwszText = m_wstrTTProcPath.data();
 }

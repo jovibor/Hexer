@@ -128,7 +128,7 @@ void CDlgOpenDrive::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 void CDlgOpenDrive::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(m_List.GetSelectedCount() > 0);
+	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(IsOK());
 }
 
 void CDlgOpenDrive::OnOK()
@@ -348,7 +348,7 @@ void CDlgOpenVolume::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 
 void CDlgOpenVolume::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(m_List.GetSelectedCount() > 0);
+	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(IsOK());
 }
 
 void CDlgOpenVolume::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
@@ -503,7 +503,7 @@ void CDlgOpenPath::OnCancel()
 
 void CDlgOpenPath::OnComboPathEdit()
 {
-	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(m_stComboPath.GetWindowTextLengthW() > 0);
+	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(IsOK());
 }
 
 void CDlgOpenPath::OnOK()
@@ -680,7 +680,11 @@ void CDlgOpenDevice::OnOK()
 
 void CDlgOpenDevice::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
-	SetCurrentTab(TabIDToName(m_tabMain.GetCurSel()));
+	const auto eTab = TabIDToName(m_tabMain.GetCurSel());
+	if (m_eCurTab == eTab)
+		return;
+
+	SetCurrentTab(eTab);
 }
 
 BOOL CDlgOpenDevice::PreTranslateMessage(MSG* pMsg)

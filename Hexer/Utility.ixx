@@ -149,7 +149,7 @@ export namespace Ut {
 	}
 
 	enum class EOpenMode : std::uint8_t {
-		OPEN_FILE, OPEN_DRIVE, OPEN_VOLUME, OPEN_PATH, OPEN_PROC, NEW_FILE
+		OPEN_FILE = 0x1, OPEN_DRIVE, OPEN_VOLUME, OPEN_PATH, OPEN_PROC, NEW_FILE
 	};
 
 	enum class EDataAccessMode : std::uint8_t {
