@@ -330,6 +330,7 @@ BOOL CHexerApp::InitInstance()
 	HANDLE hToken { };
 	OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
 	AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, nullptr, nullptr);
+	CloseHandle(hToken);
 
 	EnableTaskbarInteraction(FALSE);
 	SetRegistryKey(Ut::GetAppName().data());

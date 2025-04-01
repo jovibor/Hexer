@@ -9,12 +9,11 @@ module;
 #include "resource.h"
 #include <afxwin.h>
 #include "HexCtrl.h"
-#include <winioctl.h>
 #include <compare>
 #include <chrono>
 #include <expected>
-#include <optional>
 #include <string>
+#include <winioctl.h>
 export module Utility;
 
 export import StrToNum;
@@ -29,6 +28,19 @@ export namespace Ut {
 	constexpr auto HEXER_VERSION_PATCH = 0;
 
 	constexpr UINT g_arrPanes[] { IDC_PANE_DATAINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGGER };
+
+	[[nodiscard]] bool IsElevated() { //Checking if the app runs elevated.
+		static const bool fElevated = [] {
+			HANDLE hToken { };
+			::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &hToken);
+			TOKEN_ELEVATION te { };
+			DWORD cbSize { sizeof(te) };
+			::GetTokenInformation(hToken, TokenElevation, &te, sizeof(te), &cbSize);
+			::CloseHandle(hToken);
+			return te.TokenIsElevated > 0;
+			}();
+		return fElevated;
+	}
 
 	//AfxGetMainWnd() doesn't return correct handle in some cases.
 	//For instance, when open process and trying filling its whole memory with any data.

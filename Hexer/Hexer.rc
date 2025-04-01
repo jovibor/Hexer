@@ -238,7 +238,7 @@ BEGIN
     CONTROL         "",IDC_OPENDEVICE_TAB,"SysTabControl32",0x0,0,0,383,13
     DEFPUSHBUTTON   "Open",IDOK,269,152,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,327,152,50,14
-    LTEXT           "Some entities may require elevation (Admin access) to open.",IDC_OPENDEVICE_STATIC_INFO,6,155,194,8
+    LTEXT           "Some entities may require elevation (as Admin) to open.",IDC_OPENDEVICE_STATIC_INFO,6,155,180,8
 END
 
 IDD_NEWFILE DIALOGEX 0, 0, 279, 90

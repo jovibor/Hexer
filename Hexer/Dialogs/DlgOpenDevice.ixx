@@ -40,6 +40,7 @@ private:
 	void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
 	BOOL OnInitDialog()override;
 	afx_msg void OnListDblClick(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListGetColor(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	void OnOK()override;
@@ -52,6 +53,7 @@ private:
 BEGIN_MESSAGE_MAP(CDlgOpenDrive, CDialogEx)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPENDRIVE_LIST, &CDlgOpenDrive::OnListDblClick)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENDRIVE_LIST, &CDlgOpenDrive::OnListItemChanged)
+	ON_NOTIFY(lex::LISTEX_MSG_GETCOLOR, IDC_OPENDRIVE_LIST, &CDlgOpenDrive::OnListGetColor)
 	ON_WM_DRAWITEM()
 	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
@@ -108,6 +110,10 @@ BOOL CDlgOpenDrive::OnInitDialog()
 		m_List.SetItemText(iidx, 1, std::format(L"{:.2f} GB", static_cast<double>(drive.u64Size) / 1024 / 1024 / 1024).data());
 		m_List.SetItemText(iidx, 2, drive.wstrDrivePath.data());
 		m_List.SetItemText(iidx, 3, drive.wstrBusType.data());
+
+		//Setting exact size as item data, to get it in the OnListGetColor.
+		const LVITEMW lvi { .mask { LVIF_PARAM }, .iItem { iidx }, .lParam { static_cast<LPARAM>(drive.u64Size) } };
+		m_List.SetItem(&lvi);
 	}
 
 	return TRUE;
@@ -123,6 +129,18 @@ void CDlgOpenDrive::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	if (const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 		pNMI->iItem >= 0 && pNMI->iSubItem >= 0) {
 		OnOK();
+	}
+}
+
+void CDlgOpenDrive::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	const auto pLCI = reinterpret_cast<lex::PLISTEXCOLORINFO>(pNMHDR);
+	if (pLCI->iSubItem == 1) { //Size column.
+		LVITEMW lvi { .mask { LVIF_PARAM }, .iItem { pLCI->iItem } };
+		m_List.GetItem(&lvi);
+		if (lvi.lParam == 0) {
+			pLCI->stClr = { RGB(250, 250, 250), RGB(250, 0, 0) };
+		}
 	}
 }
 
@@ -238,6 +256,7 @@ private:
 	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
 	BOOL OnInitDialog()override;
 	afx_msg void OnListDblClick(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnListGetColor(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	void OnOK()override;
@@ -250,6 +269,7 @@ private:
 BEGIN_MESSAGE_MAP(CDlgOpenVolume, CDialogEx)
 	ON_NOTIFY(NM_DBLCLK, IDC_OPENVOLUME_LIST, &CDlgOpenVolume::OnListDblClick)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_OPENVOLUME_LIST, &CDlgOpenVolume::OnListItemChanged)
+	ON_NOTIFY(lex::LISTEX_MSG_GETCOLOR, IDC_OPENVOLUME_LIST, &CDlgOpenVolume::OnListGetColor)
 	ON_WM_DRAWITEM()
 	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
@@ -333,6 +353,10 @@ BOOL CDlgOpenVolume::OnInitDialog()
 		m_List.SetItemText(iidx, 4, vol.wstrDriveType.data());
 		m_List.SetItemText(iidx, 5, vol.wstrFileSystem.data());
 		m_List.SetItemText(iidx, 6, vol.wstrVolumePath.data());
+
+		//Setting exact size as item data, to get it in the OnListGetColor.
+		const LVITEMW lvi { .mask { LVIF_PARAM }, .iItem { iidx }, .lParam { static_cast<LPARAM>(vol.u64Size) } };
+		m_List.SetItem(&lvi);
 	}
 
 	return TRUE;
@@ -343,6 +367,18 @@ void CDlgOpenVolume::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	if (const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 		pNMI->iItem >= 0 && pNMI->iSubItem >= 0) {
 		OnOK();
+	}
+}
+
+void CDlgOpenVolume::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
+{
+	const auto pLCI = reinterpret_cast<lex::PLISTEXCOLORINFO>(pNMHDR);
+	if (pLCI->iSubItem == 3) { //Size column.
+		LVITEMW lvi { .mask { LVIF_PARAM }, .iItem { pLCI->iItem } };
+		m_List.GetItem(&lvi);
+		if (lvi.lParam == 0) {
+			pLCI->stClr = { RGB(250, 250, 250), RGB(250, 0, 0) };
+		}
 	}
 }
 
@@ -572,7 +608,7 @@ auto CDlgOpenDevice::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH
 {
 	const auto hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
 	if (nCtlColor == CTLCOLOR_STATIC) {
-		pDC->SetTextColor(RGB(0, 0, 250));
+		pDC->SetTextColor(Ut::IsElevated() ? RGB(0, 210, 0) : RGB(250, 0, 0));
 	}
 	return hbr;
 }
@@ -637,6 +673,10 @@ BOOL CDlgOpenDevice::OnInitDialog()
 	pLayout->AddItem(IDC_OPENDEVICE_STATIC_INFO, CMFCDynamicLayout::MoveVertical(100), CMFCDynamicLayout::SizeNone());
 
 	SetCurrentTab(m_eCurTab);
+
+	if (Ut::IsElevated()) {
+		GetDlgItem(IDC_OPENDEVICE_STATIC_INFO)->SetWindowTextW(L"App is running in elevated (as Admin) mode.");
+	}
 
 	const auto hIcon = AfxGetApp()->LoadIconW(IDR_HEXER_FRAME);
 	SetIcon(hIcon, TRUE);

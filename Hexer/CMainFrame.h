@@ -27,7 +27,7 @@ public:
 	[[nodiscard]] bool IsPaneVisible(UINT uPaneID); //Is Pane visible even if pane's window itself is tabbed and hidden atm (not active).
 	[[nodiscard]] bool IsPaneActive(UINT uPaneID);  //Is Pane itself visible atm.
 	BOOL LoadFrame(UINT nIDResource, DWORD dwDefaultStyle = WS_OVERLAPPEDWINDOW | FWS_ADDTOTITLE,
-		CWnd* pParentWnd = NULL, CCreateContext* pContext = NULL)override;
+		CWnd* pParentWnd = nullptr, CCreateContext* pContext = nullptr)override;
 	void OnChildFrameActivate();
 	void OnChildFrameCloseLast();   //When the last child frame is closed.
 	void OnChildFrameDisactivate();
