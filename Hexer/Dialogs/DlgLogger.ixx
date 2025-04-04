@@ -1,4 +1,4 @@
-﻿module;
+module;
 /*******************************************************************************
 * Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
@@ -37,9 +37,9 @@ private:
 		IDM_LIST_CLEARALL = 0x8001
 	};
 	struct LOGDATA { //Struct for storing log data.
-		Ut::Log::local_time tmloc;
-		std::wstring        wstrMsg;
-		Ut::Log::EMsgType   eType { };
+		std::time_t       time;
+		std::wstring      wstrMsg;
+		Ut::Log::EMsgType eType { };
 	};
 	lex::CListEx m_List;
 	std::vector<LOGDATA> m_vecData;
@@ -57,7 +57,7 @@ END_MESSAGE_MAP()
 
 void CDlgLogger::AddLogEntry(const Ut::Log::LOGINFO& li)
 {
-	m_vecData.emplace_back(li.tmloc, std::wstring { li.wsvMsg }, li.eType);
+	m_vecData.emplace_back(li.time, std::wstring { li.wsvMsg }, li.eType);
 
 	if (::IsWindow(m_hWnd)) {
 		m_List.SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOINVALIDATEALL);
@@ -151,7 +151,7 @@ void CDlgLogger::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 		*std::format_to(pItem->pszText, L"{}", iItem + 1) = L'\0';
 		break;
 	case 1: //Time.
-		*std::format_to(pItem->pszText, L"{:%H:%M:%OS}", refData.tmloc) = L'\0';
+		*std::format_to(pItem->pszText, L"{}", Ut::TimetToWstr(refData.time)) = L'\0';
 		break;
 	case 2: //Event.
 		*std::format_to(pItem->pszText, L"{}", refData.wstrMsg) = L'\0';

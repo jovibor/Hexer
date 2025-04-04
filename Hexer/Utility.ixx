@@ -303,6 +303,14 @@ export namespace Ut {
 		return hICO;
 	}
 
+	[[nodiscard]] auto TimetToWstr(std::time_t time) -> std::wstring {
+		std::tm tm;
+		localtime_s(&tm, &time);
+		wchar_t wbuff[32];
+		std::wcsftime(wbuff, 32, L"%H:%M:%S", &tm);
+		return wbuff;
+	}
+
 	struct DATAOPEN { //Main data opening struct.
 		std::wstring  wstrDataPath; //Or Process name.
 		std::wstring  wstrFriendlyName; //Used mostly for devices' friendly name.
@@ -345,9 +353,8 @@ export namespace Ut {
 			Unknown = -1, msg_error = 0, msg_warning = 1, msg_info = 2
 		};
 
-		using local_time = std::chrono::local_time<std::chrono::system_clock::duration>;
 		struct LOGINFO { //Struct for providing and transferring log data.
-			local_time        tmloc { std::chrono::current_zone()->to_local(std::chrono::system_clock::now()) };
+			std::time_t       time { std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) };
 			std::wstring_view wsvMsg;
 			EMsgType          eType { };
 		};
