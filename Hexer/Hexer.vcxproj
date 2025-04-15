@@ -68,6 +68,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(ProjectDir);dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -98,6 +99,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(ProjectDir);dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -257,7 +259,6 @@
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_BKMS.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_CLPBRD_COPYHEX.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_CLPBRD_PASTEHEX.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_DATAINTERP.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_FONTCHOOSE.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_GROUP.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_LOGO.bmp" />

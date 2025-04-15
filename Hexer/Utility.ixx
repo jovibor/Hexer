@@ -25,7 +25,7 @@ HWND g_hWndMain { };
 export namespace Ut {
 	constexpr auto HEXER_VERSION_MAJOR = 1;
 	constexpr auto HEXER_VERSION_MINOR = 3;
-	constexpr auto HEXER_VERSION_PATCH = 0;
+	constexpr auto HEXER_VERSION_PATCH = 1;
 
 	constexpr UINT g_arrPanes[] { IDC_PANE_DATAINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGGER };
 
@@ -304,11 +304,14 @@ export namespace Ut {
 	}
 
 	[[nodiscard]] auto TimetToWstr(std::time_t time) -> std::wstring {
-		std::tm tm;
-		localtime_s(&tm, &time);
-		wchar_t wbuff[32];
-		std::wcsftime(wbuff, 32, L"%H:%M:%S", &tm);
-		return wbuff;
+		std::wstring wstr;
+		wstr.resize_and_overwrite(32, [=](wchar_t* pData, std::size_t sSize)noexcept {
+			std::tm tm;
+			localtime_s(&tm, &time);
+			return std::wcsftime(pData, sSize, L"%H:%M:%S", &tm);
+		});
+
+		return wstr;
 	}
 
 	struct DATAOPEN { //Main data opening struct.
