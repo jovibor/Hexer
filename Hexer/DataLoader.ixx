@@ -22,17 +22,17 @@ export class CDataLoader final : public HEXCTRL::IHexVirtData {
 public:
 	CDataLoader();
 	~CDataLoader();
-	void ChangeDataAccessMode(Ut::DATAACCESS stDAC);
-	void ChangeDataIOMode(Ut::EDataIOMode eDataIOMode);
+	void ChangeDataAccessMode(ut::DATAACCESS stDAC);
+	void ChangeDataIOMode(ut::EDataIOMode eDataIOMode);
 	void Close();
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
-	[[nodiscard]] auto GetDataAccessMode()const->Ut::DATAACCESS;
-	[[nodiscard]] auto GetDataIOMode()const->Ut::EDataIOMode;
+	[[nodiscard]] auto GetDataAccessMode()const->ut::DATAACCESS;
+	[[nodiscard]] auto GetDataIOMode()const->ut::EDataIOMode;
 	[[nodiscard]] auto GetFileMMAPData()const->std::byte*;
 	[[nodiscard]] auto GetFileName()const->const std::wstring&;
 	[[nodiscard]] auto GetMaxVirtOffset()const->std::uint64_t;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
-	[[nodiscard]] auto GetOpenMode()const->Ut::EOpenMode;
+	[[nodiscard]] auto GetOpenMode()const->ut::EOpenMode;
 	[[nodiscard]] auto GetProcID()const->DWORD;
 	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
 	[[nodiscard]] auto GetIHexVirtData() -> HEXCTRL::IHexVirtData*;
@@ -41,7 +41,7 @@ public:
 	[[nodiscard]] bool IsFile()const;
 	[[nodiscard]] bool IsProcess()const;
 	[[nodiscard]] bool IsDataOKForDASAFE()const;
-	[[nodiscard]] auto Open(const Ut::DATAOPEN& dos, Ut::DATAACCESS stDAC, Ut::EDataIOMode eDataIOMode) ->
+	[[nodiscard]] auto Open(const ut::DATAOPEN& dos, ut::DATAACCESS stDAC, ut::EDataIOMode eDataIOMode) ->
 		std::expected<void, DWORD>;
 	void SaveDataToDisk();
 	[[nodiscard]] static constexpr auto GetCacheSize() -> DWORD; //Cache size reported to the outside, for IHexCtrl.
@@ -76,7 +76,7 @@ private:
 	[[nodiscard]] static constexpr auto GetFileSizeForDASAFE() -> DWORD; //Maximum file size for ACCESS_SAFE.
 private:
 	std::unique_ptr < std::byte[], decltype([](auto p) { _aligned_free(p); }) > m_pCache { };
-	Ut::DATAOPEN m_dos;            //Copy struct from the Open() method.
+	ut::DATAOPEN m_dos;            //Copy struct from the Open() method.
 	std::wstring m_wstrFileName;   //File name without path, or Process name.
 	std::vector<MEMORY_BASIC_INFORMATION> m_vecProcMemory; //Process memory regions info.
 	HANDLE m_hHandle { };          //Handle of a file or process.
@@ -88,8 +88,8 @@ private:
 	std::uint64_t m_ullMaxVirtOffset { }; //Maximum virtual address of a process.
 	DWORD m_dwPageSize { };        //System Virtual page size.
 	DWORD m_dwDeviceAlign { 1 };   //Alignment that the offset and the size must be aligned on, for the ReadFile on Device.
-	Ut::DATAACCESS m_stDAC;           //Current data access mode.
-	Ut::EDataIOMode m_eDataIOMode; //Current data IO mode.
+	ut::DATAACCESS m_stDAC;           //Current data access mode.
+	ut::EDataIOMode m_eDataIOMode; //Current data IO mode.
 	bool m_fDataMutable { false };     //Is data opened as RW or RO?
 	bool m_fModified { false };    //Data was modified.
 	bool m_fCacheZeroed { false }; //If cache is set with zeros or not.
@@ -107,7 +107,7 @@ CDataLoader::~CDataLoader()
 	Close();
 }
 
-void CDataLoader::ChangeDataAccessMode(Ut::DATAACCESS stDAC)
+void CDataLoader::ChangeDataAccessMode(ut::DATAACCESS stDAC)
 {
 	if (m_hHandle == nullptr) {
 		assert(true);
@@ -126,7 +126,7 @@ void CDataLoader::ChangeDataAccessMode(Ut::DATAACCESS stDAC)
 	if (stDACCurr.eDataAccessMode == stDAC.eDataAccessMode)
 		return;
 
-	using enum Ut::EDataAccessMode;
+	using enum ut::EDataAccessMode;
 	switch (stDAC.eDataAccessMode) {
 	case ACCESS_SAFE:
 		if (!IsDataOKForDASAFE()) {
@@ -147,7 +147,7 @@ void CDataLoader::ChangeDataAccessMode(Ut::DATAACCESS stDAC)
 	m_stDAC = stDAC;
 }
 
-void CDataLoader::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
+void CDataLoader::ChangeDataIOMode(ut::EDataIOMode eDataIOMode)
 {
 	if (m_hHandle == nullptr) {
 		assert(true);
@@ -159,7 +159,7 @@ void CDataLoader::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
 	if (!IsFile() || IsDataAccessSAFE() || eDataIOMode == GetDataIOMode())
 		return;
 
-	using enum Ut::EDataIOMode;
+	using enum ut::EDataIOMode;
 	m_eDataIOMode = eDataIOMode;
 	switch (eDataIOMode) {
 	case DATA_MMAP:
@@ -208,12 +208,12 @@ auto CDataLoader::GetDataSize()const->std::uint64_t
 	return static_cast<std::uint64_t>(m_stDataSize.QuadPart);
 }
 
-auto CDataLoader::GetDataAccessMode()const->Ut::DATAACCESS
+auto CDataLoader::GetDataAccessMode()const->ut::DATAACCESS
 {
 	return m_stDAC;
 }
 
-auto CDataLoader::GetDataIOMode()const->Ut::EDataIOMode
+auto CDataLoader::GetDataIOMode()const->ut::EDataIOMode
 {
 	return m_eDataIOMode;
 }
@@ -238,7 +238,7 @@ auto CDataLoader::GetMemPageSize()const->DWORD
 	return m_dwPageSize;
 }
 
-auto CDataLoader::GetOpenMode()const->Ut::EOpenMode
+auto CDataLoader::GetOpenMode()const->ut::EOpenMode
 {
 	return m_dos.eOpenMode;
 }
@@ -265,13 +265,13 @@ bool CDataLoader::IsDataOKForDASAFE()const
 
 bool CDataLoader::IsDevice()const
 {
-	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_DRIVE || m_dos.eOpenMode == Ut::EOpenMode::OPEN_VOLUME
-		|| m_dos.eOpenMode == Ut::EOpenMode::OPEN_PATH;
+	return m_dos.eOpenMode == ut::EOpenMode::OPEN_DRIVE || m_dos.eOpenMode == ut::EOpenMode::OPEN_VOLUME
+		|| m_dos.eOpenMode == ut::EOpenMode::OPEN_PATH;
 }
 
 bool CDataLoader::IsFile()const
 {
-	using enum Ut::EOpenMode;
+	using enum ut::EOpenMode;
 	return m_dos.eOpenMode == OPEN_FILE || m_dos.eOpenMode == NEW_FILE;
 }
 
@@ -282,10 +282,10 @@ bool CDataLoader::IsDataWritable()const
 
 bool CDataLoader::IsProcess()const
 {
-	return m_dos.eOpenMode == Ut::EOpenMode::OPEN_PROC;
+	return m_dos.eOpenMode == ut::EOpenMode::OPEN_PROC;
 }
 
-auto CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::DATAACCESS stDAC, Ut::EDataIOMode eDataIOMode)
+auto CDataLoader::Open(const ut::DATAOPEN& dos, ut::DATAACCESS stDAC, ut::EDataIOMode eDataIOMode)
 ->std::expected<void, DWORD>
 {
 	if (m_hHandle != nullptr) { //Already opened.
@@ -297,7 +297,7 @@ auto CDataLoader::Open(const Ut::DATAOPEN& dos, Ut::DATAACCESS stDAC, Ut::EDataI
 	m_stDAC = stDAC;
 	m_eDataIOMode = eDataIOMode;
 
-	using enum Ut::EOpenMode;
+	using enum ut::EOpenMode;
 	switch (dos.eOpenMode) {
 	case OPEN_FILE:
 		return OpenFile();
@@ -417,7 +417,7 @@ void CDataLoader::InitDataAccessINPLACE(bool fInit)
 void CDataLoader::InitForFile()
 {
 	if (IsDataAccessSAFE() && !IsDataOKForDASAFE()) {
-		m_stDAC.eDataAccessMode = Ut::EDataAccessMode::ACCESS_INPLACE;
+		m_stDAC.eDataAccessMode = ut::EDataAccessMode::ACCESS_INPLACE;
 	}
 
 	if (IsDataAccessSAFE()) {
@@ -432,7 +432,7 @@ void CDataLoader::InitIOMMAP(bool fInit)
 {
 	if (fInit) {
 		if (m_hMapObject != nullptr || m_lpMapBase != nullptr) {
-			Ut::Log::AddLogEntryError(L"File already mapped.");
+			ut::Log::AddLogEntryError(L"File already mapped.");
 			return;
 		}
 
@@ -473,24 +473,24 @@ void CDataLoader::InitInternalCache(DWORD dwSize, DWORD dwAlign)
 
 bool CDataLoader::IsDataAccessSAFE()const
 {
-	return GetDataAccessMode().eDataAccessMode == Ut::EDataAccessMode::ACCESS_SAFE;
+	return GetDataAccessMode().eDataAccessMode == ut::EDataAccessMode::ACCESS_SAFE;
 }
 
 bool CDataLoader::IsDataAccessINPLACE()const
 {
-	return GetDataAccessMode().eDataAccessMode == Ut::EDataAccessMode::ACCESS_INPLACE;
+	return GetDataAccessMode().eDataAccessMode == ut::EDataAccessMode::ACCESS_INPLACE;
 }
 
 bool CDataLoader::IsDataIOImmediate()const
 {
 	//If true then any data change will be written back to the file immediately.
 	//Otherwise, the whole cache will be written, but only when it needs to be refilled.
-	return GetDataIOMode() == Ut::EDataIOMode::DATA_IOIMMEDIATE;
+	return GetDataIOMode() == ut::EDataIOMode::DATA_IOIMMEDIATE;
 }
 
 bool CDataLoader::IsDataIOMMAP()const
 {
-	return GetDataIOMode() == Ut::EDataIOMode::DATA_MMAP;
+	return GetDataIOMode() == ut::EDataIOMode::DATA_MMAP;
 }
 
 bool CDataLoader::IsModified()const
@@ -500,13 +500,13 @@ bool CDataLoader::IsModified()const
 
 void CDataLoader::LogLastError(std::wstring_view wsvSource, DWORD dwErr)const
 {
-	Ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X} {}",
-		GetFileName(), wsvSource, dwErr > 0 ? dwErr : GetLastError(), Ut::GetLastErrorWstr(dwErr)));
+	ut::Log::AddLogEntryError(std::format(L"{}: {} failed: 0x{:08X} {}",
+		GetFileName(), wsvSource, dwErr > 0 ? dwErr : GetLastError(), ut::GetLastErrorWstr(dwErr)));
 }
 
 auto CDataLoader::NewFile()->std::expected<void, DWORD>
 {
-	assert(m_dos.eOpenMode == Ut::EOpenMode::NEW_FILE);
+	assert(m_dos.eOpenMode == ut::EOpenMode::NEW_FILE);
 	assert(m_dos.ullSizeNewFile > 0);
 	if (m_dos.ullSizeNewFile == 0) {
 		return std::unexpected(0);
@@ -540,7 +540,7 @@ auto CDataLoader::NewFile()->std::expected<void, DWORD>
 
 void CDataLoader::OnHexGetData(HEXCTRL::HEXDATAINFO& hdi)
 {
-	using enum Ut::EOpenMode;
+	using enum ut::EOpenMode;
 	switch (m_dos.eOpenMode) {
 	case OPEN_PROC:
 		hdi.spnData = ReadProcData(hdi);
@@ -594,7 +594,7 @@ void CDataLoader::OnHexGetOffset(HEXCTRL::HEXDATAINFO& hdi, bool fGetVirt)
 
 void CDataLoader::OnHexSetData(const HEXCTRL::HEXDATAINFO& hdi)
 {
-	using enum Ut::EOpenMode;
+	using enum ut::EOpenMode;
 	switch (m_dos.eOpenMode) {
 	case OPEN_DRIVE:
 	case OPEN_VOLUME:
@@ -670,15 +670,15 @@ auto CDataLoader::OpenDevice()->std::expected<void, DWORD>
 	}
 
 	m_dwDeviceAlign = stGeometry.BytesPerSector;
-	const auto expSize = Ut::GetDeviceSize(m_hHandle);
+	const auto expSize = ut::GetDeviceSize(m_hHandle);
 	if (!expSize) {
 		LogLastError(L"GetDeviceSize", expSize.error());
 		return std::unexpected(expSize.error());
 	}
 
 	m_stDataSize.QuadPart = *expSize;
-	m_stDAC.eDataAccessMode = Ut::EDataAccessMode::ACCESS_INPLACE;
-	m_eDataIOMode = Ut::EDataIOMode::DATA_IOIMMEDIATE;
+	m_stDAC.eDataAccessMode = ut::EDataAccessMode::ACCESS_INPLACE;
+	m_eDataIOMode = ut::EDataIOMode::DATA_IOIMMEDIATE;
 	InitInternalCache(GetInternalCacheSize(), GetDeviceAlign());
 
 	return { };
@@ -709,8 +709,8 @@ auto CDataLoader::OpenProcess()->std::expected<void, DWORD>
 
 	m_stDataSize.QuadPart = std::reduce(m_vecProcMemory.begin(), m_vecProcMemory.end(), 0ULL,
 		[](ULONGLONG ullSumm, const MEMORY_BASIC_INFORMATION& ref) { return ullSumm + ref.RegionSize; });
-	m_stDAC.eDataAccessMode = Ut::EDataAccessMode::ACCESS_INPLACE;
-	m_eDataIOMode = Ut::EDataIOMode::DATA_IOIMMEDIATE;
+	m_stDAC.eDataAccessMode = ut::EDataAccessMode::ACCESS_INPLACE;
+	m_eDataIOMode = ut::EDataIOMode::DATA_IOIMMEDIATE;
 	InitInternalCache();
 	m_fDataMutable = true;
 

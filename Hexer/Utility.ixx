@@ -22,7 +22,7 @@ export import ListEx;
 export namespace lex = HEXCTRL::LISTEX;
 HWND g_hWndMain { };
 
-export namespace Ut {
+export namespace ut {
 	constexpr auto HEXER_VERSION_MAJOR = 1;
 	constexpr auto HEXER_VERSION_MINOR = 3;
 	constexpr auto HEXER_VERSION_PATCH = 1;
@@ -100,7 +100,7 @@ export namespace Ut {
 	}
 
 	void ShowLastError(DWORD dwErr = 0) {
-		::MessageBoxW(nullptr, Ut::GetLastErrorWstr(dwErr).data(), nullptr, 0);
+		::MessageBoxW(nullptr, ut::GetLastErrorWstr(dwErr).data(), nullptr, 0);
 	}
 
 	[[nodiscard]] auto GetDeviceSize(HANDLE hHandle) -> std::expected<std::uint64_t, int> {
@@ -285,7 +285,7 @@ export namespace Ut {
 	};
 
 	[[nodiscard]] auto GetHBITMAP(int iResID) -> HBITMAP {
-		const auto iSizeIcon = static_cast<int>(16 * Ut::GetHiDPIInfo().flDPIScale);
+		const auto iSizeIcon = static_cast<int>(16 * ut::GetHiDPIInfo().flDPIScale);
 		return static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(iResID),
 			IMAGE_BITMAP, iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
 	}

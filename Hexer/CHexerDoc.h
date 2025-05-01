@@ -14,11 +14,11 @@ import Utility;
 
 class CHexerDoc final : public CDocument {
 public:
-	void ChangeDataAccessMode(Ut::DATAACCESS stDAC);
-	void ChangeDataIOMode(Ut::EDataIOMode eDataIOMode);
+	void ChangeDataAccessMode(ut::DATAACCESS stDAC);
+	void ChangeDataIOMode(ut::EDataIOMode eDataIOMode);
 	[[nodiscard]] auto GetCacheSize()const->DWORD;
-	[[nodiscard]] auto GetDataAccessMode()const->Ut::DATAACCESS;
-	[[nodiscard]] auto GetDataIOMode()const->Ut::EDataIOMode;
+	[[nodiscard]] auto GetDataAccessMode()const->ut::DATAACCESS;
+	[[nodiscard]] auto GetDataIOMode()const->ut::EDataIOMode;
 	[[nodiscard]] auto GetDataPath()const->const std::wstring&;
 	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
 	[[nodiscard]] auto GetDocIcon()const->HICON;
@@ -27,7 +27,7 @@ public:
 	[[nodiscard]] auto GetFriendlyName()const->const std::wstring&;
 	[[nodiscard]] auto GetMaxVirtOffset()const->std::uint64_t;
 	[[nodiscard]] auto GetMemPageSize()const->DWORD;
-	[[nodiscard]] auto GetOpenMode()const->Ut::EOpenMode;
+	[[nodiscard]] auto GetOpenMode()const->ut::EOpenMode;
 	[[nodiscard]] auto GetProcID()const->DWORD;
 	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
 	[[nodiscard]] auto GetIHexVirtData() -> HEXCTRL::IHexVirtData*;
@@ -40,10 +40,10 @@ public:
 	[[nodiscard]] bool IsDevice()const;
 	[[nodiscard]] bool IsFile()const;
 	[[nodiscard]] bool IsProcess()const;
-	[[nodiscard]] bool OnOpenDocument(const Ut::DATAOPEN& dos);
+	[[nodiscard]] bool OnOpenDocument(const ut::DATAOPEN& dos);
 	void SaveDataToDisk();
-	static auto GetUniqueDocName(const Ut::DATAOPEN& dos) -> std::wstring;
-	static auto GetDocTitle(const Ut::DATAOPEN& dos) -> std::wstring;
+	static auto GetUniqueDocName(const ut::DATAOPEN& dos) -> std::wstring;
+	static auto GetDocTitle(const ut::DATAOPEN& dos) -> std::wstring;
 private:
 	[[nodiscard]] auto GetMainFrame()const->CMainFrame*;
 	BOOL OnOpenDocument(LPCWSTR lpszPathName)override;

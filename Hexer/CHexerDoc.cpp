@@ -21,12 +21,12 @@ IMPLEMENT_DYNCREATE(CHexerDoc, CDocument)
 BEGIN_MESSAGE_MAP(CHexerDoc, CDocument)
 END_MESSAGE_MAP()
 
-void CHexerDoc::ChangeDataAccessMode(Ut::DATAACCESS stDAC)
+void CHexerDoc::ChangeDataAccessMode(ut::DATAACCESS stDAC)
 {
 	m_stDataLoader.ChangeDataAccessMode(stDAC);
 }
 
-void CHexerDoc::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
+void CHexerDoc::ChangeDataIOMode(ut::EDataIOMode eDataIOMode)
 {
 	m_stDataLoader.ChangeDataIOMode(eDataIOMode);
 }
@@ -36,12 +36,12 @@ auto CHexerDoc::GetCacheSize()const->DWORD
 	return m_stDataLoader.GetCacheSize();
 }
 
-auto CHexerDoc::GetDataAccessMode()const->Ut::DATAACCESS
+auto CHexerDoc::GetDataAccessMode()const->ut::DATAACCESS
 {
 	return m_stDataLoader.GetDataAccessMode();
 }
 
-auto CHexerDoc::GetDataIOMode()const->Ut::EDataIOMode
+auto CHexerDoc::GetDataIOMode()const->ut::EDataIOMode
 {
 	return m_stDataLoader.GetDataIOMode();
 }
@@ -86,7 +86,7 @@ auto CHexerDoc::GetMemPageSize()const->DWORD
 	return m_stDataLoader.GetMemPageSize();
 }
 
-auto CHexerDoc::GetOpenMode()const->Ut::EOpenMode
+auto CHexerDoc::GetOpenMode()const->ut::EOpenMode
 {
 	return m_stDataLoader.GetOpenMode();
 }
@@ -109,13 +109,13 @@ auto CHexerDoc::GetIHexVirtData()->HEXCTRL::IHexVirtData*
 bool CHexerDoc::IsDataAccessRWINPLACE() const
 {
 	const auto stDAC = GetDataAccessMode();
-	return stDAC.fMutable && stDAC.eDataAccessMode == Ut::EDataAccessMode::ACCESS_INPLACE;
+	return stDAC.fMutable && stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_INPLACE;
 }
 
 bool CHexerDoc::IsDataAccessRWSAFE()const
 {
 	const auto stDAC = GetDataAccessMode();
-	return stDAC.fMutable && stDAC.eDataAccessMode == Ut::EDataAccessMode::ACCESS_SAFE;
+	return stDAC.fMutable && stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_SAFE;
 }
 
 bool CHexerDoc::IsDataAccessRO()
@@ -153,7 +153,7 @@ bool CHexerDoc::IsProcess()const
 	return m_stDataLoader.IsProcess();
 }
 
-bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
+bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
 {
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
@@ -162,10 +162,10 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 	if (const auto expOpen = m_stDataLoader.Open(dos, refSett.GetGeneralSettings().stDAC,
 		refSett.GetGeneralSettings().eDataIOMode); !expOpen) {
 		refSett.RFLRemoveFromList(dos);
-		const auto wstrLog = std::format(L"{} open failed: {} \r\n{}", Ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
-			Ut::GetLastErrorWstr(expOpen.error()));
+		const auto wstrLog = std::format(L"{} open failed: {} \r\n{}", ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
+			ut::GetLastErrorWstr(expOpen.error()));
 		MessageBoxW(AfxGetMainWnd()->m_hWnd, wstrLog.data(), L"Opening error", MB_ICONERROR);
-		Ut::Log::AddLogEntryError(wstrLog);
+		ut::Log::AddLogEntryError(wstrLog);
 
 		return false;
 	}
@@ -176,7 +176,7 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 	m_bEmbedded = FALSE;
 	SetTitle(GetDocTitle(dos).data());
 	const auto iResID = [this]() {
-		using enum Ut::EOpenMode;
+		using enum ut::EOpenMode;
 		switch (GetOpenMode()) {
 		case OPEN_FILE:
 		case NEW_FILE:
@@ -191,10 +191,10 @@ bool CHexerDoc::OnOpenDocument(const Ut::DATAOPEN& dos)
 			return 0;
 		}
 	}();
-	m_hDocIcon = Ut::HICONfromHBITMAP(Ut::GetHBITMAP(iResID));
-	const auto wstrLog = std::format(L"{} opened: {} ({})", Ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
-		Ut::GetWstrDATAACCESS(GetDataAccessMode()));
-	Ut::Log::AddLogEntryInfo(wstrLog);
+	m_hDocIcon = ut::HICONfromHBITMAP(ut::GetHBITMAP(iResID));
+	const auto wstrLog = std::format(L"{} opened: {} ({})", ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
+		ut::GetWstrDATAACCESS(GetDataAccessMode()));
+	ut::Log::AddLogEntryInfo(wstrLog);
 	m_fOpened = true;
 
 	return true;
@@ -215,7 +215,7 @@ auto CHexerDoc::GetMainFrame()const->CMainFrame*
 
 BOOL CHexerDoc::OnOpenDocument(LPCWSTR lpszPathName)
 {
-	return OnOpenDocument({ .wstrDataPath { lpszPathName }, .eOpenMode { Ut::EOpenMode::OPEN_FILE } });
+	return OnOpenDocument({ .wstrDataPath { lpszPathName }, .eOpenMode { ut::EOpenMode::OPEN_FILE } });
 }
 
 void CHexerDoc::OnCloseDocument()
@@ -225,22 +225,22 @@ void CHexerDoc::OnCloseDocument()
 		std::wstring wstrInfo;
 		if (IsProcess()) {
 			wstrInfo = std::format(L"{} closed: {} (ID: {})",
-				Ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(), GetProcID());
+				ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(), GetProcID());
 		}
 		else {
-			(((wstrInfo += Ut::GetWstrEOpenMode(GetOpenMode())) += L" closed: ") += GetFileName());
+			(((wstrInfo += ut::GetWstrEOpenMode(GetOpenMode())) += L" closed: ") += GetFileName());
 		}
 
-		Ut::Log::AddLogEntryInfo(wstrInfo);
+		ut::Log::AddLogEntryInfo(wstrInfo);
 		theApp.GetAppSettings().LOLRemoveFromList({ .wstrDataPath { GetDataPath() }, .dwProcID { GetProcID() } });
 	}
 
 	CDocument::OnCloseDocument();
 }
 
-auto CHexerDoc::GetUniqueDocName(const Ut::DATAOPEN& dos)->std::wstring
+auto CHexerDoc::GetUniqueDocName(const ut::DATAOPEN& dos)->std::wstring
 {
-	if (dos.eOpenMode == Ut::EOpenMode::OPEN_PROC) {
+	if (dos.eOpenMode == ut::EOpenMode::OPEN_PROC) {
 		return std::format(L"Process: {} (ID: {})", dos.wstrDataPath, dos.dwProcID);
 	}
 	else {
@@ -248,9 +248,9 @@ auto CHexerDoc::GetUniqueDocName(const Ut::DATAOPEN& dos)->std::wstring
 	}
 }
 
-auto CHexerDoc::GetDocTitle(const Ut::DATAOPEN& dos)->std::wstring
+auto CHexerDoc::GetDocTitle(const ut::DATAOPEN& dos)->std::wstring
 {
-	using enum Ut::EOpenMode;
+	using enum ut::EOpenMode;
 	if (dos.eOpenMode == OPEN_PROC) {
 		return GetUniqueDocName(dos);
 	}
@@ -265,7 +265,7 @@ auto CHexerDoc::GetDocTitle(const Ut::DATAOPEN& dos)->std::wstring
 	case OPEN_DRIVE:
 	case OPEN_VOLUME:
 	case OPEN_PATH:
-		return std::format(L"{}: {}", Ut::GetWstrEOpenMode(dos.eOpenMode), dos.wstrDataPath.substr(nName + 1));
+		return std::format(L"{}: {}", ut::GetWstrEOpenMode(dos.eOpenMode), dos.wstrDataPath.substr(nName + 1));
 	default:
 		return dos.wstrDataPath.substr(nName + 1);
 	}

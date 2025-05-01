@@ -17,7 +17,7 @@ import Utility;
 export class CDlgNewFile final : public CDialogEx {
 public:
 	CDlgNewFile(CWnd* pParent = nullptr) : CDialogEx(IDD_NEWFILE, pParent) { }
-	[[nodiscard]] auto GetOpenData()const->const Ut::DATAOPEN&;
+	[[nodiscard]] auto GetOpenData()const->const ut::DATAOPEN&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	[[nodiscard]] bool IsOK()const;
@@ -30,7 +30,7 @@ private:
 	CComboBox m_stComboMeasure;
 	CEdit m_stEditPath;
 	CEdit m_stEditSize;
-	Ut::DATAOPEN m_stDOS;
+	ut::DATAOPEN m_stDOS;
 };
 
 BEGIN_MESSAGE_MAP(CDlgNewFile, CDialogEx)
@@ -39,7 +39,7 @@ BEGIN_MESSAGE_MAP(CDlgNewFile, CDialogEx)
 	ON_EN_CHANGE(IDC_NEWFILE_EDIT_SIZE, &CDlgNewFile::OnChangeEditPathAndSize)
 END_MESSAGE_MAP()
 
-auto CDlgNewFile::GetOpenData()const->const Ut::DATAOPEN&
+auto CDlgNewFile::GetOpenData()const->const ut::DATAOPEN&
 {
 	return m_stDOS;
 }
@@ -107,7 +107,7 @@ void CDlgNewFile::OnOK()
 
 	CStringW cwstrPath;
 	m_stEditPath.GetWindowTextW(cwstrPath);
-	m_stDOS.eOpenMode = Ut::EOpenMode::NEW_FILE;
+	m_stDOS.eOpenMode = ut::EOpenMode::NEW_FILE;
 	m_stDOS.wstrDataPath = cwstrPath;
 	m_stDOS.ullSizeNewFile = *optSize * m_stComboMeasure.GetItemData(m_stComboMeasure.GetCurSel());
 

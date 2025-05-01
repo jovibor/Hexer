@@ -32,7 +32,7 @@ class CDlgOpenDrive final : public CDialogEx {
 		std::uint64_t u64Size { };
 	};
 public:
-	[[nodiscard]] auto GetOpenData()const->std::vector<Ut::DATAOPEN>;
+	[[nodiscard]] auto GetOpenData()const->std::vector<ut::DATAOPEN>;
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -58,15 +58,15 @@ BEGIN_MESSAGE_MAP(CDlgOpenDrive, CDialogEx)
 	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
 
-auto CDlgOpenDrive::GetOpenData()const->std::vector<Ut::DATAOPEN>
+auto CDlgOpenDrive::GetOpenData()const->std::vector<ut::DATAOPEN>
 {
-	std::vector<Ut::DATAOPEN> vec;
+	std::vector<ut::DATAOPEN> vec;
 	int nItem { -1 };
 	for (auto i { 0UL }; i < m_List.GetSelectedCount(); ++i) {
 		nItem = m_List.GetNextItem(nItem, LVNI_SELECTED);
-		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { m_List.GetItemText(nItem, 2 /*Path.*/) },
+		vec.emplace_back(ut::DATAOPEN { .wstrDataPath { m_List.GetItemText(nItem, 2 /*Path.*/) },
 			.wstrFriendlyName { m_List.GetItemText(nItem, 0 /*Drive name.*/) },
-			.eOpenMode { Ut::EOpenMode::OPEN_DRIVE } });
+			.eOpenMode { ut::EOpenMode::OPEN_DRIVE } });
 	}
 
 	return vec;
@@ -212,7 +212,7 @@ auto CDlgOpenDrive::GetDeviceDrives()->std::vector<DEVICE_DRIVE>
 			}
 
 			//Drive size.
-			stDrive.u64Size = Ut::GetDeviceSize(stDrive.wstrDrivePath.data()).value_or(0);
+			stDrive.u64Size = ut::GetDeviceSize(stDrive.wstrDrivePath.data()).value_or(0);
 			CloseHandle(hDevice);
 		}
 
@@ -248,7 +248,7 @@ class CDlgOpenVolume final : public CDialogEx {
 		std::wstring  wstrDriveType;
 	};
 public:
-	[[nodiscard]] auto GetOpenData()const->std::vector<Ut::DATAOPEN>;
+	[[nodiscard]] auto GetOpenData()const->std::vector<ut::DATAOPEN>;
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -274,9 +274,9 @@ BEGIN_MESSAGE_MAP(CDlgOpenVolume, CDialogEx)
 	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
 
-auto CDlgOpenVolume::GetOpenData()const->std::vector<Ut::DATAOPEN>
+auto CDlgOpenVolume::GetOpenData()const->std::vector<ut::DATAOPEN>
 {
-	std::vector<Ut::DATAOPEN> vec;
+	std::vector<ut::DATAOPEN> vec;
 	int nItem { -1 };
 	for (auto i { 0UL }; i < m_List.GetSelectedCount(); ++i) {
 		nItem = m_List.GetNextItem(nItem, LVNI_SELECTED);
@@ -285,7 +285,7 @@ auto CDlgOpenVolume::GetOpenData()const->std::vector<Ut::DATAOPEN>
 			wstrVolPath = wstrVolPath.substr(0, wstrVolPath.size() - 1);
 		}
 
-		vec.emplace_back(Ut::DATAOPEN { .wstrDataPath { std::move(wstrVolPath) }, .eOpenMode { Ut::EOpenMode::OPEN_VOLUME } });
+		vec.emplace_back(ut::DATAOPEN { .wstrDataPath { std::move(wstrVolPath) }, .eOpenMode { ut::EOpenMode::OPEN_VOLUME } });
 	}
 
 	return vec;
@@ -471,7 +471,7 @@ auto CDlgOpenVolume::GetDeviceVolumes()->std::vector<DEVICE_VOLUME>
 		}
 
 		//Volume size.
-		stVolume.u64Size = Ut::GetDeviceSize(stVolume.wstrVolumePath.data()).value_or(0);
+		stVolume.u64Size = ut::GetDeviceSize(stVolume.wstrVolumePath.data()).value_or(0);
 
 		if (fwstrPath) {
 			stVolume.wstrVolumePath.back() = L'\\';
@@ -490,7 +490,7 @@ auto CDlgOpenVolume::GetDeviceVolumes()->std::vector<DEVICE_VOLUME>
 
 class CDlgOpenPath final : public CDialogEx {
 public:
-	[[nodiscard]] auto GetOpenData() -> std::vector<Ut::DATAOPEN>;
+	[[nodiscard]] auto GetOpenData() -> std::vector<ut::DATAOPEN>;
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -506,7 +506,7 @@ BEGIN_MESSAGE_MAP(CDlgOpenPath, CDialogEx)
 	ON_CBN_EDITUPDATE(IDC_OPENPATH_COMBO_PATH, &CDlgOpenPath::OnComboPathEdit)
 END_MESSAGE_MAP()
 
-auto CDlgOpenPath::GetOpenData()->std::vector<Ut::DATAOPEN>
+auto CDlgOpenPath::GetOpenData()->std::vector<ut::DATAOPEN>
 {
 	if (m_stComboPath.GetWindowTextLengthW() == 0)
 		return { };
@@ -514,7 +514,7 @@ auto CDlgOpenPath::GetOpenData()->std::vector<Ut::DATAOPEN>
 	CString cstrText;
 	m_stComboPath.GetWindowTextW(cstrText);
 
-	return { Ut::DATAOPEN { .wstrDataPath { cstrText }, .eOpenMode { Ut::EOpenMode::OPEN_PATH } } };
+	return { ut::DATAOPEN { .wstrDataPath { cstrText }, .eOpenMode { ut::EOpenMode::OPEN_PATH } } };
 }
 
 bool CDlgOpenPath::IsOK()
@@ -553,8 +553,8 @@ void CDlgOpenPath::OnOK()
 export class CDlgOpenDevice final : public CDialogEx {
 public:
 	CDlgOpenDevice(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENDEVICE, pParent) { }
-	INT_PTR DoModal(Ut::EOpenMode eTab = OPEN_DRIVE);
-	[[nodiscard]] auto GetOpenData()const->const std::vector<Ut::DATAOPEN>&;
+	INT_PTR DoModal(ut::EOpenMode eTab = OPEN_DRIVE);
+	[[nodiscard]] auto GetOpenData()const->const std::vector<ut::DATAOPEN>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	afx_msg auto OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor) -> HBRUSH;
@@ -563,9 +563,9 @@ private:
 	afx_msg void OnTabSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	BOOL PreTranslateMessage(MSG* pMsg)override;
-	void SetCurrentTab(Ut::EOpenMode eTab);
-	[[nodiscard]] auto TabIDToName(int iTab)const->Ut::EOpenMode;
-	[[nodiscard]] auto TabNameToID(Ut::EOpenMode eTab)const->int;
+	void SetCurrentTab(ut::EOpenMode eTab);
+	[[nodiscard]] auto TabIDToName(int iTab)const->ut::EOpenMode;
+	[[nodiscard]] auto TabNameToID(ut::EOpenMode eTab)const->int;
 	DECLARE_MESSAGE_MAP();
 private:
 	CTabCtrl m_tabMain;
@@ -573,8 +573,8 @@ private:
 	std::unique_ptr<CDlgOpenDrive> m_pDlgDrives { std::make_unique<CDlgOpenDrive>() };
 	std::unique_ptr<CDlgOpenVolume> m_pDlgVolumes { std::make_unique<CDlgOpenVolume>() };
 	std::unique_ptr<CDlgOpenPath> m_pDlgPath { std::make_unique<CDlgOpenPath>() };
-	std::vector<Ut::DATAOPEN> m_vecOpenData;
-	Ut::EOpenMode m_eCurTab { }; //Current tab name.
+	std::vector<ut::DATAOPEN> m_vecOpenData;
+	ut::EOpenMode m_eCurTab { }; //Current tab name.
 };
 
 
@@ -584,13 +584,13 @@ BEGIN_MESSAGE_MAP(CDlgOpenDevice, CDialogEx)
 	ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
 
-INT_PTR CDlgOpenDevice::DoModal(Ut::EOpenMode eTab)
+INT_PTR CDlgOpenDevice::DoModal(ut::EOpenMode eTab)
 {
 	m_eCurTab = eTab;
 	return CDialogEx::DoModal();
 }
 
-auto CDlgOpenDevice::GetOpenData()const->const std::vector<Ut::DATAOPEN>&
+auto CDlgOpenDevice::GetOpenData()const->const std::vector<ut::DATAOPEN>&
 {
 	return m_vecOpenData;
 }
@@ -608,7 +608,7 @@ auto CDlgOpenDevice::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH
 {
 	const auto hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
 	if (nCtlColor == CTLCOLOR_STATIC) {
-		pDC->SetTextColor(Ut::IsElevated() ? RGB(0, 210, 0) : RGB(250, 0, 0));
+		pDC->SetTextColor(ut::IsElevated() ? RGB(0, 210, 0) : RGB(250, 0, 0));
 	}
 	return hbr;
 }
@@ -674,7 +674,7 @@ BOOL CDlgOpenDevice::OnInitDialog()
 
 	SetCurrentTab(m_eCurTab);
 
-	if (Ut::IsElevated()) {
+	if (ut::IsElevated()) {
 		GetDlgItem(IDC_OPENDEVICE_STATIC_INFO)->SetWindowTextW(L"App is running in elevated (as Admin) mode.");
 	}
 
@@ -737,7 +737,7 @@ BOOL CDlgOpenDevice::PreTranslateMessage(MSG* pMsg)
 	return CDialogEx::PreTranslateMessage(pMsg);
 }
 
-void CDlgOpenDevice::SetCurrentTab(Ut::EOpenMode eTab)
+void CDlgOpenDevice::SetCurrentTab(ut::EOpenMode eTab)
 {
 	m_eCurTab = eTab;
 	m_tabMain.SetCurSel(TabNameToID(eTab));
@@ -769,15 +769,15 @@ void CDlgOpenDevice::SetCurrentTab(Ut::EOpenMode eTab)
 	GetDlgItem(IDOK)->EnableWindow(fEnableOK);
 }
 
-auto CDlgOpenDevice::TabIDToName(int iTab)const->Ut::EOpenMode
+auto CDlgOpenDevice::TabIDToName(int iTab)const->ut::EOpenMode
 {
 	TCITEMW tci { .mask { TCIF_PARAM } };
 	m_tabMain.GetItem(iTab, &tci);
 
-	return static_cast<Ut::EOpenMode>(tci.lParam);
+	return static_cast<ut::EOpenMode>(tci.lParam);
 }
 
-auto CDlgOpenDevice::TabNameToID(Ut::EOpenMode eTab)const->int {
+auto CDlgOpenDevice::TabNameToID(ut::EOpenMode eTab)const->int {
 	for (auto i { 0 }; i < m_tabMain.GetItemCount(); ++i) {
 		TCITEMW tci { .mask { TCIF_PARAM } };
 		m_tabMain.GetItem(i, &tci);

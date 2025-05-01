@@ -18,7 +18,7 @@ public:
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
 	[[nodiscard]] auto GetClassName()const->LPCWSTR;
 	auto OpenDocumentCustom(LPCWSTR pwszPath, bool fDontLNK) -> CDocument*;
-	auto OpenDocumentCustom(const Ut::DATAOPEN& dos) -> CDocument*;
+	auto OpenDocumentCustom(const ut::DATAOPEN& dos) -> CDocument*;
 	auto OpenDocumentFile(LPCWSTR pwszPath) -> CDocument* override;
 private:
 	BOOL InitInstance()override;

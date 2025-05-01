@@ -215,7 +215,7 @@ void CDlgSettingsGeneral::SaveSettings()
 	refSett.eOnStartup = static_cast<CAppSettings::EOnStartup>(GetPropOptDataDWORD(std::to_underlying(eOnStartup)));
 	refSett.fWindowsMenu = GetPropOptDataDWORD(std::to_underlying(fWindowsMenu));
 	refSett.stDAC = GetPropOptDataDWORD(std::to_underlying(stDAC));
-	refSett.eDataIOMode = static_cast<Ut::EDataIOMode>(GetPropOptDataDWORD(std::to_underlying(eDataIOMode)));
+	refSett.eDataIOMode = static_cast<ut::EDataIOMode>(GetPropOptDataDWORD(std::to_underlying(eDataIOMode)));
 	m_fModified = false;
 }
 
@@ -256,8 +256,8 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	const auto pFont = m_grid.GetFont();
 	LOGFONTW lf;
 	pFont->GetLogFont(&lf);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Ut::GetHiDPIInfo().iLOGPIXELSY) + 1;
-	lf.lfHeight = -MulDiv(lFontSize, Ut::GetHiDPIInfo().iLOGPIXELSY, 72);
+	const auto lFontSize = MulDiv(-lf.lfHeight, 72, ut::GetHiDPIInfo().iLOGPIXELSY) + 1;
+	lf.lfHeight = -MulDiv(lFontSize, ut::GetHiDPIInfo().iLOGPIXELSY, 72);
 	m_fntGrid.CreateFontIndirectW(&lf);
 	m_grid.SetFont(&m_fntGrid);
 
@@ -306,23 +306,23 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	}
 	m_grid.AddProperty(pGeneral);
 
-	using enum Ut::EDataAccessMode;
+	using enum ut::EDataAccessMode;
 	const auto& refDataAccess = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Data Access Mode:", L""),
 	std::to_underlying(GROUP_IO), std::to_underlying(stDAC));
 	const auto pPropDataAccess = static_cast<CHexerPropGridProp*>(refDataAccess.pProp);
-	pPropDataAccess->AddOptionEx(Ut::GetWstrDATAACCESS({ 0 }), 0);
-	pPropDataAccess->AddOptionEx(Ut::GetWstrDATAACCESS({ 1 }), 1);
-	pPropDataAccess->AddOptionEx(Ut::GetWstrDATAACCESS({ 2 }), 2);
+	pPropDataAccess->AddOptionEx(ut::GetWstrDATAACCESS({ 0 }), 0);
+	pPropDataAccess->AddOptionEx(ut::GetWstrDATAACCESS({ 1 }), 1);
+	pPropDataAccess->AddOptionEx(ut::GetWstrDATAACCESS({ 2 }), 2);
 	pPropDataAccess->SetValueFromData(refSett.stDAC);
 	pPropDataAccess->AllowEdit(FALSE);
 
-	using enum Ut::EDataIOMode;
+	using enum ut::EDataIOMode;
 	const auto& refDataIO = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Data IO Mode:", L""),
 			std::to_underlying(GROUP_IO), std::to_underlying(eDataIOMode));
 	const auto pPropDataIO = static_cast<CHexerPropGridProp*>(refDataIO.pProp);
-	pPropDataIO->AddOptionEx(Ut::GetWstrEDataIOMode(DATA_MMAP), std::to_underlying(DATA_MMAP));
-	pPropDataIO->AddOptionEx(Ut::GetWstrEDataIOMode(DATA_IOBUFF), std::to_underlying(DATA_IOBUFF));
-	pPropDataIO->AddOptionEx(Ut::GetWstrEDataIOMode(DATA_IOIMMEDIATE), std::to_underlying(DATA_IOIMMEDIATE));
+	pPropDataIO->AddOptionEx(ut::GetWstrEDataIOMode(DATA_MMAP), std::to_underlying(DATA_MMAP));
+	pPropDataIO->AddOptionEx(ut::GetWstrEDataIOMode(DATA_IOBUFF), std::to_underlying(DATA_IOBUFF));
+	pPropDataIO->AddOptionEx(ut::GetWstrEDataIOMode(DATA_IOIMMEDIATE), std::to_underlying(DATA_IOIMMEDIATE));
 	pPropDataIO->SetValueFromData(std::to_underlying(refSett.eDataIOMode));
 	pPropDataIO->AllowEdit(FALSE);
 
@@ -384,7 +384,8 @@ enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
 	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, wchDateSepar, wstrDateFormat, fScrollLines,
 	flScrollRatio, fInfoBar, fOffsetHex, dwCharsExtraSpace, stLogFont,
 	clrFontHex, clrFontText, clrFontSel, clrFontDataInterp, clrFontCaption, clrFontInfoParam, clrFontInfoData,
-	clrFontCaret, clrFontBkm, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel, clrBkBkm
+	clrFontCaret, clrFontBkm, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel, clrBkBkm,
+	clrLinesMain, clrLinesTempl
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsHexCtrl, CDialogEx)
@@ -433,6 +434,8 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueRGB(std::to_underlying(clrBkCaret), refClrs.clrBkCaret);
 	SetPropValueRGB(std::to_underlying(clrBkCaretSel), refClrs.clrBkCaretSel);
 	SetPropValueRGB(std::to_underlying(clrBkBkm), refClrs.clrBkBkm);
+	SetPropValueRGB(std::to_underlying(clrLinesMain), refClrs.clrLinesMain);
+	SetPropValueRGB(std::to_underlying(clrLinesTempl), refClrs.clrLinesTempl);
 	m_grid.SetRedraw(TRUE);
 	m_grid.RedrawWindow();
 	m_fModified = true;
@@ -474,6 +477,8 @@ void CDlgSettingsHexCtrl::SaveSettings()
 	refClrs.clrBkCaret = GetPropValueRGB(std::to_underlying(clrBkCaret));
 	refClrs.clrBkCaretSel = GetPropValueRGB(std::to_underlying(clrBkCaretSel));
 	refClrs.clrBkBkm = GetPropValueRGB(std::to_underlying(clrBkBkm));
+	refClrs.clrLinesMain = GetPropValueRGB(std::to_underlying(clrLinesMain));
+	refClrs.clrLinesTempl = GetPropValueRGB(std::to_underlying(clrLinesTempl));
 	m_fModified = false;
 }
 
@@ -506,7 +511,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	m_grid.MarkModifiedProperties(TRUE, FALSE);
-	m_grid.EnableHeaderCtrl(TRUE, L"Property", L"Value");
+	m_grid.EnableHeaderCtrl(TRUE);
 	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 150 };
 	m_grid.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
 
@@ -514,8 +519,8 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	const auto pFont = m_grid.GetFont();
 	LOGFONTW lf;
 	pFont->GetLogFont(&lf);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Ut::GetHiDPIInfo().iLOGPIXELSY) + 1;
-	lf.lfHeight = -MulDiv(lFontSize, Ut::GetHiDPIInfo().iLOGPIXELSY, 72);
+	const auto lFontSize = MulDiv(-lf.lfHeight, 72, ut::GetHiDPIInfo().iLOGPIXELSY) + 1;
+	lf.lfHeight = -MulDiv(lFontSize, ut::GetHiDPIInfo().iLOGPIXELSY, 72);
 	m_fntGrid.CreateFontIndirectW(&lf);
 	m_grid.SetFont(&m_fntGrid);
 
@@ -641,6 +646,10 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBkCaretSel));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Bookmarks", refClrs.clrBkBkm),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBkBkm));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Lines Main", refClrs.clrLinesMain),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrLinesMain));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Lines Templates", refClrs.clrLinesTempl),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrLinesTempl));
 
 	const auto pColors = new CMFCPropertyGridProperty(L"Colors:");
 	for (const auto& it : m_vecGrid) {
@@ -813,7 +822,7 @@ void CDlgSettings::SaveSettings()
 	m_pDlgSettingsGeneral->SaveSettings();
 	m_pDlgSettingsHexCtrl->SaveSettings();
 	m_pAppSettings->OnSettingsChanged();
-	::SendMessageW(Ut::GetMainWnd(), Ut::WM_APP_SETTINGS_CHANGED, 0, 0);
+	::SendMessageW(ut::GetMainWnd(), ut::WM_APP_SETTINGS_CHANGED, 0, 0);
 	m_fModified = false;
 }
 

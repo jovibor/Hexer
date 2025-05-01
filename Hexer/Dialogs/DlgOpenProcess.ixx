@@ -24,7 +24,7 @@ public:
 	struct PROCDATA;
 	struct MODULEDATA;
 	CDlgOpenProcess(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENPROCESS, pParent) { }
-	[[nodiscard]] auto GetOpenData()const->const std::vector<Ut::DATAOPEN>&;
+	[[nodiscard]] auto GetOpenData()const->const std::vector<ut::DATAOPEN>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	void EnableDynamicLayoutHelper(bool fEnable);
@@ -54,7 +54,7 @@ private:
 	lex::CListEx m_ListModules;
 	std::vector<PROCDATA> m_vecProcs;
 	std::vector<MODULEDATA> m_vecModules;
-	std::vector<Ut::DATAOPEN> m_vecOpenData;
+	std::vector<ut::DATAOPEN> m_vecOpenData;
 	std::wstring m_wstrTTProcPath; //Tooltip for process image full path.
 	std::locale m_locale;
 	CButton m_btnOpen;
@@ -91,7 +91,7 @@ BEGIN_MESSAGE_MAP(CDlgOpenProcess, CDialogEx)
 	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
-auto CDlgOpenProcess::GetOpenData()const->const std::vector<Ut::DATAOPEN>&
+auto CDlgOpenProcess::GetOpenData()const->const std::vector<ut::DATAOPEN>&
 {
 	return m_vecOpenData;
 }
@@ -470,8 +470,8 @@ void CDlgOpenProcess::OnOK()
 	for (auto i { 0UL }; i < m_ListProcs.GetSelectedCount(); ++i) {
 		nItem = m_ListProcs.GetNextItem(nItem, LVNI_SELECTED);
 		auto& ref = m_vecProcs[nItem];
-		m_vecOpenData.emplace_back(Ut::DATAOPEN { .wstrDataPath { std::move(ref.wstrProcName) },
-			.dwProcID { ref.dwProcID }, .eOpenMode { Ut::EOpenMode::OPEN_PROC } });
+		m_vecOpenData.emplace_back(ut::DATAOPEN { .wstrDataPath { std::move(ref.wstrProcName) },
+			.dwProcID { ref.dwProcID }, .eOpenMode { ut::EOpenMode::OPEN_PROC } });
 	}
 
 	CDialogEx::OnOK();

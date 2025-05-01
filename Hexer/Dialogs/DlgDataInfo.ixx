@@ -1,4 +1,4 @@
-﻿module;
+module;
 /*******************************************************************************
 * Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
@@ -21,7 +21,7 @@ import HexerPropGridCtrl;
 //CDlgDataInfo.
 export class CDlgDataInfo final : public CDialogEx {
 public:
-	void SetDataInfo(const Ut::DATAINFO& dis);
+	void SetDataInfo(const ut::DATAINFO& dis);
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	BOOL OnInitDialog()override;
@@ -34,7 +34,7 @@ private:
 	CHexerPropGridCtrl m_gridDataInfo;
 	std::vector<CHexerPropGridProp*> m_vecPropsDataProps;
 	CFont m_fntFilePropsGrid;
-	Ut::DATAINFO m_dis;
+	ut::DATAINFO m_dis;
 };
 
 BEGIN_MESSAGE_MAP(CDlgDataInfo, CDialogEx)
@@ -43,7 +43,7 @@ END_MESSAGE_MAP()
 
 //Private methods.
 
-void CDlgDataInfo::SetDataInfo(const Ut::DATAINFO& dis)
+void CDlgDataInfo::SetDataInfo(const ut::DATAINFO& dis)
 {
 	m_dis = dis;
 
@@ -76,8 +76,8 @@ BOOL CDlgDataInfo::OnInitDialog()
 	pFont->GetLogFont(&lf);
 	constexpr wchar_t pwszFont[] { L"Microsoft Sans Serif" };
 	std::copy_n(pwszFont, std::size(pwszFont), lf.lfFaceName);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, Ut::GetHiDPIInfo().iLOGPIXELSY) + 1; //Convert font Height to point size.
-	lf.lfHeight = -MulDiv(lFontSize, Ut::GetHiDPIInfo().iLOGPIXELSY, 72); //Convert point size to font Height.
+	const auto lFontSize = MulDiv(-lf.lfHeight, 72, ut::GetHiDPIInfo().iLOGPIXELSY) + 1; //Convert font Height to point size.
+	lf.lfHeight = -MulDiv(lFontSize, ut::GetHiDPIInfo().iLOGPIXELSY, 72); //Convert point size to font Height.
 	m_fntFilePropsGrid.CreateFontIndirectW(&lf);
 	m_gridDataInfo.SetFont(&m_fntFilePropsGrid);
 
@@ -143,7 +143,7 @@ void CDlgDataInfo::UpdateGridData()
 {
 	const auto lmbSetValue = [&](CHexerPropGridProp* pProp) {
 		using enum EPropName;
-		auto wstr = std::wstring { Ut::GetWstrEOpenMode(m_dis.eOpenMode) };
+		auto wstr = std::wstring { ut::GetWstrEOpenMode(m_dis.eOpenMode) };
 		switch (static_cast<EPropName>(pProp->GetData())) {
 		case DATA_PATH:
 			pProp->SetName((wstr += L" Path:").data(), FALSE);
@@ -164,7 +164,7 @@ void CDlgDataInfo::UpdateGridData()
 			pProp->SetValue(std::format(L"{}", m_dis.dwPageSize).data());
 			break;
 		case ACCESS_MODE:
-			pProp->SetValue(Ut::GetWstrDATAACCESS(m_dis.stDAC));
+			pProp->SetValue(ut::GetWstrDATAACCESS(m_dis.stDAC));
 			COLORREF clr;
 			if (!m_dis.stDAC.fMutable) {
 				clr = RGB(128, 128, 128);
@@ -185,8 +185,8 @@ void CDlgDataInfo::UpdateGridData()
 			pProp->SetValueColor(clr);
 			break;
 		case IO_MODE:
-			if (m_dis.stDAC.fMutable && m_dis.stDAC.eDataAccessMode == Ut::EDataAccessMode::ACCESS_INPLACE) {
-				pProp->SetValue(Ut::GetWstrEDataIOMode(m_dis.eDataIOMode));
+			if (m_dis.stDAC.fMutable && m_dis.stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_INPLACE) {
+				pProp->SetValue(ut::GetWstrEDataIOMode(m_dis.eDataIOMode));
 			}
 			else {
 				pProp->SetValue(L"—");

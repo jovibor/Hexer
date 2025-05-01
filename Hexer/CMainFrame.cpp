@@ -20,8 +20,8 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWndEx)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
 	ON_COMMAND_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnViewRangePanes)
-	ON_MESSAGE(Ut::WM_APP_SETTINGS_CHANGED, &CMainFrame::OnAppSettingsChanged)
-	ON_MESSAGE(Ut::WM_ADD_LOG_ENTRY, &CMainFrame::OnAddLogEntry)
+	ON_MESSAGE(ut::WM_APP_SETTINGS_CHANGED, &CMainFrame::OnAppSettingsChanged)
+	ON_MESSAGE(ut::WM_ADD_LOG_ENTRY, &CMainFrame::OnAddLogEntry)
 	ON_REGISTERED_MESSAGE(AFX_WM_ON_GET_TAB_TOOLTIP, &CMainFrame::OnGetTabTooltip)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnUpdateRangePanes)
 	ON_WM_CLOSE()
@@ -29,7 +29,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_WM_CREATE()
 END_MESSAGE_MAP()
 
-void CMainFrame::AddLogEntry(const Ut::Log::LOGINFO& stData)
+void CMainFrame::AddLogEntry(const ut::Log::LOGINFO& stData)
 {
 	m_dlgLogInfo.AddLogEntry(stData);
 }
@@ -65,7 +65,7 @@ void CMainFrame::OnChildFrameActivate()
 	//Docking Panes that are combined in a tab group also send this message to the CMainFrame window.
 
 	//Setting Panes' HWND according to the current active ChildFrame.
-	for (auto uPaneID : Ut::g_arrPanes) {
+	for (auto uPaneID : ut::g_arrPanes) {
 		if (IsPaneVisible(uPaneID)) {
 			ShowPane(uPaneID, true, IsPaneActive(uPaneID));
 		}
@@ -94,7 +94,7 @@ void CMainFrame::OnChildFrameOpenFirst()
 		return;
 	}
 
-	for (auto id : Ut::g_arrPanes) {
+	for (auto id : ut::g_arrPanes) {
 		if (const auto ps = theApp.GetAppSettings().GetPaneStatus(id); ps.fVisible) {
 			ShowPane(id, true, ps.fActive);
 		}
@@ -142,7 +142,7 @@ auto CMainFrame::GetDlgDataBkmMgr()->std::uint64_t
 	const auto hWndHex = pHex->GetDlgItemHandle(BKMMGR_CHK_HEX);
 	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
 	if (pBtnHex->GetCheck()) {
-		ullData |= Ut::HEXCTRL_FLAG_BKMMGR_HEX;
+		ullData |= ut::HEXCTRL_FLAG_BKMMGR_HEX;
 	}
 
 	return ullData;
@@ -162,13 +162,13 @@ auto CMainFrame::GetDlgDataDataInterp()->std::uint64_t
 	const auto hWndHex = pHex->GetDlgItemHandle(DATAINTERP_CHK_HEX);
 	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
 	if (pBtnHex->GetCheck()) {
-		ullData |= Ut::HEXCTRL_FLAG_DATAINTERP_HEX;
+		ullData |= ut::HEXCTRL_FLAG_DATAINTERP_HEX;
 	}
 
 	const auto hWndBE = pHex->GetDlgItemHandle(DATAINTERP_CHK_BE);
 	const auto pBtnBE = static_cast<CButton*>(CWnd::FromHandle(hWndBE));
 	if (pBtnBE->GetCheck()) {
-		ullData |= Ut::HEXCTRL_FLAG_DATAINTERP_BE;
+		ullData |= ut::HEXCTRL_FLAG_DATAINTERP_BE;
 	}
 
 	return ullData;
@@ -198,31 +198,31 @@ auto CMainFrame::GetDlgDataTemplMgr()->std::uint64_t
 	const auto hWndMin = pHex->GetDlgItemHandle(TEMPLMGR_CHK_MIN);
 	const auto pBtnMin = static_cast<CButton*>(CWnd::FromHandle(hWndMin));
 	if (pBtnMin->GetCheck()) {
-		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_MIN;
+		ullData |= ut::HEXCTRL_FLAG_TEMPLMGR_MIN;
 	}
 
 	const auto hWndHex = pHex->GetDlgItemHandle(TEMPLMGR_CHK_HEX);
 	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
 	if (pBtnHex->GetCheck()) {
-		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_HEX;
+		ullData |= ut::HEXCTRL_FLAG_TEMPLMGR_HEX;
 	}
 
 	const auto hWndTT = pHex->GetDlgItemHandle(TEMPLMGR_CHK_TT);
 	const auto pBtnTT = static_cast<CButton*>(CWnd::FromHandle(hWndTT));
 	if (pBtnTT->GetCheck()) {
-		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_TT;
+		ullData |= ut::HEXCTRL_FLAG_TEMPLMGR_TT;
 	}
 
 	const auto hWndHgl = pHex->GetDlgItemHandle(TEMPLMGR_CHK_HGL);
 	const auto pBtnHgl = static_cast<CButton*>(CWnd::FromHandle(hWndHgl));
 	if (pBtnHgl->GetCheck()) {
-		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_HGL;
+		ullData |= ut::HEXCTRL_FLAG_TEMPLMGR_HGL;
 	}
 
 	const auto hWndSwap = pHex->GetDlgItemHandle(TEMPLMGR_CHK_SWAP);
 	const auto pBtnSwap = static_cast<CButton*>(CWnd::FromHandle(hWndSwap));
 	if (pBtnSwap->GetCheck()) {
-		ullData |= Ut::HEXCTRL_FLAG_TEMPLMGR_SWAP;
+		ullData |= ut::HEXCTRL_FLAG_TEMPLMGR_SWAP;
 	}
 
 	return ullData;
@@ -334,7 +334,7 @@ BOOL CMainFrame::LoadFrame(UINT nIDResource, DWORD dwDefaultStyle, CWnd* pParent
 
 auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 {
-	AddLogEntry(*reinterpret_cast<Ut::Log::LOGINFO*>(lParam));
+	AddLogEntry(*reinterpret_cast<ut::Log::LOGINFO*>(lParam));
 	return S_OK;
 }
 
@@ -395,7 +395,7 @@ BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pPane)
 	pPane->GetWindowTextW(wstrPane);
 
 	CStringW wstrRes;
-	for (auto uPaneID : Ut::g_arrPanes) {
+	for (auto uPaneID : ut::g_arrPanes) {
 		if (wstrRes.LoadStringW(uPaneID); wstrRes == wstrPane) { //Cycling through all pane's names.
 			SavePaneData(uPaneID);
 			break;
@@ -432,7 +432,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	const auto imgTB = CMFCToolBar::GetImages();    //Toolbar image.
 	const auto sizeImgCurr = imgTB->GetImageSize(); //One button's dimensions.
 	const auto flToolbarScaledFactor = sizeImgCurr.cx / 16.0; //How many times our toolbar is bigger than the standard one.
-	const auto flScale = Ut::GetHiDPIInfo().flDPIScale; //Scale factor for HighDPI displays.
+	const auto flScale = ut::GetHiDPIInfo().flDPIScale; //Scale factor for HighDPI displays.
 	const auto flScaleTB = flScale / flToolbarScaledFactor;
 	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * flScaleTB) + 7,
 		static_cast<int>(sizeImgCurr.cy * flScaleTB) + 7 }; //Size of the toolbar's button.
@@ -546,7 +546,7 @@ auto CMainFrame::OnGetTabTooltip(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(HasChildFrame());
-	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(Ut::GetPaneIDFromMenuID(pCmdUI->m_nID)) : FALSE);
+	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(ut::GetPaneIDFromMenuID(pCmdUI->m_nID)) : FALSE);
 }
 
 void CMainFrame::OnViewCustomize()
@@ -558,7 +558,7 @@ void CMainFrame::OnViewCustomize()
 
 void CMainFrame::OnViewRangePanes(UINT uMenuID)
 {
-	const auto uPaneID = Ut::GetPaneIDFromMenuID(uMenuID);
+	const auto uPaneID = ut::GetPaneIDFromMenuID(uMenuID);
 	const auto fVisible = IsPaneVisible(uPaneID);
 	ShowPane(uPaneID, !fVisible, !fVisible);
 
@@ -683,7 +683,7 @@ void CMainFrame::SaveHexCtrlSettings()
 
 void CMainFrame::SavePaneData(UINT uPaneID)
 {
-	if (const auto optDlg = Ut::GetEHexWndFromPaneID(uPaneID); optDlg) {
+	if (const auto optDlg = ut::GetEHexWndFromPaneID(uPaneID); optDlg) {
 		theApp.GetAppSettings().SetPaneData(uPaneID, GetHexCtrlDlgData(*optDlg));
 	}
 }
@@ -693,7 +693,7 @@ void CMainFrame::SavePanesSettings()
 	if (GetHexerView() == nullptr)
 		return;
 
-	for (auto uPaneID : Ut::g_arrPanes) {
+	for (auto uPaneID : ut::g_arrPanes) {
 		theApp.GetAppSettings().SetPaneStatus(uPaneID, IsPaneVisible(uPaneID), IsPaneActive(uPaneID));
 		if (IsPaneVisible(uPaneID)) {
 			SavePaneData(uPaneID);
@@ -723,9 +723,9 @@ auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		pDC->SelectObject(m_fontMDIClient);
 		pDC->SetBkMode(TRANSPARENT);
 		pDC->SetTextColor(RGB(220, 220, 220)); //Shadow color.
-		pDC->DrawTextW(Ut::GetAppName().data(), static_cast<int>(Ut::GetAppName().size()), rcShadow, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		pDC->DrawTextW(ut::GetAppName().data(), static_cast<int>(ut::GetAppName().size()), rcShadow, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
 		pDC->SetTextColor(RGB(203, 203, 203)); //Text color.
-		pDC->DrawTextW(Ut::GetAppName().data(), static_cast<int>(Ut::GetAppName().size()), rcText, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		pDC->DrawTextW(ut::GetAppName().data(), static_cast<int>(ut::GetAppName().size()), rcText, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
 	}
 	break;
 	case WM_SIZE:
@@ -746,7 +746,7 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	const auto pDC = CDC::FromHandle(::GetDC(hWnd));
 	const auto iWidthNew = LOWORD(lParam);
 	auto iFontSizeMin = 10;
-	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, Ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
+	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
 		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } };
 
 	m_fontMDIClient.DeleteObject();
@@ -755,10 +755,10 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	while (stSizeText.cx < (iWidthNew - 150)) { //Until the text size is not big enough to fill the window's width.
 		m_fontMDIClient.DeleteObject();
 		iFontSizeMin += 4;
-		lf.lfHeight = -MulDiv(iFontSizeMin, Ut::GetHiDPIInfo().iLOGPIXELSY, 72);
+		lf.lfHeight = -MulDiv(iFontSizeMin, ut::GetHiDPIInfo().iLOGPIXELSY, 72);
 		m_fontMDIClient.CreateFontIndirectW(&lf);
 		pDC->SelectObject(m_fontMDIClient);
-		stSizeText = pDC->GetTextExtent(Ut::GetAppName().data(), static_cast<int>(Ut::GetAppName().size()));
+		stSizeText = pDC->GetTextExtent(ut::GetAppName().data(), static_cast<int>(ut::GetAppName().size()));
 	}
 	::ReleaseDC(hWnd, pDC->m_hDC);
 	::RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);

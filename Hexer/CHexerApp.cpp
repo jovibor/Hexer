@@ -46,7 +46,7 @@ BOOL CDlgAbout::OnInitDialog()
 
 	const auto wstrDescr = std::format(L"Hexer v{}.{}.{}, based on the HexCtrl v{}.{}.{}\r\n"
 		"Copyright © 2023-present Jovibor",
-		Ut::HEXER_VERSION_MAJOR, Ut::HEXER_VERSION_MINOR, Ut::HEXER_VERSION_PATCH,
+		ut::HEXER_VERSION_MAJOR, ut::HEXER_VERSION_MINOR, ut::HEXER_VERSION_PATCH,
 		HEXCTRL::HEXCTRL_VERSION_MAJOR, HEXCTRL::HEXCTRL_VERSION_MINOR, HEXCTRL::HEXCTRL_VERSION_PATCH);
 	GetDlgItem(IDC_ABOUT_STATIC_VERSION)->SetWindowTextW(wstrDescr.data());
 	GetDlgItem(IDC_STATIC_BUILDTIME)->SetWindowTextW(L"Built on: " STRWIDER(__DATE__) L" "  STRWIDER(__TIME__));
@@ -61,10 +61,10 @@ public:
 	CHexerMDTemplate(UINT nIDResource, CRuntimeClass* pDocClass, CRuntimeClass* pFrameClass, CRuntimeClass* pViewClass)
 		: CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass) {
 	}
-	[[nodiscard]] auto OpenDocumentFile(const Ut::DATAOPEN& dos) -> CDocument*;
+	[[nodiscard]] auto OpenDocumentFile(const ut::DATAOPEN& dos) -> CDocument*;
 };
 
-auto CHexerMDTemplate::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
+auto CHexerMDTemplate::OpenDocumentFile(const ut::DATAOPEN& dos)->CDocument*
 {
 	//This code is copy-pasted from the original CMultiDocTemplate::OpenDocumentFile.
 	//And adapted to work with the DATAOPEN struct.
@@ -106,7 +106,7 @@ auto CHexerMDTemplate::OpenDocumentFile(const Ut::DATAOPEN& dos)->CDocument*
 class CHexerDocMgr final : public CDocManager {
 public:
 	auto OpenDocumentCustom(LPCWSTR lpszFileName, bool fDontLNK) -> CDocument*;
-	auto OpenDocumentCustom(const Ut::DATAOPEN& dos) -> CDocument*;
+	auto OpenDocumentCustom(const ut::DATAOPEN& dos) -> CDocument*;
 	auto OpenDocumentFile(LPCWSTR lpszFileName, BOOL bAddToMRU = FALSE) -> CDocument* override;
 	DECLARE_DYNCREATE(CHexerDocMgr);
 };
@@ -115,11 +115,11 @@ IMPLEMENT_DYNCREATE(CHexerDocMgr, CDocument)
 
 auto CHexerDocMgr::OpenDocumentCustom(LPCWSTR lpszFileName, bool fDontLNK)->CDocument*
 {
-	return OpenDocumentCustom({ .wstrDataPath { fDontLNK ? lpszFileName : Ut::ResolveLNK(lpszFileName) },
-		.eOpenMode { Ut::EOpenMode::OPEN_FILE } });
+	return OpenDocumentCustom({ .wstrDataPath { fDontLNK ? lpszFileName : ut::ResolveLNK(lpszFileName) },
+		.eOpenMode { ut::EOpenMode::OPEN_FILE } });
 }
 
-auto CHexerDocMgr::OpenDocumentCustom(const Ut::DATAOPEN& dos)->CDocument*
+auto CHexerDocMgr::OpenDocumentCustom(const ut::DATAOPEN& dos)->CDocument*
 {
 	//This code below is copy-pasted from the original CDocManager::OpenDocumentFile.
 	//We need to override this method to remove calls to AtlStrLen, AfxFullPath, AfxResolveShortcut
@@ -188,7 +188,7 @@ auto CHexerDocMgr::OpenDocumentFile(LPCWSTR lpszFileName, BOOL /*bAddToMRU*/)->C
 {
 	//This method also takes a part in the HDROP.
 
-	return OpenDocumentCustom({ .wstrDataPath { Ut::ResolveLNK(lpszFileName) }, .eOpenMode { Ut::EOpenMode::OPEN_FILE } });
+	return OpenDocumentCustom({ .wstrDataPath { ut::ResolveLNK(lpszFileName) }, .eOpenMode { ut::EOpenMode::OPEN_FILE } });
 }
 
 
@@ -221,7 +221,7 @@ void CHexerApp::NotifyTabsOnSettingsChange()
 		const auto pDocTempl = GetNextDocTemplate(posDocTempl);
 		auto posDoc = pDocTempl->GetFirstDocPosition();
 		while (posDoc != nullptr) {
-			pDocTempl->GetNextDoc(posDoc)->UpdateAllViews(nullptr, Ut::WM_APP_SETTINGS_CHANGED);
+			pDocTempl->GetNextDoc(posDoc)->UpdateAllViews(nullptr, ut::WM_APP_SETTINGS_CHANGED);
 		}
 	}
 }
@@ -265,7 +265,7 @@ auto CHexerApp::OpenDocumentCustom(LPCWSTR pwszPath, bool fDontLNK)->CDocument*
 	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentCustom(pwszPath, fDontLNK);
 }
 
-auto CHexerApp::OpenDocumentCustom(const Ut::DATAOPEN& dos)->CDocument*
+auto CHexerApp::OpenDocumentCustom(const ut::DATAOPEN& dos)->CDocument*
 {
 	ENSURE_VALID(m_pDocManager);
 	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentCustom(dos);
@@ -294,7 +294,7 @@ BOOL CHexerApp::InitInstance()
 	const auto fHDROP = cmdInfo.m_nShellCommand == CCommandLineInfo::FileOpen;
 	HANDLE hMutex { };
 
-	GetAppSettings().LoadSettings(Ut::GetAppName());
+	GetAppSettings().LoadSettings(ut::GetAppName());
 
 	if (!GetAppSettings().GetGeneralSettings().fMultipleInst) { //Single.
 		//Check for the already running app instance.
@@ -333,7 +333,7 @@ BOOL CHexerApp::InitInstance()
 	CloseHandle(hToken);
 
 	EnableTaskbarInteraction(FALSE);
-	SetRegistryKey(Ut::GetAppName().data());
+	SetRegistryKey(ut::GetAppName().data());
 	InitTooltipManager();
 
 	CMFCToolTipInfo ttParams;
@@ -352,11 +352,11 @@ BOOL CHexerApp::InitInstance()
 	const auto pMainFrame = new CMainFrame;
 	pMainFrame->LoadFrame(IDR_HEXER_FRAME); //IDR_HEXER_FRAME is also used in the CMainFrame::PreCreateWindow.
 	m_pMainWnd = pMainFrame;
-	Ut::SetMainWnd(pMainFrame->m_hWnd);
+	ut::SetMainWnd(pMainFrame->m_hWnd);
 
-	const auto hBMPFile = Ut::GetHBITMAP(IDB_FILE);
-	const auto hBMPDevice = Ut::GetHBITMAP(IDB_DEVICE);
-	const auto hBMPProcess = Ut::GetHBITMAP(IDB_PROCESS);
+	const auto hBMPFile = ut::GetHBITMAP(IDB_FILE);
+	const auto hBMPDevice = ut::GetHBITMAP(IDB_DEVICE);
+	const auto hBMPProcess = ut::GetHBITMAP(IDB_PROCESS);
 	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPFile } };
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
 	pFileMenu->SetMenuItemInfoW(1, &mii, TRUE); //Icon for the "Open File..." menu.

@@ -22,21 +22,21 @@ export module AppSettings;
 
 import Utility;
 
-using VecDataOpen = std::vector<Ut::DATAOPEN>;
+using VecDataOpen = std::vector<ut::DATAOPEN>;
 
 //CAppSettingsRFL.
 class CAppSettingsRFL final //Recent Files List.
 {
 public:
 	CAppSettingsRFL() = default;
-	void AddToList(const Ut::DATAOPEN& dos);
-	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const->Ut::DATAOPEN;
+	void AddToList(const ut::DATAOPEN& dos);
+	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const->ut::DATAOPEN;
 	void Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry, HBITMAP hBMPFile, HBITMAP hBMPDevice,
 		HBITMAP hBMPProcess, const std::wstring& wstrRFLRegPath);
-	void RemoveFromList(const Ut::DATAOPEN& dos);
+	void RemoveFromList(const ut::DATAOPEN& dos);
 	void SetRFLSize(DWORD dwRFLSize);
 	void SaveSettings()const;
-	[[nodiscard]] static void AddToListBeginning(const Ut::DATAOPEN& dos, VecDataOpen& vecData);
+	[[nodiscard]] static void AddToListBeginning(const ut::DATAOPEN& dos, VecDataOpen& vecData);
 	[[nodiscard]] static auto ReadRegData(const wchar_t* pwszRegPath) -> VecDataOpen;
 	[[nodiscard]] static void SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen& vecData);
 private:
@@ -54,7 +54,7 @@ private:
 	bool m_fInit { };
 };
 
-void CAppSettingsRFL::AddToList(const Ut::DATAOPEN& dos)
+void CAppSettingsRFL::AddToList(const ut::DATAOPEN& dos)
 {
 	AddToListBeginning(dos, m_vecRFL);
 	if (m_vecRFL.size() > m_dwRFLSize) {
@@ -64,7 +64,7 @@ void CAppSettingsRFL::AddToList(const Ut::DATAOPEN& dos)
 	RebuildRFLMenu();
 }
 
-auto CAppSettingsRFL::GetDataFromMenuID(UINT uID)const->Ut::DATAOPEN
+auto CAppSettingsRFL::GetDataFromMenuID(UINT uID)const->ut::DATAOPEN
 {
 	assert(m_fInit);
 	if (!m_fInit)
@@ -101,13 +101,13 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
 	RebuildRFLMenu();
 }
 
-void CAppSettingsRFL::RemoveFromList(const Ut::DATAOPEN& dos)
+void CAppSettingsRFL::RemoveFromList(const ut::DATAOPEN& dos)
 {
 	assert(m_fInit);
 	if (!m_fInit)
 		return;
 
-	std::erase_if(m_vecRFL, [&dos](const Ut::DATAOPEN& refData) { return refData == dos; });
+	std::erase_if(m_vecRFL, [&dos](const ut::DATAOPEN& refData) { return refData == dos; });
 	RebuildRFLMenu();
 }
 
@@ -137,13 +137,13 @@ auto CAppSettingsRFL::GetRegRFLPath()const->const wchar_t*
 	return m_pwszRFLRegPath;
 }
 
-void CAppSettingsRFL::AddToListBeginning(const Ut::DATAOPEN& dos, VecDataOpen& vecData)
+void CAppSettingsRFL::AddToListBeginning(const ut::DATAOPEN& dos, VecDataOpen& vecData)
 {
-	using enum Ut::EOpenMode;
+	using enum ut::EOpenMode;
 	//Remove any duplicates. Processes can have same names but different IDs.
-	std::erase_if(vecData, [&dos](const Ut::DATAOPEN& refData) { return refData == dos; });
+	std::erase_if(vecData, [&dos](const ut::DATAOPEN& refData) { return refData == dos; });
 	const auto eOpenMode = dos.eOpenMode == NEW_FILE ? OPEN_FILE : dos.eOpenMode;
-	vecData.emplace(vecData.begin(), Ut::DATAOPEN {
+	vecData.emplace(vecData.begin(), ut::DATAOPEN {
 		.wstrDataPath { dos.wstrDataPath }, .wstrFriendlyName { dos.wstrFriendlyName },
 		.dwProcID { dos.dwProcID }, .eOpenMode { eOpenMode } });
 }
@@ -170,18 +170,18 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 		if (iCode == ERROR_SUCCESS && dwDataType == REG_SZ) {
 			const auto wsvName = std::wstring_view { buffName };
 
-			using enum Ut::EOpenMode;
-			Ut::EOpenMode eOpenMode { };
+			using enum ut::EOpenMode;
+			ut::EOpenMode eOpenMode { };
 			if (const auto it = wsvName.find(L':'); it != std::wstring_view::npos) {
 				const auto wsvMode = wsvName.substr(it + 1);
-				const auto optEOpenMode = Ut::GetEOpenModeWstr(wsvMode);
+				const auto optEOpenMode = ut::GetEOpenModeWstr(wsvMode);
 				if (!optEOpenMode)
 					continue;
 
 				eOpenMode = *optEOpenMode;
 			}
 
-			Ut::DATAOPEN stDOS { .eOpenMode { eOpenMode } };
+			ut::DATAOPEN stDOS { .eOpenMode { eOpenMode } };
 			const auto wsvData = std::wstring_view { buffData };
 			if (eOpenMode == OPEN_PROC) {
 				const auto nID = wsvData.find(L"ID:");
@@ -259,7 +259,7 @@ auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
 
 void CAppSettingsRFL::SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen& vecData)
 {
-	using enum Ut::EOpenMode;
+	using enum ut::EOpenMode;
 	const auto wsv = std::wstring_view { pwszRegPath };
 	const auto wsvRegKeyName = wsv.substr(wsv.find_last_of(L'\\') + 1);
 	const auto wstrRegPathWithoutKey = std::wstring { wsv.substr(0, wsv.find_last_of(L'\\')) };
@@ -272,15 +272,15 @@ void CAppSettingsRFL::SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen&
 	reg.Create(HKEY_CURRENT_USER, pwszRegPath);
 	for (const auto& [idx, ref] : vecData | std::views::enumerate) {
 		if (ref.eOpenMode == OPEN_PROC) {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
+			reg.SetStringValue(std::format(L"{:02d}:{}", idx, ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
 				std::format(L"ID:{};Name:{};", ref.dwProcID, ref.wstrDataPath).data());
 		}
 		else if (ref.eOpenMode == OPEN_DRIVE) {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
+			reg.SetStringValue(std::format(L"{:02d}:{}", idx, ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
 				std::format(L"Path:{};FriendlyName:{};", ref.wstrDataPath, ref.wstrFriendlyName).data());
 		}
 		else {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, Ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
+			reg.SetStringValue(std::format(L"{:02d}:{}", idx, ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
 				ref.wstrDataPath.data());
 		}
 	}
@@ -291,7 +291,7 @@ void CAppSettingsRFL::SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen&
 
 void CAppSettingsRFL::RebuildRFLMenu()
 {
-	using enum Ut::EOpenMode;
+	using enum ut::EOpenMode;
 	assert(m_fInit);
 	if (!m_fInit)
 		return;
@@ -306,11 +306,11 @@ void CAppSettingsRFL::RebuildRFLMenu()
 
 		std::wstring wstrMenu;
 		if (refData.eOpenMode == OPEN_PROC) {
-			wstrMenu = std::format(L"{} {}: {} (ID: {})", idx + 1, Ut::GetWstrEOpenMode(refData.eOpenMode), refData.wstrDataPath,
+			wstrMenu = std::format(L"{} {}: {} (ID: {})", idx + 1, ut::GetWstrEOpenMode(refData.eOpenMode), refData.wstrDataPath,
 				refData.dwProcID);
 		}
 		else {
-			wstrMenu = std::format(L"{} {}: {}", idx + 1, Ut::GetWstrEOpenMode(refData.eOpenMode), refData.wstrDataPath);
+			wstrMenu = std::format(L"{} {}: {}", idx + 1, ut::GetWstrEOpenMode(refData.eOpenMode), refData.wstrDataPath);
 		}
 
 		const auto uMenuID = static_cast<UINT>(m_iIDMenuFirst + idx);
@@ -364,25 +364,25 @@ public:
 	struct GENERALSETTINGS {
 		bool            fMultipleInst { }; //0-Single, 1-Multiple.
 		DWORD           dwRFLSize { };
-		EOnStartup        eOnStartup { };
-		Ut::DATAACCESS  stDAC { };
-		Ut::EDataIOMode eDataIOMode { };
+		EOnStartup      eOnStartup { };
+		ut::DATAACCESS  stDAC { };
+		ut::EDataIOMode eDataIOMode { };
 		bool            fWindowsMenu { }; //1-Show, 0-Don't show.
 	};
 	struct HEXCTRLSETTINGS {
 		LOGFONTW stLogFont { };
 		HEXCTRL::HEXCOLORS stClrs;
-		DWORD dwCapacity { };
-		DWORD dwDateFormat { };
-		DWORD dwGroupSize { };
-		DWORD dwPageSize { };
-		DWORD dwCharsExtraSpace { };
-		float flScrollRatio { };
-		wchar_t wchUnprintable { }; //Replacement char for unprintable characters.
-		wchar_t wchDateSepar { };   //Date separator.
-		bool fOffsetHex { };
-		bool fScrollLines { };
-		bool fInfoBar { };
+		DWORD    dwCapacity { };
+		DWORD    dwDateFormat { };
+		DWORD    dwGroupSize { };
+		DWORD    dwPageSize { };
+		DWORD    dwCharsExtraSpace { };
+		float    flScrollRatio { };
+		wchar_t  wchUnprintable { }; //Replacement char for unprintable characters.
+		wchar_t  wchDateSepar { };   //Date separator.
+		bool     fOffsetHex { };
+		bool     fScrollLines { };
+		bool     fInfoBar { };
 	};
 	CAppSettings() = default;
 	CAppSettings(const CAppSettings&) = delete;
@@ -396,13 +396,13 @@ public:
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const->std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const->PANESTATUS;
 	void LoadSettings(std::wstring_view wsvAppName);
-	void LOLAddToList(const Ut::DATAOPEN& dos);      //Last Opened List add.
-	void LOLRemoveFromList(const Ut::DATAOPEN& dos); //Last Opened List remove.
+	void LOLAddToList(const ut::DATAOPEN& dos);      //Last Opened List add.
+	void LOLRemoveFromList(const ut::DATAOPEN& dos); //Last Opened List remove.
 	void OnSettingsChanged();
-	void RFLAddToList(const Ut::DATAOPEN& dos);
-	[[nodiscard]] auto RFLGetDataFromMenuID(UINT uID)const->Ut::DATAOPEN;
+	void RFLAddToList(const ut::DATAOPEN& dos);
+	[[nodiscard]] auto RFLGetDataFromMenuID(UINT uID)const->ut::DATAOPEN;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
-	void RFLRemoveFromList(const Ut::DATAOPEN& dos);
+	void RFLRemoveFromList(const ut::DATAOPEN& dos);
 	void SaveSettings();
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
 	void SetPaneStatus(UINT uPaneID, bool fVisible, bool fActive);
@@ -559,10 +559,10 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 		refGeneral.fWindowsMenu = dwWindowsMenu;
 		DWORD dwDataAccessMode { };
 		regSettings.QueryDWORDValue(L"GeneralDataAccessMode", dwDataAccessMode);
-		refGeneral.stDAC = (std::min)(dwDataAccessMode, static_cast<DWORD>(Ut::EDataAccessMode::ACCESS_INPLACE));
+		refGeneral.stDAC = (std::min)(dwDataAccessMode, static_cast<DWORD>(ut::EDataAccessMode::ACCESS_INPLACE));
 		DWORD dwDataIOMode { };
 		regSettings.QueryDWORDValue(L"GeneralDataIOMode", dwDataIOMode);
-		refGeneral.eDataIOMode = (std::min)(static_cast<Ut::EDataIOMode>(dwDataIOMode), Ut::EDataIOMode::DATA_IOIMMEDIATE);
+		refGeneral.eDataIOMode = (std::min)(static_cast<ut::EDataIOMode>(dwDataIOMode), ut::EDataIOMode::DATA_IOIMMEDIATE);
 
 		//HexCtrl settings.
 		const auto& refHexCtrlSettPath = GetRegHexCtrlSettingsPath();
@@ -640,6 +640,8 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkCaret", refClrs.clrBkCaret);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkCaretSel", refClrs.clrBkCaretSel);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkBkm", refClrs.clrBkBkm);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrLinesMain", refClrs.clrLinesMain);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrLinesTempl", refClrs.clrLinesTempl);
 		}
 	}
 
@@ -648,7 +650,7 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 	m_fLoaded = true;
 }
 
-void CAppSettings::LOLAddToList(const Ut::DATAOPEN& dos)
+void CAppSettings::LOLAddToList(const ut::DATAOPEN& dos)
 {
 	CAppSettingsRFL::AddToListBeginning(dos, m_vecLOL);
 
@@ -657,9 +659,9 @@ void CAppSettings::LOLAddToList(const Ut::DATAOPEN& dos)
 	}
 }
 
-void CAppSettings::LOLRemoveFromList(const Ut::DATAOPEN& dos)
+void CAppSettings::LOLRemoveFromList(const ut::DATAOPEN& dos)
 {
-	std::erase_if(m_vecLOL, [&dos](const Ut::DATAOPEN& refData) { return refData == dos; });
+	std::erase_if(m_vecLOL, [&dos](const ut::DATAOPEN& refData) { return refData == dos; });
 }
 
 void CAppSettings::OnSettingsChanged()
@@ -668,7 +670,7 @@ void CAppSettings::OnSettingsChanged()
 	m_stRFL.SetRFLSize(m_stGeneralData.dwRFLSize);
 }
 
-void CAppSettings::RFLAddToList(const Ut::DATAOPEN& dos)
+void CAppSettings::RFLAddToList(const ut::DATAOPEN& dos)
 {
 	assert(m_fLoaded);
 	if (!m_fLoaded)
@@ -677,7 +679,7 @@ void CAppSettings::RFLAddToList(const Ut::DATAOPEN& dos)
 	m_stRFL.AddToList(dos);
 }
 
-auto CAppSettings::RFLGetDataFromMenuID(UINT uID)const->Ut::DATAOPEN
+auto CAppSettings::RFLGetDataFromMenuID(UINT uID)const->ut::DATAOPEN
 {
 	assert(m_fLoaded);
 	if (!m_fLoaded)
@@ -696,7 +698,7 @@ void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile
 		hBMPFile, hBMPDevice, hBMPProcess, GetRegRFLPath());
 }
 
-void CAppSettings::RFLRemoveFromList(const Ut::DATAOPEN& dos)
+void CAppSettings::RFLRemoveFromList(const ut::DATAOPEN& dos)
 {
 	assert(m_fLoaded);
 	if (!m_fLoaded)
@@ -792,6 +794,8 @@ void CAppSettings::SaveSettings()
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkCaret", refClrs.clrBkCaret);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkCaretSel", refClrs.clrBkCaretSel);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkBkm", refClrs.clrBkBkm);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrLinesMain", refClrs.clrLinesMain);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrLinesTempl", refClrs.clrLinesTempl);
 }
 
 void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
@@ -948,13 +952,13 @@ auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
 {
 	static const GENERALSETTINGS defs { .fMultipleInst { false }, .dwRFLSize { 20 }, .eOnStartup { EOnStartup::DO_NOTHING },
-		.stDAC { 0 }, .eDataIOMode { Ut::EDataIOMode::DATA_MMAP }, .fWindowsMenu { false } };
+		.stDAC { 0 }, .eDataIOMode { ut::EDataIOMode::DATA_MMAP }, .fWindowsMenu { false } };
 	return defs;
 }
 
 auto CAppSettings::GetHexCtrlDefs()->const HEXCTRLSETTINGS&
 {
-	static const HEXCTRLSETTINGS defs { .stLogFont { .lfHeight { -MulDiv(11, Ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
+	static const HEXCTRLSETTINGS defs { .stLogFont { .lfHeight { -MulDiv(11, ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
 		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } }, //HexCtrl default font.
 		.dwCapacity { 16UL }, .dwDateFormat { 0xFFFFFFFFUL }, .dwGroupSize { 1UL }, .dwPageSize { 0UL },
 		.dwCharsExtraSpace { 0UL }, .flScrollRatio { 3.0F }, .wchUnprintable { L'.' }, .wchDateSepar { L'/' },

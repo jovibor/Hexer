@@ -18,7 +18,7 @@ import Utility;
 
 export class CDlgLogger final : public CDialogEx {
 public:
-	void AddLogEntry(const Ut::Log::LOGINFO& stData);
+	void AddLogEntry(const ut::Log::LOGINFO& stData);
 private:
 	void ClearAll();
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -39,7 +39,7 @@ private:
 	struct LOGDATA { //Struct for storing log data.
 		std::time_t       time;
 		std::wstring      wstrMsg;
-		Ut::Log::EMsgType eType { };
+		ut::Log::EMsgType eType { };
 	};
 	lex::CListEx m_List;
 	std::vector<LOGDATA> m_vecData;
@@ -55,7 +55,7 @@ BEGIN_MESSAGE_MAP(CDlgLogger, CDialogEx)
 	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
 
-void CDlgLogger::AddLogEntry(const Ut::Log::LOGINFO& li)
+void CDlgLogger::AddLogEntry(const ut::Log::LOGINFO& li)
 {
 	m_vecData.emplace_back(li.time, std::wstring { li.wsvMsg }, li.eType);
 
@@ -120,7 +120,7 @@ BOOL CDlgLogger::OnInitDialog()
 	m_menuList.CreatePopupMenu();
 	m_menuList.AppendMenuW(MF_STRING, static_cast<UINT_PTR>(EMenuID::IDM_LIST_CLEARALL), L"Clear All");
 
-	const auto iIconSize = static_cast<int>(16 * Ut::GetHiDPIInfo().flDPIScale);
+	const auto iIconSize = static_cast<int>(16 * ut::GetHiDPIInfo().flDPIScale);
 	m_stImgList.Create(iIconSize, iIconSize, ILC_COLOR32 | ILC_MASK, 3, 3);
 
 	//Icons added in exact order: "msg_error, msg_warning, msg_info" as the enum values in the EMsgType.
@@ -151,7 +151,7 @@ void CDlgLogger::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 		*std::format_to(pItem->pszText, L"{}", iItem + 1) = L'\0';
 		break;
 	case 1: //Time.
-		*std::format_to(pItem->pszText, L"{}", Ut::TimetToWstr(refData.time)) = L'\0';
+		*std::format_to(pItem->pszText, L"{}", ut::TimetToWstr(refData.time)) = L'\0';
 		break;
 	case 2: //Event.
 		*std::format_to(pItem->pszText, L"{}", refData.wstrMsg) = L'\0';

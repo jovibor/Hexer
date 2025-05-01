@@ -46,7 +46,7 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
-auto CHexerView::GetDataInfo()const->Ut::DATAINFO
+auto CHexerView::GetDataInfo()const->ut::DATAINFO
 {
 	const auto pDoc = GetDocument();
 	return { .wsvDataPath { pDoc->GetDataPath() }, .wsvFileName { pDoc->GetFileName() },
@@ -68,7 +68,7 @@ auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
 auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 {
 	//If Pane with HexCtrl's dialog inside.
-	if (const auto optDlg = Ut::GetEHexWndFromPaneID(uPaneID); optDlg) {
+	if (const auto optDlg = ut::GetEHexWndFromPaneID(uPaneID); optDlg) {
 		const auto hWnd = GetHexCtrl()->GetWndHandle(*optDlg);
 		if (!IsPaneAlreadyLaunch(uPaneID)) {
 			SetPaneAlreadyLaunch(uPaneID);
@@ -120,7 +120,7 @@ void CHexerView::HexCtrlSetData(bool fAdjust)
 		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { fMutable } }, fAdjust);
 }
 
-void CHexerView::ChangeDataAccessMode(Ut::DATAACCESS stDAC)
+void CHexerView::ChangeDataAccessMode(ut::DATAACCESS stDAC)
 {
 	const auto pDoc = GetDocument();
 	if (pDoc->GetDataAccessMode() == stDAC)
@@ -130,11 +130,11 @@ void CHexerView::ChangeDataAccessMode(Ut::DATAACCESS stDAC)
 	HexCtrlSetData(true);
 	GetMainFrame()->UpdatePaneFileInfo();
 	const auto wstr = std::format(L"Data access changed: {} ({})", GetDocument()->GetFileName(),
-		Ut::GetWstrDATAACCESS(stDAC));
-	Ut::Log::AddLogEntryInfo(wstr);
+		ut::GetWstrDATAACCESS(stDAC));
+	ut::Log::AddLogEntryInfo(wstr);
 }
 
-void CHexerView::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
+void CHexerView::ChangeDataIOMode(ut::EDataIOMode eDataIOMode)
 {
 	const auto pDoc = GetDocument();
 	if (pDoc->GetDataIOMode() == eDataIOMode)
@@ -145,7 +145,7 @@ void CHexerView::ChangeDataIOMode(Ut::EDataIOMode eDataIOMode)
 	GetMainFrame()->UpdatePaneFileInfo();
 	const auto wstr = std::format(L"Data IO mode changed: {} ({})", GetDocument()->GetFileName(),
 		GetWstrEDataIOMode(pDoc->GetDataIOMode()));
-	Ut::Log::AddLogEntryInfo(wstr);
+	ut::Log::AddLogEntryInfo(wstr);
 }
 
 auto CHexerView::GetChildFrame()const->CChildFrame*
@@ -308,7 +308,7 @@ void CHexerView::OnSize(UINT nType, int cx, int cy)
 
 void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
 {
-	if (lHint == Ut::WM_APP_SETTINGS_CHANGED) {
+	if (lHint == ut::WM_APP_SETTINGS_CHANGED) {
 		const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlSettings();
 		const auto pHex = GetHexCtrl();
 		pHex->SetRedraw(false);
@@ -336,7 +336,7 @@ void CHexerView::OnUpdateDataAccessMode(CCmdUI* pCmdUI)
 
 	bool fEnable { false };
 	bool fCheck { false };
-	using enum Ut::EDataAccessMode;
+	using enum ut::EDataAccessMode;
 	switch (pCmdUI->m_nID) {
 	case IDM_DA_RO:
 		fEnable = true;
@@ -367,7 +367,7 @@ void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI)
 	bool fEnable { false };
 	bool fCheck { false };
 
-	using enum Ut::EDataIOMode;
+	using enum ut::EDataIOMode;
 	switch (pCmdUI->m_nID) {
 	case IDM_DA_DATAIO_MMAP:
 		fEnable = fModeAllowed && fIsFile;
@@ -446,7 +446,7 @@ void CHexerView::UpdateDlgBkmMgr()const
 
 	const auto hWnd = pHex->GetDlgItemHandle(BKMMGR_CHK_HEX);
 	const auto pBtn = static_cast<CButton*>(CWnd::FromHandle(hWnd));
-	if (pBtn->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_BKMMGR_HEX) > 0) {
+	if (pBtn->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_BKMMGR_HEX) > 0) {
 		pBtn->SendMessageW(BM_CLICK);
 	}
 }
@@ -460,13 +460,13 @@ void CHexerView::UpdateDlgDataInterp()const
 
 	const auto hWndHex = pHex->GetDlgItemHandle(DATAINTERP_CHK_HEX);
 	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
-	if (pBtnHex->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_DATAINTERP_HEX) > 0) {
+	if (pBtnHex->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_DATAINTERP_HEX) > 0) {
 		pBtnHex->SendMessageW(BM_CLICK);
 	}
 
 	const auto hWndBE = pHex->GetDlgItemHandle(DATAINTERP_CHK_BE);
 	const auto pBtnBE = static_cast<CButton*>(CWnd::FromHandle(hWndBE));
-	if (pBtnBE->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_DATAINTERP_BE) > 0) {
+	if (pBtnBE->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_DATAINTERP_BE) > 0) {
 		pBtnBE->SendMessageW(BM_CLICK);
 	}
 }
@@ -488,31 +488,31 @@ void CHexerView::UpdateDlgTemplMgr()const
 
 	const auto hWndMin = pHex->GetDlgItemHandle(TEMPLMGR_CHK_MIN);
 	const auto pBtnMin = static_cast<CButton*>(CWnd::FromHandle(hWndMin));
-	if (pBtnMin->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_MIN) > 0) {
+	if (pBtnMin->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_TEMPLMGR_MIN) > 0) {
 		pBtnMin->SendMessageW(BM_CLICK);
 	}
 
 	const auto hWndHex = pHex->GetDlgItemHandle(TEMPLMGR_CHK_HEX);
 	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
-	if (pBtnHex->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_HEX) > 0) {
+	if (pBtnHex->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_TEMPLMGR_HEX) > 0) {
 		pBtnHex->SendMessageW(BM_CLICK);
 	}
 
 	const auto hWndTT = pHex->GetDlgItemHandle(TEMPLMGR_CHK_TT);
 	const auto pBtnTT = static_cast<CButton*>(CWnd::FromHandle(hWndTT));
-	if (pBtnTT->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_TT) > 0) {
+	if (pBtnTT->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_TEMPLMGR_TT) > 0) {
 		pBtnTT->SendMessageW(BM_CLICK);
 	}
 
 	const auto hWndHgl = pHex->GetDlgItemHandle(TEMPLMGR_CHK_HGL);
 	const auto pBtnHgl = static_cast<CButton*>(CWnd::FromHandle(hWndHgl));
-	if (pBtnHgl->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_HGL) > 0) {
+	if (pBtnHgl->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_TEMPLMGR_HGL) > 0) {
 		pBtnHgl->SendMessageW(BM_CLICK);
 	}
 
 	const auto hWndSwap = pHex->GetDlgItemHandle(TEMPLMGR_CHK_SWAP);
 	const auto pBtnSwap = static_cast<CButton*>(CWnd::FromHandle(hWndSwap));
-	if (pBtnSwap->GetCheck() != (u64Data & Ut::HEXCTRL_FLAG_TEMPLMGR_SWAP) > 0) {
+	if (pBtnSwap->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_TEMPLMGR_SWAP) > 0) {
 		pBtnSwap->SendMessageW(BM_CLICK);
 	}
 }
@@ -520,7 +520,7 @@ void CHexerView::UpdateDlgTemplMgr()const
 void CHexerView::UpdateHexCtrlDlgData(UINT uPaneID)const
 {
 	using enum HEXCTRL::EHexWnd;
-	switch (*Ut::GetEHexWndFromPaneID(uPaneID)) {
+	switch (*ut::GetEHexWndFromPaneID(uPaneID)) {
 	case DLG_BKMMGR:
 		UpdateDlgBkmMgr();
 		break;

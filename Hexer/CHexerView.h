@@ -15,15 +15,15 @@ class CChildFrame;
 class CHexerDoc;
 class CHexerView final : public CView {
 public:
-	[[nodiscard]] auto GetDataInfo()const->Ut::DATAINFO;
+	[[nodiscard]] auto GetDataInfo()const->ut::DATAINFO;
 	[[nodiscard]] auto GetDlgProcMemory()const->HWND;
 	[[nodiscard]] auto GetDocument()const->CHexerDoc*;
 	[[nodiscard]] auto GetHexCtrl()const->HEXCTRL::IHexCtrl*;
 	[[nodiscard]] auto GetHWNDForPane(UINT uPaneID) -> HWND;
 	[[nodiscard]] bool OnBeforeClose();
 private:
-	void ChangeDataAccessMode(Ut::DATAACCESS stDAC);
-	void ChangeDataIOMode(Ut::EDataIOMode eDataIOMode);
+	void ChangeDataAccessMode(ut::DATAACCESS stDAC);
+	void ChangeDataIOMode(ut::EDataIOMode eDataIOMode);
 	[[nodiscard]] auto GetChildFrame()const->CChildFrame*;
 	[[nodiscard]] auto GetMainFrame()const->CMainFrame*;
 	void HexCtrlSetData(bool fAdjust = false);
