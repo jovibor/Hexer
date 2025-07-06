@@ -385,7 +385,7 @@ enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
 	flScrollRatio, fInfoBar, fOffsetHex, dwCharsExtraSpace, stLogFont,
 	clrFontHex, clrFontText, clrFontSel, clrFontDataInterp, clrFontCaption, clrFontInfoParam, clrFontInfoData,
 	clrFontCaret, clrFontBkm, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel, clrBkBkm,
-	clrLinesMain, clrLinesTempl
+	clrLinesMain, clrLinesTempl, clrScrollBar, clrScrollThumb, clrScrollArrow
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsHexCtrl, CDialogEx)
@@ -436,6 +436,9 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropValueRGB(std::to_underlying(clrBkBkm), refClrs.clrBkBkm);
 	SetPropValueRGB(std::to_underlying(clrLinesMain), refClrs.clrLinesMain);
 	SetPropValueRGB(std::to_underlying(clrLinesTempl), refClrs.clrLinesTempl);
+	SetPropValueRGB(std::to_underlying(clrScrollBar), refClrs.clrScrollBar);
+	SetPropValueRGB(std::to_underlying(clrScrollThumb), refClrs.clrScrollThumb);
+	SetPropValueRGB(std::to_underlying(clrScrollArrow), refClrs.clrScrollArrow);
 	m_grid.SetRedraw(TRUE);
 	m_grid.RedrawWindow();
 	m_fModified = true;
@@ -479,6 +482,9 @@ void CDlgSettingsHexCtrl::SaveSettings()
 	refClrs.clrBkBkm = GetPropValueRGB(std::to_underlying(clrBkBkm));
 	refClrs.clrLinesMain = GetPropValueRGB(std::to_underlying(clrLinesMain));
 	refClrs.clrLinesTempl = GetPropValueRGB(std::to_underlying(clrLinesTempl));
+	refClrs.clrScrollBar = GetPropValueRGB(std::to_underlying(clrScrollBar));
+	refClrs.clrScrollThumb = GetPropValueRGB(std::to_underlying(clrScrollThumb));
+	refClrs.clrScrollArrow = GetPropValueRGB(std::to_underlying(clrScrollArrow));
 	m_fModified = false;
 }
 
@@ -650,6 +656,12 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrLinesMain));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Lines Templates", refClrs.clrLinesTempl),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrLinesTempl));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Scroll Bar", refClrs.clrScrollBar),
+	std::to_underlying(GROUP_COLORS), std::to_underlying(clrScrollBar));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Scroll Thumb", refClrs.clrScrollThumb),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrScrollThumb));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Scroll Arrow", refClrs.clrScrollArrow),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrScrollArrow));
 
 	const auto pColors = new CMFCPropertyGridProperty(L"Colors:");
 	for (const auto& it : m_vecGrid) {

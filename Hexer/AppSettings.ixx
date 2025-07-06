@@ -642,6 +642,9 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkBkm", refClrs.clrBkBkm);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrLinesMain", refClrs.clrLinesMain);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrLinesTempl", refClrs.clrLinesTempl);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrScrollBar", refClrs.clrScrollBar);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrScrollThumb", refClrs.clrScrollThumb);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrScrollArrow", refClrs.clrScrollArrow);
 		}
 	}
 
@@ -796,6 +799,9 @@ void CAppSettings::SaveSettings()
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkBkm", refClrs.clrBkBkm);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrLinesMain", refClrs.clrLinesMain);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrLinesTempl", refClrs.clrLinesTempl);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrScrollBar", refClrs.clrScrollBar);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrScrollThumb", refClrs.clrScrollThumb);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrScrollArrow", refClrs.clrScrollArrow);
 }
 
 void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)

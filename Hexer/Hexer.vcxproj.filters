@@ -119,31 +119,31 @@
     <ClCompile Include="dep\HexCtrl\HexCtrl\dep\ListEx\ListEx.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgProgress.ixx">
-      <Filter>HexCtrl</Filter>
-    </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexCtrl.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgBkmMgr.ixx">
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexDlgBkmMgr.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgCodepage.ixx">
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexDlgCodepage.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgDataInterp.ixx">
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexDlgDataInterp.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgGoTo.ixx">
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexDlgGoTo.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgModify.ixx">
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexDlgModify.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgSearch.ixx">
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexDlgProgress.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\src\Dialogs\CHexDlgTemplMgr.ixx">
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexDlgSearch.ixx">
+      <Filter>HexCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexDlgTemplMgr.ixx">
       <Filter>HexCtrl</Filter>
     </ClCompile>
   </ItemGroup>
