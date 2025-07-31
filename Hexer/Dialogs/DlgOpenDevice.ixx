@@ -32,7 +32,7 @@ class CDlgOpenDrive final : public CDialogEx {
 		std::uint64_t u64Size { };
 	};
 public:
-	[[nodiscard]] auto GetOpenData()const->std::vector<ut::DATAOPEN>;
+	[[nodiscard]] auto GetOpenData()const -> std::vector<ut::DATAOPEN>;
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -94,7 +94,7 @@ BOOL CDlgOpenDrive::OnInitDialog()
 	pLayout->Create(this);
 	pLayout->AddItem(IDC_OPENDRIVE_LIST, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
 
-	m_List.Create({ .hWndParent { m_hWnd }, .uID { IDC_OPENDRIVE_LIST }, .dwWidthGrid { 0 }, .fDialogCtrl { true } });
+	m_List.Create({ .hWndParent { m_hWnd }, .uID { IDC_OPENDRIVE_LIST }, .dwGridWidth { 0 }, .fDialogCtrl { true } });
 	m_List.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 	m_List.InsertColumn(0, L"Drive Name", 0, 200);
 	m_List.InsertColumn(1, L"Size", 0, 70);
@@ -248,7 +248,7 @@ class CDlgOpenVolume final : public CDialogEx {
 		std::wstring  wstrDriveType;
 	};
 public:
-	[[nodiscard]] auto GetOpenData()const->std::vector<ut::DATAOPEN>;
+	[[nodiscard]] auto GetOpenData()const -> std::vector<ut::DATAOPEN>;
 	[[nodiscard]] bool IsOK();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -328,7 +328,7 @@ BOOL CDlgOpenVolume::OnInitDialog()
 	pLayout->Create(this);
 	pLayout->AddItem(IDC_OPENVOLUME_LIST, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
 
-	m_List.Create({ .hWndParent { m_hWnd }, .uID { IDC_OPENVOLUME_LIST }, .dwWidthGrid { 0 }, .fDialogCtrl { true } });
+	m_List.Create({ .hWndParent { m_hWnd }, .uID { IDC_OPENVOLUME_LIST }, .dwGridWidth { 0 }, .fDialogCtrl { true } });
 	m_List.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 	m_List.InsertColumn(0, L"Mount Point", 0, 80);
 	m_List.InsertColumn(1, L"Resides In", 0, 110);
@@ -554,7 +554,7 @@ export class CDlgOpenDevice final : public CDialogEx {
 public:
 	CDlgOpenDevice(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENDEVICE, pParent) { }
 	INT_PTR DoModal(ut::EOpenMode eTab = OPEN_DRIVE);
-	[[nodiscard]] auto GetOpenData()const->const std::vector<ut::DATAOPEN>&;
+	[[nodiscard]] auto GetOpenData()const -> const std::vector<ut::DATAOPEN>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	afx_msg auto OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor) -> HBRUSH;
@@ -564,8 +564,8 @@ private:
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	BOOL PreTranslateMessage(MSG* pMsg)override;
 	void SetCurrentTab(ut::EOpenMode eTab);
-	[[nodiscard]] auto TabIDToName(int iTab)const->ut::EOpenMode;
-	[[nodiscard]] auto TabNameToID(ut::EOpenMode eTab)const->int;
+	[[nodiscard]] auto TabIDToName(int iTab)const -> ut::EOpenMode;
+	[[nodiscard]] auto TabNameToID(ut::EOpenMode eTab)const -> int;
 	DECLARE_MESSAGE_MAP();
 private:
 	CTabCtrl m_tabMain;

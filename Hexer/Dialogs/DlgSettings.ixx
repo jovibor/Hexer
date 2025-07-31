@@ -30,16 +30,16 @@ public:
 		std::uint8_t ui8Name { };
 	};
 
-	[[nodiscard]] auto GetGridData(std::uint8_t ui8Name)const->const GRIDDATA*;
-	[[nodiscard]] auto GetProperty(std::uint8_t ui8Name)const->CMFCPropertyGridProperty*;
-	[[nodiscard]] auto GetPropOptDataDWORD(std::uint8_t ui8Name)const->DWORD;
-	[[nodiscard]] auto GetPropOptDataULL(std::uint8_t ui8Name)const->DWORD_PTR;
-	[[nodiscard]] auto GetPropValueDWORD(std::uint8_t ui8Name)const->DWORD;
-	[[nodiscard]] auto GetPropValueFLOAT(std::uint8_t ui8Name)const->float;
-	[[nodiscard]] auto GetPropValuePLOGFONT(std::uint8_t ui8Name)const->LOGFONTW*;
-	[[nodiscard]] auto GetPropValueRGB(std::uint8_t ui8Name)const->COLORREF;
-	[[nodiscard]] auto GetPropValueWCHAR(std::uint8_t ui8Name)const->wchar_t;
-	[[nodiscard]] auto GetPropValueWSTR(std::uint8_t ui8Name)const->std::wstring_view;
+	[[nodiscard]] auto GetGridData(std::uint8_t ui8Name)const -> const GRIDDATA*;
+	[[nodiscard]] auto GetProperty(std::uint8_t ui8Name)const -> CMFCPropertyGridProperty*;
+	[[nodiscard]] auto GetPropOptDataDWORD(std::uint8_t ui8Name)const -> DWORD;
+	[[nodiscard]] auto GetPropOptDataULL(std::uint8_t ui8Name)const -> DWORD_PTR;
+	[[nodiscard]] auto GetPropValueDWORD(std::uint8_t ui8Name)const -> DWORD;
+	[[nodiscard]] auto GetPropValueFLOAT(std::uint8_t ui8Name)const -> float;
+	[[nodiscard]] auto GetPropValuePLOGFONT(std::uint8_t ui8Name)const -> LOGFONTW*;
+	[[nodiscard]] auto GetPropValueRGB(std::uint8_t ui8Name)const -> COLORREF;
+	[[nodiscard]] auto GetPropValueWCHAR(std::uint8_t ui8Name)const -> wchar_t;
+	[[nodiscard]] auto GetPropValueWSTR(std::uint8_t ui8Name)const -> std::wstring_view;
 	void SetPropOptValueByData(std::uint8_t ui8Name, DWORD_PTR dwData)const; //Value according to inner user dwData.
 	void SetPropValueDWORD(std::uint8_t ui8Name, DWORD dwValue)const;
 	void SetPropValueFLOAT(std::uint8_t ui8Name, float flValue)const;
@@ -48,7 +48,7 @@ public:
 	void SetPropValueWCHAR(std::uint8_t ui8Name, wchar_t wchValue)const;
 	void SetPropValueWSTR(std::uint8_t ui8Name, LPCWSTR pwstr)const;
 private:
-	[[nodiscard]] virtual auto GetGridVec()const->const std::vector<GRIDDATA> & = 0;
+	[[nodiscard]] virtual auto GetGridVec()const -> const std::vector<GRIDDATA> & = 0;
 };
 
 auto IPropsHelper::GetGridData(std::uint8_t ui8Name)const->const GRIDDATA*
@@ -150,7 +150,7 @@ public:
 	void SaveSettings();
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
-	[[nodiscard]] auto GetGridVec()const->const std::vector<GRIDDATA> & override;
+	[[nodiscard]] auto GetGridVec()const -> const std::vector<GRIDDATA> & override;
 	[[nodiscard]] bool IsModified()const;
 	void OnCancel()override;
 	BOOL OnInitDialog()override;
@@ -361,7 +361,7 @@ private:
 	enum class EGroup : std::uint8_t;
 	enum class EName : std::uint8_t;
 	void DoDataExchange(CDataExchange* pDX)override;
-	[[nodiscard]] auto GetGridVec()const->const std::vector<GRIDDATA> & override;
+	[[nodiscard]] auto GetGridVec()const -> const std::vector<GRIDDATA> & override;
 	[[nodiscard]] bool IsModified()const;
 	void OnCancel()override;
 	BOOL OnInitDialog()override;
@@ -382,7 +382,7 @@ enum class CDlgSettingsHexCtrl::EGroup : std::uint8_t {
 
 enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
 	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, wchDateSepar, wstrDateFormat, fScrollLines,
-	flScrollRatio, fInfoBar, fOffsetHex, dwCharsExtraSpace, stLogFont,
+	flScrollRatio, fInfoBar, fOffsetHex, fHexCharsCaseUpper, dwCharsExtraSpace, stLogFont,
 	clrFontHex, clrFontText, clrFontSel, clrFontDataInterp, clrFontCaption, clrFontInfoParam, clrFontInfoData,
 	clrFontCaret, clrFontBkm, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel, clrBkBkm,
 	clrLinesMain, clrLinesTempl, clrScrollBar, clrScrollThumb, clrScrollArrow
@@ -416,6 +416,7 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	SetPropOptValueByData(std::to_underlying(fScrollLines), refDefs.fScrollLines);
 	SetPropOptValueByData(std::to_underlying(fInfoBar), refDefs.fInfoBar);
 	SetPropOptValueByData(std::to_underlying(fOffsetHex), refDefs.fOffsetHex);
+	SetPropOptValueByData(std::to_underlying(fHexCharsCaseUpper), refDefs.fHexCharsCaseUpper);
 	SetPropValueLOGFONT(std::to_underlying(stLogFont), refDefs.stLogFont);
 	const auto& refClrs = refDefs.stClrs;
 	SetPropValueRGB(std::to_underlying(clrFontHex), refClrs.clrFontHex);
@@ -463,6 +464,7 @@ void CDlgSettingsHexCtrl::SaveSettings()
 	refSett.fScrollLines = GetPropOptDataDWORD(std::to_underlying(fScrollLines));
 	refSett.fInfoBar = GetPropOptDataDWORD(std::to_underlying(fInfoBar));
 	refSett.fOffsetHex = GetPropOptDataDWORD(std::to_underlying(fOffsetHex));
+	refSett.fHexCharsCaseUpper = GetPropOptDataDWORD(std::to_underlying(fHexCharsCaseUpper));
 	auto& refClrs = refSett.stClrs;
 	refClrs.clrFontHex = GetPropValueRGB(std::to_underlying(clrFontHex));
 	refClrs.clrFontText = GetPropValueRGB(std::to_underlying(clrFontText));
@@ -600,6 +602,14 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	pPropOffsetMode->SetValueFromData(refSett.fOffsetHex);
 	pPropOffsetMode->AllowEdit(FALSE);
 
+	const auto& refHexCharsCase = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Hex Chars Case:", L""),
+		std::to_underlying(GROUP_GENERAL), std::to_underlying(fHexCharsCaseUpper));
+	const auto pPropHexCharsCase = static_cast<CHexerPropGridProp*>(refHexCharsCase.pProp);
+	pPropHexCharsCase->AddOptionEx(L"Upper", 1UL);
+	pPropHexCharsCase->AddOptionEx(L"Lower", 0UL);
+	pPropHexCharsCase->SetValueFromData(refSett.fHexCharsCaseUpper);
+	pPropHexCharsCase->AllowEdit(FALSE);
+
 	const auto& refExtraSpace = m_vecGrid.emplace_back(new CHexerPropGridProp(L"Chars Extra Space:",
 		static_cast<_variant_t>(refSett.dwCharsExtraSpace), 0, 0, 0, 0, L"0123456789"),
 		std::to_underlying(GROUP_GENERAL), std::to_underlying(dwCharsExtraSpace));
@@ -706,8 +716,8 @@ private:
 	afx_msg void OnTabSelChanged(NMHDR* pNMHDR, LRESULT* pResult);
 	void SaveSettings();
 	void SetCurrentTab(ETabs eTab);
-	[[nodiscard]] auto TabIDToName(int iTab)const->ETabs;
-	[[nodiscard]] auto TabNameToID(ETabs eTab)const->int;
+	[[nodiscard]] auto TabIDToName(int iTab)const -> ETabs;
+	[[nodiscard]] auto TabNameToID(ETabs eTab)const -> int;
 	DECLARE_MESSAGE_MAP();
 private:
 	CTabCtrl m_tabMain;

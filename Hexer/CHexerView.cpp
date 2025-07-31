@@ -290,6 +290,8 @@ void CHexerView::OnInitialUpdate()
 	pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
 	pHex->SetPageSize(pDoc->IsProcess() ? pDoc->GetMemPageSize() : refHexSet.dwPageSize);
 	pHex->SetUnprintableChar(refHexSet.wchUnprintable);
+	pHex->SetHexCharsCase(refHexSet.fHexCharsCaseUpper);
+
 	for (const auto& p : theApp.GetAppSettings().GetHexCtrlTemplates()) {
 		pHex->GetTemplates()->AddTemplate(*p);
 	}
@@ -312,17 +314,18 @@ void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
 		const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlSettings();
 		const auto pHex = GetHexCtrl();
 		pHex->SetRedraw(false);
-		pHex->SetColors(refHexSet.stClrs);
-		pHex->SetFont(refHexSet.stLogFont);
-		pHex->SetGroupSize(refHexSet.dwGroupSize);
 		pHex->SetCapacity(refHexSet.dwCapacity);
+		pHex->SetGroupSize(refHexSet.dwGroupSize);
+		pHex->SetPageSize(refHexSet.dwPageSize);
+		pHex->SetUnprintableChar(refHexSet.wchUnprintable);
+		pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
 		pHex->SetScrollRatio(refHexSet.flScrollRatio, refHexSet.fScrollLines);
 		pHex->ShowInfoBar(refHexSet.fInfoBar);
 		pHex->SetOffsetMode(refHexSet.fOffsetHex);
+		pHex->SetHexCharsCase(refHexSet.fHexCharsCaseUpper);
 		pHex->SetCharsExtraSpace(refHexSet.dwCharsExtraSpace);
-		pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
-		pHex->SetPageSize(refHexSet.dwPageSize);
-		pHex->SetUnprintableChar(refHexSet.wchUnprintable);
+		pHex->SetFont(refHexSet.stLogFont);
+		pHex->SetColors(refHexSet.stClrs);
 		pHex->SetRedraw(true);
 		pHex->Redraw();
 	}

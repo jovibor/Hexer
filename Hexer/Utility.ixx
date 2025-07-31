@@ -189,7 +189,7 @@ export namespace ut {
 			}
 		};
 		EDataAccessMode eDataAccessMode { };
-		bool            fMutable { };
+		bool fMutable { };
 		constexpr auto operator<=>(const DATAACCESS&)const = default;
 		constexpr operator DWORD()const { return fMutable ? std::to_underlying(eDataAccessMode) : 0; };
 	};

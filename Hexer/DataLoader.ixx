@@ -25,16 +25,16 @@ public:
 	void ChangeDataAccessMode(ut::DATAACCESS stDAC);
 	void ChangeDataIOMode(ut::EDataIOMode eDataIOMode);
 	void Close();
-	[[nodiscard]] auto GetDataSize()const->std::uint64_t;
-	[[nodiscard]] auto GetDataAccessMode()const->ut::DATAACCESS;
-	[[nodiscard]] auto GetDataIOMode()const->ut::EDataIOMode;
-	[[nodiscard]] auto GetFileMMAPData()const->std::byte*;
-	[[nodiscard]] auto GetFileName()const->const std::wstring&;
-	[[nodiscard]] auto GetMaxVirtOffset()const->std::uint64_t;
-	[[nodiscard]] auto GetMemPageSize()const->DWORD;
-	[[nodiscard]] auto GetOpenMode()const->ut::EOpenMode;
-	[[nodiscard]] auto GetProcID()const->DWORD;
-	[[nodiscard]] auto GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&;
+	[[nodiscard]] auto GetDataSize()const -> std::uint64_t;
+	[[nodiscard]] auto GetDataAccessMode()const -> ut::DATAACCESS;
+	[[nodiscard]] auto GetDataIOMode()const -> ut::EDataIOMode;
+	[[nodiscard]] auto GetFileMMAPData()const -> std::byte*;
+	[[nodiscard]] auto GetFileName()const -> const std::wstring&;
+	[[nodiscard]] auto GetMaxVirtOffset()const -> std::uint64_t;
+	[[nodiscard]] auto GetMemPageSize()const -> DWORD;
+	[[nodiscard]] auto GetOpenMode()const -> ut::EOpenMode;
+	[[nodiscard]] auto GetProcID()const -> DWORD;
+	[[nodiscard]] auto GetVecProcMemory()const -> const std::vector<MEMORY_BASIC_INFORMATION>&;
 	[[nodiscard]] auto GetIHexVirtData() -> HEXCTRL::IHexVirtData*;
 	[[nodiscard]] bool IsDataWritable()const;
 	[[nodiscard]] bool IsDevice()const;
@@ -47,7 +47,7 @@ public:
 	[[nodiscard]] static constexpr auto GetCacheSize() -> DWORD; //Cache size reported to the outside, for IHexCtrl.
 private:
 	void FlushCache();
-	[[nodiscard]] auto GetDeviceAlign()const->DWORD;
+	[[nodiscard]] auto GetDeviceAlign()const -> DWORD;
 	void InitDataAccessSAFE(bool fInit);
 	void InitDataAccessINPLACE(bool fInit);
 	void InitForFile();
@@ -417,6 +417,8 @@ void CDataLoader::InitDataAccessINPLACE(bool fInit)
 void CDataLoader::InitForFile()
 {
 	if (IsDataAccessSAFE() && !IsDataOKForDASAFE()) {
+		::MessageBoxW(0, std::format(L"File size exceeds {}MB, all changes will be written back to the file on disk immediately.",
+			GetFileSizeForDASAFE() / 1024 / 1024).data(), L"File size warning.", MB_ICONWARNING);
 		m_stDAC.eDataAccessMode = ut::EDataAccessMode::ACCESS_INPLACE;
 	}
 
@@ -955,10 +957,10 @@ constexpr auto CDataLoader::GetInternalCacheSize()->DWORD
 	//Internal working cache size is two times bigger than the size reported to the IHexCtrl.
 	//This will ensure that the data size returned after the OnHexGetData call will not be smaller than
 	//the size requested, even after offset and size aligning, either during File or Process data reading.
-	return 1024UL * 1024UL; //1MB cache size.
+	return 1024U * 1024U; //1MB cache size.
 }
 
 constexpr auto CDataLoader::GetFileSizeForDASAFE()->DWORD
 {
-	return 1024 * 1024 * 50; //50MB.
+	return 1024U * 1024U * 128U; //128MB.
 }

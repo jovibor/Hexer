@@ -30,7 +30,7 @@ class CAppSettingsRFL final //Recent Files List.
 public:
 	CAppSettingsRFL() = default;
 	void AddToList(const ut::DATAOPEN& dos);
-	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const->ut::DATAOPEN;
+	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const -> ut::DATAOPEN;
 	void Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry, HBITMAP hBMPFile, HBITMAP hBMPDevice,
 		HBITMAP hBMPProcess, const std::wstring& wstrRFLRegPath);
 	void RemoveFromList(const ut::DATAOPEN& dos);
@@ -40,7 +40,7 @@ public:
 	[[nodiscard]] static auto ReadRegData(const wchar_t* pwszRegPath) -> VecDataOpen;
 	[[nodiscard]] static void SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen& vecData);
 private:
-	[[nodiscard]] auto GetRegRFLPath()const->const wchar_t*;
+	[[nodiscard]] auto GetRegRFLPath()const -> const wchar_t*;
 	void RebuildRFLMenu();
 private:
 	VecDataOpen m_vecRFL;      //Recent Files List data.
@@ -381,6 +381,7 @@ public:
 		wchar_t  wchUnprintable { }; //Replacement char for unprintable characters.
 		wchar_t  wchDateSepar { };   //Date separator.
 		bool     fOffsetHex { };
+		bool     fHexCharsCaseUpper { };
 		bool     fScrollLines { };
 		bool     fInfoBar { };
 	};
@@ -391,16 +392,16 @@ public:
 	~CAppSettings() = default;
 	[[nodiscard]] auto GetGeneralSettings() -> GENERALSETTINGS&;
 	[[nodiscard]] auto GetHexCtrlSettings() -> HEXCTRLSETTINGS&;
-	[[nodiscard]] auto GetHexCtrlTemplates()const->const VecTemplates&;
-	[[nodiscard]] auto GetLastOpenedList()const->VecDataOpen;
-	[[nodiscard]] auto GetPaneData(UINT uPaneID)const->std::uint64_t;
-	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const->PANESTATUS;
+	[[nodiscard]] auto GetHexCtrlTemplates()const -> const VecTemplates&;
+	[[nodiscard]] auto GetLastOpenedList()const -> VecDataOpen;
+	[[nodiscard]] auto GetPaneData(UINT uPaneID)const -> std::uint64_t;
+	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const -> PANESTATUS;
 	void LoadSettings(std::wstring_view wsvAppName);
 	void LOLAddToList(const ut::DATAOPEN& dos);      //Last Opened List add.
 	void LOLRemoveFromList(const ut::DATAOPEN& dos); //Last Opened List remove.
 	void OnSettingsChanged();
 	void RFLAddToList(const ut::DATAOPEN& dos);
-	[[nodiscard]] auto RFLGetDataFromMenuID(UINT uID)const->ut::DATAOPEN;
+	[[nodiscard]] auto RFLGetDataFromMenuID(UINT uID)const -> ut::DATAOPEN;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	void RFLRemoveFromList(const ut::DATAOPEN& dos);
 	void SaveSettings();
@@ -410,13 +411,13 @@ public:
 	[[nodiscard]] static auto GetHexCtrlDefs() -> const HEXCTRLSETTINGS&;
 private:
 	[[nodiscard]] auto GetPanesSettings() -> PANESETTINGS&;
-	[[nodiscard]] auto GetPanesSettings()const->const PANESETTINGS&;
-	[[nodiscard]] auto GetAppName()const->const std::wstring&;
-	[[nodiscard]] auto GetRegBasePath()const->const std::wstring&;
-	[[nodiscard]] auto GetRegHexCtrlSettingsPath()const->const std::wstring&;
-	[[nodiscard]] auto GetRegLOLPath()const->const std::wstring&; //Last Opened List.
-	[[nodiscard]] auto GetRegRFLPath()const->const std::wstring&; //Recent Files List.
-	[[nodiscard]] auto GetRegSettingsPath()const->const std::wstring&;
+	[[nodiscard]] auto GetPanesSettings()const -> const PANESETTINGS&;
+	[[nodiscard]] auto GetAppName()const -> const std::wstring&;
+	[[nodiscard]] auto GetRegBasePath()const -> const std::wstring&;
+	[[nodiscard]] auto GetRegHexCtrlSettingsPath()const -> const std::wstring&;
+	[[nodiscard]] auto GetRegLOLPath()const -> const std::wstring&; //Last Opened List.
+	[[nodiscard]] auto GetRegRFLPath()const -> const std::wstring&; //Recent Files List.
+	[[nodiscard]] auto GetRegSettingsPath()const -> const std::wstring&;
 	void LoadHexCtrlTemplates();
 	void ShowInWindowsContextMenu(bool fShow);
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
@@ -591,6 +592,9 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 			DWORD dwOffsetHex { };
 			regHexCtrl.QueryDWORDValue(L"HexCtrlIsOffsetHex", dwOffsetHex);
 			refSett.fOffsetHex = dwOffsetHex;
+			DWORD dwHexCharsCaseUpper { };
+			regHexCtrl.QueryDWORDValue(L"HexCtrlIsHexCharsCaseUpper", dwHexCharsCaseUpper);
+			refSett.fHexCharsCaseUpper = dwHexCharsCaseUpper;
 			regHexCtrl.QueryDWORDValue(L"HexCtrlCharsExtraSpace", refSett.dwCharsExtraSpace);
 
 			//HexCtrl font.
@@ -743,7 +747,7 @@ void CAppSettings::SaveSettings()
 	regSettings.SetDWORDValue(L"GeneralRFLSize", refGeneral.dwRFLSize);
 	regSettings.SetDWORDValue(L"GeneralStartup", std::to_underlying(refGeneral.eOnStartup));
 	regSettings.SetDWORDValue(L"GeneralWindowsMenu", refGeneral.fWindowsMenu);
-	regSettings.SetDWORDValue(L"GeneralDataAccess", refGeneral.stDAC);
+	regSettings.SetDWORDValue(L"GeneralDataAccessMode", refGeneral.stDAC);
 	regSettings.SetDWORDValue(L"GeneralDataIOMode", std::to_underlying(refGeneral.eDataIOMode));
 
 	//HexCtrl settings.
@@ -765,6 +769,7 @@ void CAppSettings::SaveSettings()
 	regHexCtrl.SetDWORDValue(L"HexCtrlScrollSize", std::bit_cast<DWORD>(refSett.flScrollRatio));
 	regHexCtrl.SetDWORDValue(L"HexCtrlIsInfoBar", refSett.fInfoBar);
 	regHexCtrl.SetDWORDValue(L"HexCtrlIsOffsetHex", refSett.fOffsetHex);
+	regHexCtrl.SetDWORDValue(L"HexCtrlIsHexCharsCaseUpper", refSett.fHexCharsCaseUpper);
 	regHexCtrl.SetDWORDValue(L"HexCtrlCharsExtraSpace", refSett.dwCharsExtraSpace);
 
 	//HexCtrl font.
@@ -968,7 +973,7 @@ auto CAppSettings::GetHexCtrlDefs()->const HEXCTRLSETTINGS&
 		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } }, //HexCtrl default font.
 		.dwCapacity { 16UL }, .dwDateFormat { 0xFFFFFFFFUL }, .dwGroupSize { 1UL }, .dwPageSize { 0UL },
 		.dwCharsExtraSpace { 0UL }, .flScrollRatio { 3.0F }, .wchUnprintable { L'.' }, .wchDateSepar { L'/' },
-		.fOffsetHex { true }, .fScrollLines { true }, .fInfoBar { true } };
+		.fOffsetHex { true }, .fHexCharsCaseUpper { true }, .fScrollLines { true }, .fInfoBar { true } };
 	return defs;
 }
 

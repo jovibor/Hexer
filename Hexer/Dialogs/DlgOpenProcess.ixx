@@ -24,7 +24,7 @@ public:
 	struct PROCDATA;
 	struct MODULEDATA;
 	CDlgOpenProcess(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENPROCESS, pParent) { }
-	[[nodiscard]] auto GetOpenData()const->const std::vector<ut::DATAOPEN>&;
+	[[nodiscard]] auto GetOpenData()const -> const std::vector<ut::DATAOPEN>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	void EnableDynamicLayoutHelper(bool fEnable);
@@ -172,6 +172,7 @@ BOOL CDlgOpenProcess::OnInitDialog()
 	const lex::LISTEXCREATE lcs { .hWndParent { m_hWnd }, .uID { IDC_OPENPROCESS_LIST_PROCS }, .dwTTStyleCell { TTS_NOANIMATE },
 		.dwTTDelayTime { 500 }, .dwTTShowTime { 3000 }, .ptTTOffset { 9, -20 }, .fDialogCtrl { true }, .fSortable { true } };
 	m_ListProcs.Create(lcs);
+	m_ListProcs.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT);
 	m_ListProcs.InsertColumn(0, L"№", 0, 40);
 	m_ListProcs.InsertColumn(1, L"Process Name", 0, 200);
 	m_ListProcs.InsertColumn(2, L"Process ID", 0, 70);
@@ -179,6 +180,7 @@ BOOL CDlgOpenProcess::OnInitDialog()
 	m_ListProcs.SetColumnSortMode(0, false);
 
 	m_ListModules.CreateDialogCtrl(IDC_OPENPROCESS_LIST_MODULES, m_hWnd);
+	m_ListModules.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT);
 	m_ListModules.SetSortable(true);
 	m_ListModules.InsertColumn(0, L"Module Name", 0, 150);
 	m_ListModules.InsertColumn(1, L"Working Set", 0, 90);
