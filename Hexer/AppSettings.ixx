@@ -628,16 +628,20 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 
 			//HexCtrl colors.
 			auto& refClrs = refSett.stClrs;
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontCaption", refClrs.clrFontCaption);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontHex", refClrs.clrFontHex);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontText", refClrs.clrFontText);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontOffset", refClrs.clrFontOffset);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontSel", refClrs.clrFontSel);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontDataInterp", refClrs.clrFontDataInterp);
-			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontCaption", refClrs.clrFontCaption);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontInfoParam", refClrs.clrFontInfoParam);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontInfoData", refClrs.clrFontInfoData);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontCaret", refClrs.clrFontCaret);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrFontBkm", refClrs.clrFontBkm);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBk", refClrs.clrBk);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkHex", refClrs.clrBkHex);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkText", refClrs.clrBkText);
+			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkOffset", refClrs.clrBkOffset);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkSel", refClrs.clrBkSel);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkDataInterp", refClrs.clrBkDataInterp);
 			regHexCtrl.QueryDWORDValue(L"HexCtrlClrBkInfoBar", refClrs.clrBkInfoBar);
@@ -786,16 +790,20 @@ void CAppSettings::SaveSettings()
 
 	//HexCtrl colors.
 	const auto& refClrs = refSett.stClrs;
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontCaption", refClrs.clrFontCaption);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontHex", refClrs.clrFontHex);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontText", refClrs.clrFontText);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontOffset", refClrs.clrFontOffset);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontSel", refClrs.clrFontSel);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontDataInterp", refClrs.clrFontDataInterp);
-	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontCaption", refClrs.clrFontCaption);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontInfoParam", refClrs.clrFontInfoParam);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontInfoData", refClrs.clrFontInfoData);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontCaret", refClrs.clrFontCaret);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrFontBkm", refClrs.clrFontBkm);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBk", refClrs.clrBk);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkHex", refClrs.clrBkHex);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkText", refClrs.clrBkText);
+	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkOffset", refClrs.clrBkOffset);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkSel", refClrs.clrBkSel);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkDataInterp", refClrs.clrBkDataInterp);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrBkInfoBar", refClrs.clrBkInfoBar);

@@ -383,9 +383,9 @@ enum class CDlgSettingsHexCtrl::EGroup : std::uint8_t {
 enum class CDlgSettingsHexCtrl::EName : std::uint8_t {
 	dwCapacity, dwGroupSize, dwPageSize, wchUnprintable, wchDateSepar, wstrDateFormat, fScrollLines,
 	flScrollRatio, fInfoBar, fOffsetHex, fHexCharsCaseUpper, dwCharsExtraSpace, stLogFont,
-	clrFontHex, clrFontText, clrFontSel, clrFontDataInterp, clrFontCaption, clrFontInfoParam, clrFontInfoData,
-	clrFontCaret, clrFontBkm, clrBk, clrBkSel, clrBkDataInterp, clrBkInfoBar, clrBkCaret, clrBkCaretSel, clrBkBkm,
-	clrLinesMain, clrLinesTempl, clrScrollBar, clrScrollThumb, clrScrollArrow
+	clrFontCaption, clrFontHex, clrFontText, clrFontOffset, clrFontSel, clrFontDataInterp, clrFontInfoParam,
+	clrFontInfoData, clrFontCaret, clrFontBkm, clrBk, clrBkHex, clrBkText, clrBkOffset, clrBkSel, clrBkDataInterp,
+	clrBkInfoBar, clrBkCaret, clrBkCaretSel, clrBkBkm, clrLinesMain, clrLinesTempl, clrScrollBar, clrScrollThumb, clrScrollArrow
 };
 
 BEGIN_MESSAGE_MAP(CDlgSettingsHexCtrl, CDialogEx)
@@ -630,16 +630,18 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 
 	//HexCtrl colors.
 	const auto& refClrs = m_pAppSettings->GetHexCtrlSettings().stClrs;
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Caption", refClrs.clrFontCaption),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontCaption));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Hex", refClrs.clrFontHex),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontHex));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Text", refClrs.clrFontText),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontText));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Offset", refClrs.clrFontOffset),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontOffset));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Selection", refClrs.clrFontSel),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontSel));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Data Interpreter", refClrs.clrFontDataInterp),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontDataInterp));
-	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Caption", refClrs.clrFontCaption),
-		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontCaption));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Info Parameters", refClrs.clrFontInfoParam),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontInfoParam));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Font Info Data", refClrs.clrFontInfoData),
@@ -650,6 +652,12 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrFontBkm));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Background", refClrs.clrBk),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBk));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Hex", refClrs.clrBkHex),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBkHex));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Text", refClrs.clrBkText),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBkText));
+	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Offset", refClrs.clrBkOffset),
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBkOffset));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Selection", refClrs.clrBkSel),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrBkSel));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Bk Data Interpreter", refClrs.clrBkDataInterp),
@@ -667,7 +675,7 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Lines Templates", refClrs.clrLinesTempl),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrLinesTempl));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Scroll Bar", refClrs.clrScrollBar),
-	std::to_underlying(GROUP_COLORS), std::to_underlying(clrScrollBar));
+		std::to_underlying(GROUP_COLORS), std::to_underlying(clrScrollBar));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Scroll Thumb", refClrs.clrScrollThumb),
 		std::to_underlying(GROUP_COLORS), std::to_underlying(clrScrollThumb));
 	m_vecGrid.emplace_back(new CMFCPropertyGridColorProperty(L"Scroll Arrow", refClrs.clrScrollArrow),
