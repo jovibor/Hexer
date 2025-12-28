@@ -66,7 +66,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);dep\HexCtrl\HexCtrl\;</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
@@ -97,7 +97,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir);dep\HexCtrl\HexCtrl\;dep\HexCtrl\HexCtrl\dep\ListEx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);dep\HexCtrl\HexCtrl\;</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
@@ -126,14 +126,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClInclude Include="CChildFrame.h" />
-    <ClCompile Include="dep\HexCtrl\HexCtrl\dep\ListEx\ListEx.ixx">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="dep\HexCtrl\HexCtrl\dep\StrToNum\StrToNum.ixx">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\CHexCtrl.ixx">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -178,7 +170,23 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\dep\HexCtrl_ListEx.ixx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="dep\HexCtrl\HexCtrl\src\dep\HexCtrl_StrToNum.ixx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="dep\HexCtrl\HexCtrl\src\HexUtility.ixx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="dep\ListEx.ixx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="dep\StrToNum.ixx">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -211,8 +219,6 @@
     <ClInclude Include="CHexerView.h" />
     <ClInclude Include="CMainFrame.h" />
     <ClInclude Include="CHexerApp.h" />
-    <ClInclude Include="dep\HexCtrl\HexCtrl\HexCtrl.h" />
-    <ClInclude Include="dep\HexCtrl\HexCtrl\res\HexCtrlRes.h" />
     <ClCompile Include="Dialogs\DlgNewFile.ixx">
       <FileType>Document</FileType>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -233,6 +239,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClInclude Include="dep\HexCtrl\HexCtrl\HexCtrl.h" />
+    <ClInclude Include="dep\HexCtrl\HexCtrl\src\res\HexCtrlRes.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
@@ -252,20 +260,19 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="dep\HexCtrl\HexCtrl\res\HexCtrl.rc" />
+    <ResourceCompile Include="dep\HexCtrl\HexCtrl\src\res\HexCtrl.rc" />
     <ResourceCompile Include="Hexer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_BKMS.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_CLPBRD_COPYHEX.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_CLPBRD_PASTEHEX.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_FONTCHOOSE.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_GROUP.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_LOGO.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_MODIFY.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_MODIFY_FILLZEROS.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SCROLL_ARROW.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\res\IDB_HEXCTRL_SEARCH.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_BKMS.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_CLPBRD_COPYHEX.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_CLPBRD_PASTEHEX.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_FONTCHOOSE.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_GROUP.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_LOGO.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_MODIFY.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_MODIFY_FILLZEROS.bmp" />
+    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_SEARCH.bmp" />
     <Image Include="res\IDB_FILE.bmp" />
     <Image Include="res\IDB_PROCESS.bmp" />
     <Image Include="res\IDR_HEXER_FRAME.ico" />
@@ -273,7 +280,7 @@
     <Image Include="res\IDR_TOOLBAR_MAIN.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="dep\HexCtrl\HexCtrl\res\IDJ_HEXCTRL_KEYBIND.json" />
+    <None Include="dep\HexCtrl\HexCtrl\src\res\IDJ_HEXCTRL_KEYBIND.json" />
     <None Include="res\Hexer.rc2" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

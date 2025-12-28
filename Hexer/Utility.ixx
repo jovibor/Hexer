@@ -17,9 +17,8 @@ module;
 export module Utility;
 
 export import StrToNum;
-export namespace stn = HEXCTRL::stn;
 export import ListEx;
-export namespace lex = HEXCTRL::LISTEX;
+export namespace lex = LISTEX;
 HWND g_hWndMain { };
 
 export namespace ut {
