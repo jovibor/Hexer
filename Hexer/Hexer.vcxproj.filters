@@ -219,4 +219,7 @@
       <Filter>HexCtrl\res</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include=".manifest" />
+  </ItemGroup>
 </Project>
