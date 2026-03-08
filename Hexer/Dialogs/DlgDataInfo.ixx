@@ -76,8 +76,10 @@ BOOL CDlgDataInfo::OnInitDialog()
 	pFont->GetLogFont(&lf);
 	constexpr wchar_t pwszFont[] { L"Microsoft Sans Serif" };
 	std::copy_n(pwszFont, std::size(pwszFont), lf.lfFaceName);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, ut::GetHiDPIInfo().iLOGPIXELSY) + 1; //Convert font Height to point size.
-	lf.lfHeight = -MulDiv(lFontSize, ut::GetHiDPIInfo().iLOGPIXELSY, 72); //Convert point size to font Height.
+
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_gridDataInfo);
+	const auto flFontSizePoints = ut::FontPointsFromPixels(lf.lfHeight) / flDPIScale + 1.F; //Convert font height to size in points.
+	lf.lfHeight = -std::lround(ut::FontPixelsFromPoints(flFontSizePoints) * flDPIScale); //Convert point size to size in pixels.
 	m_fntFilePropsGrid.CreateFontIndirectW(&lf);
 	m_gridDataInfo.SetFont(&m_fntFilePropsGrid);
 

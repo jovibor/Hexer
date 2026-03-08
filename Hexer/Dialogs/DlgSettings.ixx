@@ -256,8 +256,10 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	const auto pFont = m_grid.GetFont();
 	LOGFONTW lf;
 	pFont->GetLogFont(&lf);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, ut::GetHiDPIInfo().iLOGPIXELSY) + 1;
-	lf.lfHeight = -MulDiv(lFontSize, ut::GetHiDPIInfo().iLOGPIXELSY, 72);
+
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_grid);
+	const auto flFontSizePoints = ut::FontPointsFromPixels(lf.lfHeight) / flDPIScale + 1.F; //Convert font height to size in points.
+	lf.lfHeight = -std::lround(ut::FontPixelsFromPoints(flFontSizePoints) * flDPIScale); //Convert point size to size in pixels.
 	m_fntGrid.CreateFontIndirectW(&lf);
 	m_grid.SetFont(&m_fntGrid);
 
@@ -527,8 +529,10 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	const auto pFont = m_grid.GetFont();
 	LOGFONTW lf;
 	pFont->GetLogFont(&lf);
-	const auto lFontSize = MulDiv(-lf.lfHeight, 72, ut::GetHiDPIInfo().iLOGPIXELSY) + 1;
-	lf.lfHeight = -MulDiv(lFontSize, ut::GetHiDPIInfo().iLOGPIXELSY, 72);
+
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_grid);
+	const auto flFontSizePoints = ut::FontPointsFromPixels(lf.lfHeight) / flDPIScale + 1.F; //Convert font height to size in points.
+	lf.lfHeight = -std::lround(ut::FontPixelsFromPoints(flFontSizePoints) * flDPIScale); //Convert point size to size in pixels.
 	m_fntGrid.CreateFontIndirectW(&lf);
 	m_grid.SetFont(&m_fntGrid);
 

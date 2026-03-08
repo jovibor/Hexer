@@ -190,8 +190,10 @@ bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
 		default:
 			return 0;
 		}
-	}();
-	m_hDocIcon = ut::HICONfromHBITMAP(ut::GetHBITMAP(iResID));
+		}();
+
+	const auto iSizeBitmap = std::lround(16.F * ut::GetDPIScaleForHWND(AfxGetMainWnd()->m_hWnd));
+	m_hDocIcon = ut::HICONfromHBITMAP(ut::LoadDIBitmap(iResID, iSizeBitmap, iSizeBitmap));
 	const auto wstrLog = std::format(L"{} opened: {} ({})", ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
 		ut::GetWstrDATAACCESS(GetDataAccessMode()));
 	ut::Log::AddLogEntryInfo(wstrLog);

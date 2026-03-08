@@ -142,21 +142,20 @@ export namespace ut {
 		return u64Size;
 	}
 
-	struct HIDPIINFO {
-		int   iLOGPIXELSY { };
-		float flDPIScale { };
-	};
+	[[nodiscard]] auto GetDPIScaleForHWND(HWND hWnd) -> float {
+		return static_cast<float>(::GetDpiForWindow(hWnd)) / USER_DEFAULT_SCREEN_DPI; //High-DPI scale factor for window.
+	}
 
-	[[nodiscard]] auto GetHiDPIInfo() -> HIDPIINFO {
-		static const HIDPIINFO ret { []()->HIDPIINFO {
-			const auto hDC = ::GetDC(nullptr);
-			const auto iLOGPIXELSY = GetDeviceCaps(hDC, LOGPIXELSY);
-			const auto flScale = iLOGPIXELSY / 96.0F;
-			::ReleaseDC(nullptr, hDC);
-			return { .iLOGPIXELSY { iLOGPIXELSY }, .flDPIScale { flScale } };
-			}() };
+	//Get GDI font size in points from the size in pixels.
+	[[nodiscard]] auto FontPointsFromPixels(long iSizePixels) -> float {
+		constexpr auto flPointsInPixel = 72.F / USER_DEFAULT_SCREEN_DPI;
+		return std::abs(iSizePixels) * flPointsInPixel;
+	}
 
-		return ret;
+	//Get GDI font size in pixels from the size in points.
+	[[nodiscard]] auto FontPixelsFromPoints(float flSizePoints) -> long {
+		constexpr auto flPixelsInPoint = USER_DEFAULT_SCREEN_DPI / 72.F;
+		return std::lround(flSizePoints * flPixelsInPoint);
 	}
 
 	enum class EOpenMode : std::uint8_t {
@@ -283,10 +282,9 @@ export namespace ut {
 		return wstrPath;
 	};
 
-	[[nodiscard]] auto GetHBITMAP(int iResID) -> HBITMAP {
-		const auto iSizeIcon = static_cast<int>(16 * ut::GetHiDPIInfo().flDPIScale);
-		return static_cast<HBITMAP>(LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(iResID),
-			IMAGE_BITMAP, iSizeIcon, iSizeIcon, LR_CREATEDIBSECTION));
+	[[nodiscard]] auto LoadDIBitmap(int iResID, int iWidth, int iHeight) -> HBITMAP {
+		return static_cast<HBITMAP>(::LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(iResID),
+			IMAGE_BITMAP, iWidth, iHeight, LR_CREATEDIBSECTION));
 	}
 
 	[[nodiscard]] auto HICONfromHBITMAP(HBITMAP hbmp) -> HICON {

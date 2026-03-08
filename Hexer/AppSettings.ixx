@@ -977,7 +977,7 @@ auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
 
 auto CAppSettings::GetHexCtrlDefs()->const HEXCTRLSETTINGS&
 {
-	static const HEXCTRLSETTINGS defs { .stLogFont { .lfHeight { -MulDiv(11, ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
+	static const HEXCTRLSETTINGS defs { .stLogFont { .lfHeight { -ut::FontPixelsFromPoints(11) },
 		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } }, //HexCtrl default font.
 		.dwCapacity { 16UL }, .dwDateFormat { 0xFFFFFFFFUL }, .dwGroupSize { 1UL }, .dwPageSize { 0UL },
 		.dwCharsExtraSpace { 0UL }, .flScrollRatio { 3.0F }, .wchUnprintable { L'.' }, .wchDateSepar { L'/' },

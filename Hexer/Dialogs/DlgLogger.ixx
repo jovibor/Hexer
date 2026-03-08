@@ -120,7 +120,7 @@ BOOL CDlgLogger::OnInitDialog()
 	m_menuList.CreatePopupMenu();
 	m_menuList.AppendMenuW(MF_STRING, static_cast<UINT_PTR>(EMenuID::IDM_LIST_CLEARALL), L"Clear All");
 
-	const auto iIconSize = static_cast<int>(16 * ut::GetHiDPIInfo().flDPIScale);
+	const auto iIconSize = static_cast<int>(16 * ut::GetDPIScaleForHWND(m_hWnd));
 	m_stImgList.Create(iIconSize, iIconSize, ILC_COLOR32 | ILC_MASK, 3, 3);
 
 	//Icons added in exact order: "msg_error, msg_warning, msg_info" as the enum values in the EMsgType.

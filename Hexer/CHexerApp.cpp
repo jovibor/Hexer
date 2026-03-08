@@ -354,9 +354,10 @@ BOOL CHexerApp::InitInstance()
 	m_pMainWnd = pMainFrame;
 	ut::SetMainWnd(pMainFrame->m_hWnd);
 
-	const auto hBMPFile = ut::GetHBITMAP(IDB_FILE);
-	const auto hBMPDevice = ut::GetHBITMAP(IDB_DEVICE);
-	const auto hBMPProcess = ut::GetHBITMAP(IDB_PROCESS);
+	const auto iSizeBitmap = std::lround(16.F * ut::GetDPIScaleForHWND(pMainFrame->m_hWnd));
+	const auto hBMPFile = ut::LoadDIBitmap(IDB_FILE, iSizeBitmap, iSizeBitmap);
+	const auto hBMPDevice = ut::LoadDIBitmap(IDB_DEVICE, iSizeBitmap, iSizeBitmap);
+	const auto hBMPProcess = ut::LoadDIBitmap(IDB_PROCESS, iSizeBitmap, iSizeBitmap);
 	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPFile } };
 	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
 	pFileMenu->SetMenuItemInfoW(1, &mii, TRUE); //Icon for the "Open File..." menu.

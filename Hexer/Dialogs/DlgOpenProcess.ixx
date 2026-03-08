@@ -169,8 +169,8 @@ BOOL CDlgOpenProcess::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	m_locale = std::locale("en_US.UTF-8");
-	const lex::LISTEXCREATE lcs { .hWndParent { m_hWnd }, .uID { IDC_OPENPROCESS_LIST_PROCS }, .dwTTStyleCell { TTS_NOANIMATE },
-		.dwTTDelayTime { 500 }, .dwTTShowTime { 3000 }, .ptTTOffset { 9, -20 }, .fDialogCtrl { true }, .fSortable { true } };
+	const lex::LISTEXCREATE lcs { .hWndParent { m_hWnd }, .ptTTOffset { 9, -20 }, .uID { IDC_OPENPROCESS_LIST_PROCS },
+		.dwTTStyleCell { TTS_NOANIMATE }, .dwTTDelayTime { 500 }, .dwTTShowTime { 3000 }, .fDialogCtrl { true }, .fSortable { true } };
 	m_ListProcs.Create(lcs);
 	m_ListProcs.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT);
 	m_ListProcs.InsertColumn(0, L"№", 0, 40);

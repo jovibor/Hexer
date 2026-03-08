@@ -22,6 +22,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnViewRangePanes)
 	ON_MESSAGE(ut::WM_APP_SETTINGS_CHANGED, &CMainFrame::OnAppSettingsChanged)
 	ON_MESSAGE(ut::WM_ADD_LOG_ENTRY, &CMainFrame::OnAddLogEntry)
+	ON_MESSAGE(WM_DPICHANGED, &CMainFrame::OnDPIChanged)
 	ON_REGISTERED_MESSAGE(AFX_WM_ON_GET_TAB_TOOLTIP, &CMainFrame::OnGetTabTooltip)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnUpdateRangePanes)
 	ON_WM_CLOSE()
@@ -432,8 +433,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	const auto imgTB = CMFCToolBar::GetImages();    //Toolbar image.
 	const auto sizeImgCurr = imgTB->GetImageSize(); //One button's dimensions.
 	const auto flToolbarScaledFactor = sizeImgCurr.cx / 16.0; //How many times our toolbar is bigger than the standard one.
-	const auto flScale = ut::GetHiDPIInfo().flDPIScale; //Scale factor for HighDPI displays.
-	const auto flScaleTB = flScale / flToolbarScaledFactor;
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd); //Scale factor for High-DPI displays.
+	const auto flScaleTB = flDPIScale / flToolbarScaledFactor;
 	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * flScaleTB) + 7,
 		static_cast<int>(sizeImgCurr.cy * flScaleTB) + 7 }; //Size of the toolbar's button.
 	imgTB->SmoothResize(flScaleTB); //Resize image according to the current DPI.
@@ -516,6 +517,11 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 	SetWindowSubclass(m_hWndMDIClient, MDIClientProc, 1, reinterpret_cast<DWORD_PTR>(this));
 
 	return TRUE;
+}
+
+auto CMainFrame::OnDPIChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
+{
+	return 0;
 }
 
 BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/)
@@ -745,8 +751,9 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 {
 	const auto pDC = CDC::FromHandle(::GetDC(hWnd));
 	const auto iWidthNew = LOWORD(lParam);
-	auto iFontSizeMin = 10;
-	LOGFONTW lf { .lfHeight { -MulDiv(iFontSizeMin, ut::GetHiDPIInfo().iLOGPIXELSY, 72) },
+	const auto flDPIScale = ut::GetDPIScaleForHWND(hWnd);
+	auto flFontSizePoints = 10.F;
+	LOGFONTW lf { .lfHeight { -std::lround(ut::FontPixelsFromPoints(flFontSizePoints) * flDPIScale) },
 		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } };
 
 	m_fontMDIClient.DeleteObject();
@@ -754,8 +761,8 @@ void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
 	CSize stSizeText { };
 	while (stSizeText.cx < (iWidthNew - 150)) { //Until the text size is not big enough to fill the window's width.
 		m_fontMDIClient.DeleteObject();
-		iFontSizeMin += 4;
-		lf.lfHeight = -MulDiv(iFontSizeMin, ut::GetHiDPIInfo().iLOGPIXELSY, 72);
+		flFontSizePoints += 4.F;
+		lf.lfHeight = -std::lround(ut::FontPixelsFromPoints(flFontSizePoints) * flDPIScale);
 		m_fontMDIClient.CreateFontIndirectW(&lf);
 		pDC->SelectObject(m_fontMDIClient);
 		stSizeText = pDC->GetTextExtent(ut::GetAppName().data(), static_cast<int>(ut::GetAppName().size()));
