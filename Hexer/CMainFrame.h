@@ -48,15 +48,15 @@ protected:
 	[[nodiscard]] auto GetPtrFromPaneID(UINT uPaneID) -> CHexerDockablePane*;
 	[[nodiscard]] bool HasChildFrame();
 	void HideAllPanes();
-	afx_msg auto OnAddLogEntry(WPARAM wParam, LPARAM lParam)->LRESULT;
-	afx_msg auto OnAppSettingsChanged(WPARAM wParam, LPARAM lParam)->LRESULT;
+	afx_msg auto OnAddLogEntry(WPARAM wParam, LPARAM lParam) -> LRESULT;
+	afx_msg auto OnAppSettingsChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	[[nodiscard]] bool OnBeforeClose();
 	afx_msg void OnClose();
 	BOOL OnCloseDockingPane(CDockablePane* pPane)override;
 	afx_msg BOOL OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS);
 	afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
-	auto OnDPIChanged(WPARAM wParam, LPARAM lParam)->LRESULT;
+	auto OnDPIChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg BOOL OnEraseMDIClientBackground(CDC* pDC)override;
 	auto OnGetTabTooltip(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg void OnUpdateRangePanes(CCmdUI* pCmdUI);
@@ -67,6 +67,7 @@ protected:
 	void SaveHexCtrlSettings();
 	void SavePaneData(UINT uPaneID);
 	void SavePanesSettings();
+	void UpdateTBSizes(); //Set/update toolbar and icons sizes.
 	DECLARE_DYNAMIC(CMainFrame);
 	DECLARE_MESSAGE_MAP();
 private:

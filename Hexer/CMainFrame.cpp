@@ -428,23 +428,11 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	m_wndToolBar.CreateEx(this, TBSTYLE_FLAT,
 		WS_CHILD | WS_VISIBLE | CBRS_TOP | CBRS_GRIPPER | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC);
 	m_wndToolBar.LoadToolBar(IDR_TOOLBAR_MAIN);
-
-	CMFCToolBar::m_bDontScaleImages = TRUE;
-	const auto imgTB = CMFCToolBar::GetImages();    //Toolbar image.
-	const auto sizeImgCurr = imgTB->GetImageSize(); //One button's dimensions.
-	const auto flToolbarScaledFactor = sizeImgCurr.cx / 16.0; //How many times our toolbar is bigger than the standard one.
-	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd); //Scale factor for High-DPI displays.
-	const auto flScaleTB = flDPIScale / flToolbarScaledFactor;
-	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * flScaleTB) + 7,
-		static_cast<int>(sizeImgCurr.cy * flScaleTB) + 7 }; //Size of the toolbar's button.
-	imgTB->SmoothResize(flScaleTB); //Resize image according to the current DPI.
-	CMFCToolBar::SetSizes(sizeBtn, imgTB->GetImageSize());
-	CMFCToolBar::SetMenuSizes(sizeBtn, imgTB->GetImageSize());
-
 	m_wndToolBar.SetWindowTextW(L"Standard"); //This text is in fact menu name.
 	m_wndToolBar.EnableCustomizeButton(TRUE, IDM_TOOLBAR_CUSTOMIZE, L"Customize...");
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	DockPane(&m_wndToolBar);
+	UpdateTBSizes();
 
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerVS2008));
 	CDockingManager::SetDockingMode(DT_SMART); //enable Visual Studio 2005 style docking window behavior
@@ -521,6 +509,8 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 
 auto CMainFrame::OnDPIChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
 {
+	UpdateTBSizes();
+
 	return 0;
 }
 
@@ -705,6 +695,21 @@ void CMainFrame::SavePanesSettings()
 			SavePaneData(uPaneID);
 		}
 	}
+}
+
+void CMainFrame::UpdateTBSizes()
+{
+	CMFCToolBar::m_bDontScaleImages = TRUE;
+	const auto pImgTB = CMFCToolBar::GetImages();    //Toolbar image.
+	const auto sizeImgCurr = pImgTB->GetImageSize(); //One button's dimensions.
+	const auto flTBScaledFactor = sizeImgCurr.cx / 16.F; //How many times our toolbar is bigger than the standard one.
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd); //Scale factor for High-DPI displays.
+	const auto flScaleTB = flDPIScale / flTBScaledFactor;
+	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * flScaleTB) + 7,
+		static_cast<int>(sizeImgCurr.cy * flScaleTB) + 7 }; //Size of the toolbar's button.
+	pImgTB->SmoothResize(flScaleTB); //Resize image according to the current DPI.
+	CMFCToolBar::SetSizes(sizeBtn, pImgTB->GetImageSize());
+	CMFCToolBar::SetMenuSizes(sizeBtn, pImgTB->GetImageSize());
 }
 
 auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR /*uID*/, DWORD_PTR dwData)->LRESULT
