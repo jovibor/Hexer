@@ -1,20 +1,25 @@
-module;
 /*******************************************************************************
 * Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
+module;
 #include <SDKDDKVer.h>
 #include "resource.h"
 #include <afxwin.h>
 #include "HexCtrl.h"
+#include <cassert>
 #include <compare>
 #include <chrono>
 #include <expected>
+#include <memory>
 #include <string>
 #include <winioctl.h>
+#include <d2d1_3.h>
 export module Utility;
+
+#pragma comment(lib, "d2d1")
 
 export import StrToNum;
 export import ListEx;
@@ -22,6 +27,132 @@ export namespace lex = LISTEX;
 HWND g_hWndMain { };
 
 export namespace ut {
+	template<typename TCom> requires requires(TCom* pTCom) { pTCom->AddRef(); pTCom->Release(); }
+	class comptr {
+	public:
+		comptr() = default;
+		comptr(TCom* pTCom) : m_pTCom(pTCom) { }
+		comptr(const comptr<TCom>& rhs) : m_pTCom(rhs.get()) { safe_addref(); }
+		~comptr() { safe_release(); }
+		operator TCom*()const { return get(); }
+		operator TCom**() { return get_addr(); }
+		operator IUnknown**() { return reinterpret_cast<IUnknown**>(get_addr()); }
+		operator void**() { return reinterpret_cast<void**>(get_addr()); }
+		auto operator->()const->TCom* { return get(); }
+		auto operator=(const comptr<TCom>& rhs)->comptr& {
+			if (this != &rhs) {
+				safe_release();	m_pTCom = rhs.get(); safe_addref();
+			}
+			return *this;
+		}
+		auto operator=(TCom* pRHS)->comptr& {
+			if (get() != pRHS) {
+				if (get() != nullptr) { get()->Release(); }
+				m_pTCom = pRHS;
+			}
+			return *this;
+		}
+		[[nodiscard]] bool operator==(const comptr<TCom>& rhs)const { return get() == rhs.get(); }
+		[[nodiscard]] bool operator==(const TCom* pRHS)const { return get() == pRHS; }
+		[[nodiscard]] explicit operator bool() { return get() != nullptr; }
+		[[nodiscard]] explicit operator bool()const { return get() != nullptr; }
+		[[nodiscard]] auto get()const -> TCom* { return m_pTCom; }
+		[[nodiscard]] auto get_addr() -> TCom** { return &m_pTCom; }
+		void safe_release() { if (get() != nullptr) { get()->Release(); m_pTCom = nullptr; } }
+		void safe_addref() { if (get() != nullptr) { get()->AddRef(); } }
+	private:
+		TCom* m_pTCom { };
+	};
+
+	[[nodiscard]] auto SVGToBmp(IStream* pStream, int iWidth, int iHeight, ID2D1Factory* pD2DFactory = nullptr) -> HBITMAP {
+		//The "height" and "width" svg root attributes <svg ...height="30" width="30"...> must be removed from the svg file,
+		//to scale image correctly with the Direct2D.
+		//Otherwise, ID2D1SvgDocument will use these attributes for scaling, not its own viewport size.
+
+		if (pD2DFactory == nullptr) {
+			static const comptr pD2DFactory1 = []() {
+				ID2D1Factory1* pFactory1;
+				::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1),
+					reinterpret_cast<void**>(&pFactory1));
+				assert(pFactory1 != nullptr);
+				return pFactory1;
+				}();
+			pD2DFactory = pD2DFactory1;
+		}
+
+		const auto d2d1RTP = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT,
+			D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), 0, 0, D2D1_RENDER_TARGET_USAGE_NONE,
+			D2D1_FEATURE_LEVEL_DEFAULT);
+		comptr<ID2D1DCRenderTarget> pDCRT;
+		pD2DFactory->CreateDCRenderTarget(&d2d1RTP, pDCRT);
+		assert(pDCRT != nullptr);
+		if (pDCRT == nullptr)
+			return { };
+
+		std::unique_ptr < std::remove_pointer_t<HDC>, decltype([](HDC hDC) { ::DeleteDC(hDC); }) > pHDC { ::CreateCompatibleDC(nullptr) };
+		assert(pHDC != nullptr);
+		if (pHDC == nullptr)
+			return { };
+
+		const BITMAPINFO bi { .bmiHeader { .biSize { sizeof(BITMAPINFOHEADER) },
+			.biWidth { iWidth }, .biHeight { iHeight }, .biPlanes { 1 }, .biBitCount { 32 }, .biCompression { BI_RGB } } };
+		void* pBitsBmp;
+		const auto hBmp = ::CreateDIBSection(pHDC.get(), &bi, DIB_RGB_COLORS, &pBitsBmp, nullptr, 0);
+		assert(hBmp != nullptr);
+		if (hBmp == nullptr)
+			return { };
+
+		::SelectObject(pHDC.get(), hBmp);
+		const RECT rc { .right { iWidth }, .bottom { iHeight } };
+		pDCRT->BindDC(pHDC.get(), &rc);
+
+		comptr<ID2D1DeviceContext5> pD2DDC5;
+		pDCRT->QueryInterface(__uuidof(ID2D1DeviceContext5), pD2DDC5);
+		assert(pD2DDC5 != nullptr);
+		if (pD2DDC5 == nullptr)
+			return { };
+
+		comptr<ID2D1SvgDocument> pSVGDoc;
+		pD2DDC5->CreateSvgDocument(pStream, { .width { static_cast<float>(iWidth) },
+			.height { static_cast<float>(iHeight) } }, pSVGDoc);
+		assert(pSVGDoc != nullptr);
+		if (pSVGDoc == nullptr)
+			return { };
+
+		pDCRT->BeginDraw();
+		pD2DDC5->DrawSvgDocument(pSVGDoc);
+		pDCRT->EndDraw();
+
+		return hBmp;
+	}
+
+	[[nodiscard]] auto SVGToBmp(UINT uIDRes, int iWidth, int iHeight, HINSTANCE hInstRes = nullptr,
+		LPCWSTR pwszTypeRes = L"SVG", ID2D1Factory * pD2DFactory = nullptr) -> HBITMAP {
+		const auto hRCSVG = ::FindResourceW(hInstRes, MAKEINTRESOURCEW(uIDRes), pwszTypeRes);
+		assert(hRCSVG != nullptr);
+		if (hRCSVG == nullptr)
+			return { };
+
+		const auto hResData = ::LoadResource(hInstRes, hRCSVG);
+		assert(hResData != nullptr);
+		if (hResData == nullptr)
+			return { };
+
+		const auto pResData = static_cast<const BYTE*>(::LockResource(hResData));
+		assert(pResData != nullptr);
+		if (pResData == nullptr)
+			return { };
+
+		const auto dwSizeRes = ::SizeofResource(hInstRes, hRCSVG);
+
+		comptr<IStream> pStream = ::SHCreateMemStream(pResData, dwSizeRes);
+		assert(pStream != nullptr);
+		if (pStream == nullptr)
+			return { };
+
+		return SVGToBmp(pStream, iWidth, iHeight, pD2DFactory);
+	}
+
 	constexpr auto HEXER_VERSION_MAJOR = 1;
 	constexpr auto HEXER_VERSION_MINOR = 3;
 	constexpr auto HEXER_VERSION_PATCH = 2;
