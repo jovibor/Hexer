@@ -279,15 +279,17 @@
     <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_MODIFY.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_MODIFY_FILLZEROS.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_SEARCH.bmp" />
-    <Image Include="res\IDB_FILE.bmp" />
-    <Image Include="res\IDB_PROCESS.bmp" />
     <Image Include="res\IDR_HEXER_FRAME.ico" />
-    <Image Include="res\IDB_DEVICE.bmp" />
     <Image Include="res\IDR_TOOLBAR_MAIN.bmp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dep\HexCtrl\HexCtrl\src\res\IDJ_HEXCTRL_KEYBIND.json" />
     <None Include="res\Hexer.rc2" />
+    <None Include="res\IDR_SVG_DEVICE_OPEN.svg" />
+    <None Include="res\IDR_SVG_FILE_NEW.svg" />
+    <None Include="res\IDR_SVG_FILE_OPEN.svg" />
+    <None Include="res\IDR_SVG_PROCESS_OPEN.svg" />
+    <None Include="res\IDR_SVG_SAVE.svg" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include=".manifest" />

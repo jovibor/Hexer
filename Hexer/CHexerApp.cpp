@@ -59,8 +59,7 @@ BOOL CDlgAbout::OnInitDialog()
 class CHexerMDTemplate final : public CMultiDocTemplate {
 public:
 	CHexerMDTemplate(UINT nIDResource, CRuntimeClass* pDocClass, CRuntimeClass* pFrameClass, CRuntimeClass* pViewClass)
-		: CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass) {
-	}
+		: CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass) { }
 	[[nodiscard]] auto OpenDocumentFile(const ut::DATAOPEN& dos) -> CDocument*;
 };
 
@@ -353,21 +352,6 @@ BOOL CHexerApp::InitInstance()
 	pMainFrame->LoadFrame(IDR_HEXER_FRAME); //IDR_HEXER_FRAME is also used in the CMainFrame::PreCreateWindow.
 	m_pMainWnd = pMainFrame;
 	ut::SetMainWnd(pMainFrame->m_hWnd);
-
-	const auto iSizeBitmap = std::lround(16.F * ut::GetDPIScaleForHWND(pMainFrame->m_hWnd));
-	const auto hBMPFile = ut::LoadDIBitmap(IDB_FILE, iSizeBitmap, iSizeBitmap);
-	const auto hBMPDevice = ut::LoadDIBitmap(IDB_DEVICE, iSizeBitmap, iSizeBitmap);
-	const auto hBMPProcess = ut::LoadDIBitmap(IDB_PROCESS, iSizeBitmap, iSizeBitmap);
-	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPFile } };
-	const auto pFileMenu = pMainFrame->GetMenu()->GetSubMenu(0); //"File" sub-menu.
-	pFileMenu->SetMenuItemInfoW(1, &mii, TRUE); //Icon for the "Open File..." menu.
-	mii.hbmpItem = hBMPDevice;
-	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //Icon for the "Open Device..." menu.
-	mii.hbmpItem = hBMPProcess;
-	pFileMenu->SetMenuItemInfoW(3, &mii, TRUE); //Icon for the "Open Process..." menu.
-	const auto pRFLSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files List" sub-menu.
-	GetAppSettings().RFLInitialize(pRFLSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPFile, hBMPDevice, hBMPProcess);
-	DrawMenuBar(pMainFrame->m_hWnd);
 
 	//For Drag'n Drop to work, even in elevated mode.
 	//helgeklein.com/blog/2010/03/how-to-enable-drag-and-drop-for-an-elevated-mfc-application-on-vistawindows-7/

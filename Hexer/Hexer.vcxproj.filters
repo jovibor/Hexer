@@ -174,15 +174,6 @@
     <Image Include="res\IDR_TOOLBAR_MAIN.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="res\IDB_DEVICE.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="res\IDB_PROCESS.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="res\IDB_FILE.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_BKMS.bmp">
       <Filter>HexCtrl\res</Filter>
     </Image>
@@ -218,8 +209,25 @@
     <None Include="dep\HexCtrl\HexCtrl\src\res\IDJ_HEXCTRL_KEYBIND.json">
       <Filter>HexCtrl\res</Filter>
     </None>
+    <None Include="res\IDR_SVG_DEVICE_OPEN.svg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\IDR_SVG_FILE_NEW.svg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\IDR_SVG_FILE_OPEN.svg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\IDR_SVG_PROCESS_OPEN.svg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\IDR_SVG_SAVE.svg">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include=".manifest" />
+    <Manifest Include=".manifest">
+      <Filter>Resource Files</Filter>
+    </Manifest>
   </ItemGroup>
 </Project>

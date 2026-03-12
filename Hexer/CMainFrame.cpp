@@ -425,6 +425,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	EnableDocking(CBRS_ALIGN_ANY);
 	CPaneDivider::m_pSliderRTC = RUNTIME_CLASS(CHexerPaneDivider);
 
+	CMFCToolBar::m_bDontScaleImages = TRUE;
 	m_wndToolBar.CreateEx(this, TBSTYLE_FLAT,
 		WS_CHILD | WS_VISIBLE | CBRS_TOP | CBRS_GRIPPER | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC);
 	m_wndToolBar.LoadToolBar(IDR_TOOLBAR_MAIN);
@@ -432,7 +433,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	m_wndToolBar.EnableCustomizeButton(TRUE, IDM_TOOLBAR_CUSTOMIZE, L"Customize...");
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	DockPane(&m_wndToolBar);
-	UpdateTBSizes();
+	UpdateIconsForDPI();
 
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerVS2008));
 	CDockingManager::SetDockingMode(DT_SMART); //enable Visual Studio 2005 style docking window behavior
@@ -509,7 +510,7 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 
 auto CMainFrame::OnDPIChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
 {
-	UpdateTBSizes();
+	UpdateIconsForDPI();
 
 	return 0;
 }
@@ -697,19 +698,59 @@ void CMainFrame::SavePanesSettings()
 	}
 }
 
-void CMainFrame::UpdateTBSizes()
+void CMainFrame::UpdateIconsForDPI()
 {
-	CMFCToolBar::m_bDontScaleImages = TRUE;
-	const auto pImgTB = CMFCToolBar::GetImages();    //Toolbar image.
-	const auto sizeImgCurr = pImgTB->GetImageSize(); //One button's dimensions.
-	const auto flTBScaledFactor = sizeImgCurr.cx / 16.F; //How many times our toolbar is bigger than the standard one.
-	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd); //Scale factor for High-DPI displays.
-	const auto flScaleTB = flDPIScale / flTBScaledFactor;
-	const SIZE sizeBtn { static_cast<int>(sizeImgCurr.cx * flScaleTB) + 7,
-		static_cast<int>(sizeImgCurr.cy * flScaleTB) + 7 }; //Size of the toolbar's button.
-	pImgTB->SmoothResize(flScaleTB); //Resize image according to the current DPI.
-	CMFCToolBar::SetSizes(sizeBtn, pImgTB->GetImageSize());
-	CMFCToolBar::SetMenuSizes(sizeBtn, pImgTB->GetImageSize());
+	const auto pImgTB = CMFCToolBar::GetImages();
+	pImgTB->Clear(); //Removing all images from the toolbar's image list.
+
+	constexpr auto iHeightTBBase { 23 };  //Base toolbar height at 96 DPI, in px.
+	constexpr auto iHeightImgBase { 16 }; //Base image height for toolbar and menus.
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
+	const auto iHeightTBCurr = std::lround(iHeightTBBase * flDPIScale);
+	const auto iHeightImg = std::lround(iHeightImgBase * flDPIScale);
+	CMFCToolBar::SetSizes({ iHeightTBCurr, iHeightTBCurr }, { iHeightImg, iHeightImg });
+
+	auto& sett = theApp.GetAppSettings();
+	sett.ReloadCMDIcons(iHeightImg, iHeightImg);
+
+	for (int i = 0; i < m_wndToolBar.GetCount(); ++i) {
+		UINT uID;
+		UINT uStyle;
+		int iImg;
+		m_wndToolBar.GetButtonInfo(i, uID, uStyle, iImg);
+		if (uID != 0) {
+			if (const auto pData = sett.GetIconDataForCmd(uID); pData != nullptr) {
+				pImgTB->AddIcon(pData->hIcon, TRUE);
+			}
+		}
+	}
+
+	const auto hBMPFileNew = sett.GetIconDataForCmd(IDM_FILE_NEWFILE)->hBmp;
+	const auto hBMPFileOpen = sett.GetIconDataForCmd(IDM_FILE_OPENFILE)->hBmp;
+	const auto hBMPDevice = sett.GetIconDataForCmd(IDM_FILE_OPENDEVICE)->hBmp;
+	const auto hBMPProcess = sett.GetIconDataForCmd(IDM_FILE_OPENPROCESS)->hBmp;
+	const auto hBMPSave = sett.GetIconDataForCmd(IDM_FILE_SAVE)->hBmp;
+	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPFileNew } };
+	const auto pFileMenu = GetMenu()->GetSubMenu(0); //"File" sub-menu.
+	pFileMenu->SetMenuItemInfoW(0, &mii, TRUE); //"New File..." menu.
+	mii.hbmpItem = hBMPFileOpen;
+	pFileMenu->SetMenuItemInfoW(1, &mii, TRUE); //"Open File..." menu.
+	mii.hbmpItem = hBMPDevice;
+	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //"Open Device..." menu.
+	mii.hbmpItem = hBMPProcess;
+	pFileMenu->SetMenuItemInfoW(3, &mii, TRUE); //"Open Process..." menu.
+	mii.hbmpItem = hBMPSave;
+	pFileMenu->SetMenuItemInfoW(6, &mii, TRUE); //"Save" menu.
+	const auto pRFLSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files List" sub-menu.
+
+	if (!sett.IsRFLInitialized()) {
+		sett.RFLInitialize(pRFLSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPFileOpen, hBMPDevice, hBMPProcess);
+	}
+	else {
+		sett.RFLUpdateMenuIcons(hBMPFileOpen, hBMPDevice, hBMPProcess);
+	}
+
+	::DrawMenuBar(m_hWnd);
 }
 
 auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR /*uID*/, DWORD_PTR dwData)->LRESULT

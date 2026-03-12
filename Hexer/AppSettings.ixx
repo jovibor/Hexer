@@ -33,15 +33,18 @@ public:
 	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const -> ut::DATAOPEN;
 	void Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry, HBITMAP hBMPFile, HBITMAP hBMPDevice,
 		HBITMAP hBMPProcess, const std::wstring& wstrRFLRegPath);
+	[[nodiscard]] bool IsInitialized()const;
 	void RemoveFromList(const ut::DATAOPEN& dos);
 	void SetRFLSize(DWORD dwRFLSize);
 	void SaveSettings()const;
+	void UpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	[[nodiscard]] static void AddToListBeginning(const ut::DATAOPEN& dos, VecDataOpen& vecData);
 	[[nodiscard]] static auto ReadRegData(const wchar_t* pwszRegPath) -> VecDataOpen;
 	[[nodiscard]] static void SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen& vecData);
 private:
 	[[nodiscard]] auto GetRegRFLPath()const -> const wchar_t*;
 	void RebuildRFLMenu();
+	void UpdateMenuIcons();
 private:
 	VecDataOpen m_vecRFL;      //Recent Files List data.
 	const wchar_t* m_pwszRFLRegPath { };
@@ -78,8 +81,7 @@ auto CAppSettingsRFL::GetDataFromMenuID(UINT uID)const->ut::DATAOPEN
 }
 
 void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
-	HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess, const std::wstring& wstrRFLRegPath)
-{
+	HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess, const std::wstring& wstrRFLRegPath) {
 	assert(IsMenu(hMenu));
 	if (!IsMenu(hMenu)) {
 		return;
@@ -99,6 +101,10 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
 	}
 
 	RebuildRFLMenu();
+}
+
+bool CAppSettingsRFL::IsInitialized()const {
+	return m_fInit;
 }
 
 void CAppSettingsRFL::RemoveFromList(const ut::DATAOPEN& dos)
@@ -130,6 +136,13 @@ void CAppSettingsRFL::SaveSettings()const
 		return;
 
 	SaveRegData(GetRegRFLPath(), m_vecRFL);
+}
+
+void CAppSettingsRFL::UpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess) {
+	m_hBMPFile = hBMPFile;
+	m_hBMPDevice = hBMPDevice;
+	m_hBMPProcess = hBMPProcess;
+	UpdateMenuIcons();
 }
 
 auto CAppSettingsRFL::GetRegRFLPath()const->const wchar_t*
@@ -301,7 +314,7 @@ void CAppSettingsRFL::RebuildRFLMenu()
 	}
 
 	for (const auto& [idx, refData] : m_vecRFL | std::views::enumerate) {
-		if (idx >= m_dwRFLSize) //Adding not more than m_dwRFLSize.
+		if (idx >= m_dwRFLSize) //Adding no more than m_dwRFLSize.
 			break;
 
 		std::wstring wstrMenu;
@@ -315,6 +328,15 @@ void CAppSettingsRFL::RebuildRFLMenu()
 
 		const auto uMenuID = static_cast<UINT>(m_iIDMenuFirst + idx);
 		AppendMenuW(m_hMenu, MF_STRING, uMenuID, wstrMenu.data());
+	}
+
+	UpdateMenuIcons();
+}
+
+void CAppSettingsRFL::UpdateMenuIcons() {
+	for (const auto& [idx, refData] : m_vecRFL | std::views::enumerate) {
+		if (idx >= m_dwRFLSize) //Adding not more than m_dwRFLSize.
+			break;
 
 		HBITMAP hBmp { };
 		switch (refData.eOpenMode) {
@@ -334,7 +356,8 @@ void CAppSettingsRFL::RebuildRFLMenu()
 		}
 
 		const MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBmp } };
-		SetMenuItemInfoW(m_hMenu, uMenuID, FALSE, &mii);
+		const auto uMenuID = static_cast<UINT>(m_iIDMenuFirst + idx);
+		::SetMenuItemInfoW(m_hMenu, uMenuID, FALSE, &mii);
 	}
 }
 
@@ -385,6 +408,13 @@ public:
 		bool     fScrollLines { };
 		bool     fInfoBar { };
 	};
+	struct ICONDATA {
+		UINT uIDCmd { };
+		UINT uIDSVG { };
+		HBITMAP hBmp { };
+		HICON hIcon { };
+		void Clear()const { ::DeleteObject(hBmp); ::DestroyIcon(hIcon); }
+	};
 	CAppSettings() = default;
 	CAppSettings(const CAppSettings&) = delete;
 	CAppSettings(CAppSettings&&) = delete;
@@ -393,26 +423,30 @@ public:
 	[[nodiscard]] auto GetGeneralSettings() -> GENERALSETTINGS&;
 	[[nodiscard]] auto GetHexCtrlSettings() -> HEXCTRLSETTINGS&;
 	[[nodiscard]] auto GetHexCtrlTemplates()const -> const VecTemplates&;
+	[[nodiscard]] auto GetIconDataForCmd(UINT uCMD)const -> const ICONDATA*;
 	[[nodiscard]] auto GetLastOpenedList()const -> VecDataOpen;
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const -> std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const -> PANESTATUS;
+	[[nodiscard]] bool IsRFLInitialized()const;
 	void LoadSettings(std::wstring_view wsvAppName);
 	void LOLAddToList(const ut::DATAOPEN& dos);      //Last Opened List add.
 	void LOLRemoveFromList(const ut::DATAOPEN& dos); //Last Opened List remove.
 	void OnSettingsChanged();
+	void ReloadCMDIcons(int iWidth, int iHeight); //All menu and toolbar icons.
 	void RFLAddToList(const ut::DATAOPEN& dos);
 	[[nodiscard]] auto RFLGetDataFromMenuID(UINT uID)const -> ut::DATAOPEN;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	void RFLRemoveFromList(const ut::DATAOPEN& dos);
+	void RFLUpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	void SaveSettings();
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
 	void SetPaneStatus(UINT uPaneID, bool fVisible, bool fActive);
 	[[nodiscard]] static auto GetGeneralDefs() -> const GENERALSETTINGS&;
 	[[nodiscard]] static auto GetHexCtrlDefs() -> const HEXCTRLSETTINGS&;
 private:
+	[[nodiscard]] auto GetAppName()const -> const std::wstring&;
 	[[nodiscard]] auto GetPanesSettings() -> PANESETTINGS&;
 	[[nodiscard]] auto GetPanesSettings()const -> const PANESETTINGS&;
-	[[nodiscard]] auto GetAppName()const -> const std::wstring&;
 	[[nodiscard]] auto GetRegBasePath()const -> const std::wstring&;
 	[[nodiscard]] auto GetRegHexCtrlSettingsPath()const -> const std::wstring&;
 	[[nodiscard]] auto GetRegLOLPath()const -> const std::wstring&; //Last Opened List.
@@ -423,6 +457,14 @@ private:
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
+	std::vector<ICONDATA> m_vecIconData {
+		{ ICONDATA { .uIDCmd { IDM_FILE_NEWFILE }, .uIDSVG { IDR_SVG_FILE_NEW } } },
+		{ ICONDATA { .uIDCmd { IDM_FILE_OPENFILE }, .uIDSVG { IDR_SVG_FILE_OPEN } } },
+		{ ICONDATA { .uIDCmd { IDM_FILE_OPENDEVICE }, .uIDSVG { IDR_SVG_DEVICE_OPEN } } },
+		{ ICONDATA { .uIDCmd { IDM_FILE_OPENPROCESS }, .uIDSVG { IDR_SVG_PROCESS_OPEN } } },
+		{ ICONDATA { .uIDCmd { IDM_FILE_SAVE }, .uIDSVG { IDR_SVG_SAVE } } }
+	};
+
 	CAppSettingsRFL m_stRFL;
 	PANESETTINGS m_stPaneSettings;      //"Panes" settings data.
 	GENERALSETTINGS m_stGeneralData;    //"General" settings data.
@@ -447,6 +489,12 @@ auto CAppSettings::GetHexCtrlSettings()->HEXCTRLSETTINGS&
 auto CAppSettings::GetHexCtrlTemplates()const->const VecTemplates&
 {
 	return m_vecHexCtrlTemplates;
+}
+
+auto CAppSettings::GetIconDataForCmd(UINT uCmd)const->const ICONDATA*
+{
+	const auto it = std::ranges::find_if(m_vecIconData, [=](const ICONDATA& data) { return data.uIDCmd == uCmd; });
+	return it != std::ranges::end(m_vecIconData) ? &*it : nullptr;
 }
 
 auto CAppSettings::GetLastOpenedList()const->VecDataOpen
@@ -500,6 +548,10 @@ auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 	default:
 		return { };
 	}
+}
+
+bool CAppSettings::IsRFLInitialized()const {
+	return m_stRFL.IsInitialized();
 }
 
 void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
@@ -681,6 +733,14 @@ void CAppSettings::OnSettingsChanged()
 	m_stRFL.SetRFLSize(m_stGeneralData.dwRFLSize);
 }
 
+void CAppSettings::ReloadCMDIcons(int iWidth, int iHeight) {
+	for (auto& data : m_vecIconData) {
+		data.Clear();
+		data.hBmp = ut::SVGToBmp(data.uIDSVG, iWidth, iHeight);
+		data.hIcon = ut::HICONFromHBITMAP(data.hBmp);
+	}
+}
+
 void CAppSettings::RFLAddToList(const ut::DATAOPEN& dos)
 {
 	assert(m_fLoaded);
@@ -716,6 +776,10 @@ void CAppSettings::RFLRemoveFromList(const ut::DATAOPEN& dos)
 		return;
 
 	m_stRFL.RemoveFromList(dos);
+}
+
+void CAppSettings::RFLUpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess) {
+	m_stRFL.UpdateMenuIcons(hBMPFile, hBMPDevice, hBMPProcess);
 }
 
 void CAppSettings::SaveSettings()
@@ -862,23 +926,36 @@ void CAppSettings::SetPaneStatus(UINT uPaneID, bool fVisible, bool fActive)
 	}
 }
 
+auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
+{
+	static const GENERALSETTINGS defs { .fMultipleInst { false }, .dwRFLSize { 20 }, .eOnStartup { EOnStartup::DO_NOTHING },
+		.stDAC { 0 }, .eDataIOMode { ut::EDataIOMode::DATA_MMAP }, .fWindowsMenu { false } };
+	return defs;
+}
+
+auto CAppSettings::GetHexCtrlDefs()->const HEXCTRLSETTINGS&
+{
+	static const HEXCTRLSETTINGS defs { .stLogFont { .lfHeight { -ut::FontPixelsFromPoints(11) },
+		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } }, //HexCtrl default font.
+		.dwCapacity { 16UL }, .dwDateFormat { 0xFFFFFFFFUL }, .dwGroupSize { 1UL }, .dwPageSize { 0UL },
+		.dwCharsExtraSpace { 0UL }, .flScrollRatio { 3.0F }, .wchUnprintable { L'.' }, .wchDateSepar { L'/' },
+		.fOffsetHex { true }, .fHexCharsCaseUpper { true }, .fScrollLines { true }, .fInfoBar { true } };
+	return defs;
+}
 
 
 //CAppSettings Private methods.
 
-auto CAppSettings::GetPanesSettings()->PANESETTINGS&
-{
-	return m_stPaneSettings;
-}
-
-auto CAppSettings::GetPanesSettings()const->const PANESETTINGS&
-{
-	return m_stPaneSettings;
-}
-
-auto CAppSettings::GetAppName()const->const std::wstring&
-{
+auto CAppSettings::GetAppName()const->const std::wstring& {
 	return m_wstrAppName;
+}
+
+auto CAppSettings::GetPanesSettings()->PANESETTINGS& {
+	return m_stPaneSettings;
+}
+
+auto CAppSettings::GetPanesSettings()const->const PANESETTINGS& {
+	return m_stPaneSettings;
 }
 
 auto CAppSettings::GetRegBasePath()const->const std::wstring&
@@ -914,7 +991,7 @@ auto CAppSettings::GetRegSettingsPath()const->const std::wstring&
 void CAppSettings::LoadHexCtrlTemplates()
 {
 	wchar_t buff[MAX_PATH];
-	GetModuleFileNameW(nullptr, buff, MAX_PATH);
+	::GetModuleFileNameW(nullptr, buff, MAX_PATH);
 	std::wstring wstrPath = buff;
 	wstrPath = wstrPath.substr(0, wstrPath.find_last_of(L'\\'));
 	wstrPath += L"\\Templates\\";
@@ -966,23 +1043,6 @@ auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS
 {
 	const std::bitset<32> bsPS(dw);
 	return { .fVisible { bsPS.test(0) }, .fActive { bsPS.test(1) } };
-}
-
-auto CAppSettings::GetGeneralDefs()->const GENERALSETTINGS&
-{
-	static const GENERALSETTINGS defs { .fMultipleInst { false }, .dwRFLSize { 20 }, .eOnStartup { EOnStartup::DO_NOTHING },
-		.stDAC { 0 }, .eDataIOMode { ut::EDataIOMode::DATA_MMAP }, .fWindowsMenu { false } };
-	return defs;
-}
-
-auto CAppSettings::GetHexCtrlDefs()->const HEXCTRLSETTINGS&
-{
-	static const HEXCTRLSETTINGS defs { .stLogFont { .lfHeight { -ut::FontPixelsFromPoints(11) },
-		.lfPitchAndFamily { FIXED_PITCH }, .lfFaceName { L"Consolas" } }, //HexCtrl default font.
-		.dwCapacity { 16UL }, .dwDateFormat { 0xFFFFFFFFUL }, .dwGroupSize { 1UL }, .dwPageSize { 0UL },
-		.dwCharsExtraSpace { 0UL }, .flScrollRatio { 3.0F }, .wchUnprintable { L'.' }, .wchDateSepar { L'/' },
-		.fOffsetHex { true }, .fHexCharsCaseUpper { true }, .fScrollLines { true }, .fInfoBar { true } };
-	return defs;
 }
 
 auto CAppSettings::PaneStatus2DWORD(PANESTATUS ps)->DWORD

@@ -27,6 +27,12 @@ export namespace lex = LISTEX;
 HWND g_hWndMain { };
 
 export namespace ut {
+	constexpr auto HEXER_VERSION_MAJOR = 1;
+	constexpr auto HEXER_VERSION_MINOR = 4;
+	constexpr auto HEXER_VERSION_PATCH = 0;
+
+	constexpr UINT g_arrPanes[] { IDC_PANE_DATAINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGGER };
+
 	template<typename TCom> requires requires(TCom* pTCom) { pTCom->AddRef(); pTCom->Release(); }
 	class comptr {
 	public:
@@ -153,11 +159,18 @@ export namespace ut {
 		return SVGToBmp(pStream, iWidth, iHeight, pD2DFactory);
 	}
 
-	constexpr auto HEXER_VERSION_MAJOR = 1;
-	constexpr auto HEXER_VERSION_MINOR = 3;
-	constexpr auto HEXER_VERSION_PATCH = 2;
+	[[nodiscard]] auto HICONFromHBITMAP(HBITMAP hBmp) -> HICON {
+		BITMAP bmp;
+		::GetObjectW(hBmp, sizeof(BITMAP), &bmp);
+		const auto hDCScreen = ::GetDC(nullptr);
+		const auto hbmMask = ::CreateCompatibleBitmap(hDCScreen, bmp.bmWidth, bmp.bmHeight);
+		ICONINFO ii { .fIcon { TRUE }, .hbmMask { hbmMask }, .hbmColor { hBmp } };
+		const auto hIcon = ::CreateIconIndirect(&ii);
+		::DeleteObject(hbmMask);
+		::ReleaseDC(nullptr, hDCScreen);
 
-	constexpr UINT g_arrPanes[] { IDC_PANE_DATAINFO, IDC_PANE_BKMMGR, IDC_PANE_DATAINTERP, IDC_PANE_TEMPLMGR, IDC_PANE_LOGGER };
+		return hIcon;
+	}
 
 	[[nodiscard]] bool IsElevated() { //Checking if the app runs elevated.
 		static const bool fElevated = [] {
@@ -416,19 +429,6 @@ export namespace ut {
 	[[nodiscard]] auto LoadDIBitmap(int iResID, int iWidth, int iHeight) -> HBITMAP {
 		return static_cast<HBITMAP>(::LoadImageW(AfxGetInstanceHandle(), MAKEINTRESOURCEW(iResID),
 			IMAGE_BITMAP, iWidth, iHeight, LR_CREATEDIBSECTION));
-	}
-
-	[[nodiscard]] auto HICONfromHBITMAP(HBITMAP hbmp) -> HICON {
-		BITMAP stBmp;
-		if (!GetObjectW(hbmp, sizeof(BITMAP), &stBmp))
-			return { };
-
-		const auto hbmpMask = CreateCompatibleBitmap(::GetDC(nullptr), stBmp.bmWidth, stBmp.bmHeight);
-		ICONINFO ii { .fIcon { TRUE }, .hbmMask { hbmpMask }, .hbmColor { hbmp } };
-		auto hICO = CreateIconIndirect(&ii);
-		DeleteObject(hbmpMask);
-
-		return hICO;
 	}
 
 	[[nodiscard]] auto TimetToWstr(std::time_t time) -> std::wstring {

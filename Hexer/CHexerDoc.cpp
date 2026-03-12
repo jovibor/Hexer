@@ -21,135 +21,109 @@ IMPLEMENT_DYNCREATE(CHexerDoc, CDocument)
 BEGIN_MESSAGE_MAP(CHexerDoc, CDocument)
 END_MESSAGE_MAP()
 
-void CHexerDoc::ChangeDataAccessMode(ut::DATAACCESS stDAC)
-{
+void CHexerDoc::ChangeDataAccessMode(ut::DATAACCESS stDAC) {
 	m_stDataLoader.ChangeDataAccessMode(stDAC);
 }
 
-void CHexerDoc::ChangeDataIOMode(ut::EDataIOMode eDataIOMode)
-{
+void CHexerDoc::ChangeDataIOMode(ut::EDataIOMode eDataIOMode) {
 	m_stDataLoader.ChangeDataIOMode(eDataIOMode);
 }
 
-auto CHexerDoc::GetCacheSize()const->DWORD
-{
+auto CHexerDoc::GetCacheSize()const->DWORD {
 	return m_stDataLoader.GetCacheSize();
 }
 
-auto CHexerDoc::GetDataAccessMode()const->ut::DATAACCESS
-{
+auto CHexerDoc::GetDataAccessMode()const->ut::DATAACCESS {
 	return m_stDataLoader.GetDataAccessMode();
 }
 
-auto CHexerDoc::GetDataIOMode()const->ut::EDataIOMode
-{
+auto CHexerDoc::GetDataIOMode()const->ut::EDataIOMode {
 	return m_stDataLoader.GetDataIOMode();
 }
 
-auto CHexerDoc::GetDataPath()const->const std::wstring&
-{
+auto CHexerDoc::GetDataPath()const->const std::wstring& {
 	return m_wstrDataPath;
 }
 
-auto CHexerDoc::GetDataSize()const->std::uint64_t
-{
+auto CHexerDoc::GetDataSize()const->std::uint64_t {
 	return m_stDataLoader.GetDataSize();
 }
 
-auto CHexerDoc::GetDocIcon()const->HICON
-{
+auto CHexerDoc::GetDocIcon()const->HICON {
 	return m_hDocIcon;
 }
 
-auto CHexerDoc::GetFileMMAPData()const->std::byte*
-{
+auto CHexerDoc::GetFileMMAPData()const->std::byte* {
 	return m_stDataLoader.GetFileMMAPData();
 }
 
-auto CHexerDoc::GetFileName()const->const std::wstring&
-{
+auto CHexerDoc::GetFileName()const->const std::wstring& {
 	return m_wstrFileName;
 }
 
-auto CHexerDoc::GetFriendlyName()const->const std::wstring&
-{
+auto CHexerDoc::GetFriendlyName()const->const std::wstring& {
 	return m_wstrFriendlyName;
 }
 
-auto CHexerDoc::GetMaxVirtOffset()const->std::uint64_t
-{
+auto CHexerDoc::GetMaxVirtOffset()const->std::uint64_t {
 	return m_stDataLoader.GetMaxVirtOffset();
 }
 
-auto CHexerDoc::GetMemPageSize()const->DWORD
-{
+auto CHexerDoc::GetMemPageSize()const->DWORD {
 	return m_stDataLoader.GetMemPageSize();
 }
 
-auto CHexerDoc::GetOpenMode()const->ut::EOpenMode
-{
+auto CHexerDoc::GetOpenMode()const->ut::EOpenMode {
 	return m_stDataLoader.GetOpenMode();
 }
 
-auto CHexerDoc::GetProcID()const->DWORD
-{
+auto CHexerDoc::GetProcID()const->DWORD {
 	return m_stDataLoader.GetProcID();
 }
 
-auto CHexerDoc::GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>&
-{
+auto CHexerDoc::GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>& {
 	return m_stDataLoader.GetVecProcMemory();
 }
 
-auto CHexerDoc::GetIHexVirtData()->HEXCTRL::IHexVirtData*
-{
+auto CHexerDoc::GetIHexVirtData()->HEXCTRL::IHexVirtData* {
 	return m_stDataLoader.GetIHexVirtData();
 }
 
-bool CHexerDoc::IsDataAccessRWINPLACE() const
-{
+bool CHexerDoc::IsDataAccessRWINPLACE() const {
 	const auto stDAC = GetDataAccessMode();
 	return stDAC.fMutable && stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_INPLACE;
 }
 
-bool CHexerDoc::IsDataAccessRWSAFE()const
-{
+bool CHexerDoc::IsDataAccessRWSAFE()const {
 	const auto stDAC = GetDataAccessMode();
 	return stDAC.fMutable && stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_SAFE;
 }
 
-bool CHexerDoc::IsDataAccessRO()
-{
+bool CHexerDoc::IsDataAccessRO() {
 	return !IsDataAccessRW();
 }
 
-bool CHexerDoc::IsDataAccessRW()
-{
+bool CHexerDoc::IsDataAccessRW() {
 	return GetDataAccessMode().fMutable;
 }
 
-bool CHexerDoc::IsDataOKForDASAFE()const
-{
+bool CHexerDoc::IsDataOKForDASAFE()const {
 	return m_stDataLoader.IsDataOKForDASAFE();
 }
 
-bool CHexerDoc::IsDataWritable()const
-{
+bool CHexerDoc::IsDataWritable()const {
 	return m_stDataLoader.IsDataWritable();
 }
 
-bool CHexerDoc::IsDevice()const
-{
+bool CHexerDoc::IsDevice()const {
 	return m_stDataLoader.IsDevice();
 }
 
-bool CHexerDoc::IsFile()const
-{
+bool CHexerDoc::IsFile()const {
 	return m_stDataLoader.IsFile();
 }
 
-bool CHexerDoc::IsProcess()const
-{
+bool CHexerDoc::IsProcess()const {
 	return m_stDataLoader.IsProcess();
 }
 
@@ -175,25 +149,24 @@ bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
 	m_strPathName = GetUniqueDocName(dos).data();
 	m_bEmbedded = FALSE;
 	SetTitle(GetDocTitle(dos).data());
-	const auto iResID = [this]() {
+	const auto uCmdID = [this]() {
 		using enum ut::EOpenMode;
 		switch (GetOpenMode()) {
 		case OPEN_FILE:
 		case NEW_FILE:
-			return IDB_FILE;
+			return IDM_FILE_OPENFILE;
 		case OPEN_DRIVE:
 		case OPEN_VOLUME:
 		case OPEN_PATH:
-			return IDB_DEVICE;
+			return IDM_FILE_OPENDEVICE;
 		case OPEN_PROC:
-			return IDB_PROCESS;
+			return IDM_FILE_OPENPROCESS;
 		default:
 			return 0;
 		}
 		}();
 
-	const auto iSizeBitmap = std::lround(16.F * ut::GetDPIScaleForHWND(AfxGetMainWnd()->m_hWnd));
-	m_hDocIcon = ut::HICONfromHBITMAP(ut::LoadDIBitmap(iResID, iSizeBitmap, iSizeBitmap));
+	m_hDocIcon = refSett.GetIconDataForCmd(uCmdID)->hIcon;
 	const auto wstrLog = std::format(L"{} opened: {} ({})", ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
 		ut::GetWstrDATAACCESS(GetDataAccessMode()));
 	ut::Log::AddLogEntryInfo(wstrLog);
@@ -202,21 +175,18 @@ bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
 	return true;
 }
 
-void CHexerDoc::SaveDataToDisk()
-{
+void CHexerDoc::SaveDataToDisk() {
 	m_stDataLoader.SaveDataToDisk();
 }
 
 
 //Private methods.
 
-auto CHexerDoc::GetMainFrame()const->CMainFrame*
-{
+auto CHexerDoc::GetMainFrame()const->CMainFrame* {
 	return static_cast<CMainFrame*>(AfxGetMainWnd());
 }
 
-BOOL CHexerDoc::OnOpenDocument(LPCWSTR lpszPathName)
-{
+BOOL CHexerDoc::OnOpenDocument(LPCWSTR lpszPathName) {
 	return OnOpenDocument({ .wstrDataPath { lpszPathName }, .eOpenMode { ut::EOpenMode::OPEN_FILE } });
 }
 

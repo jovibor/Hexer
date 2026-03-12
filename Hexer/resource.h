@@ -18,9 +18,11 @@
 #define IDR_MAINFRAME                   200
 #define IDR_HEXER_FRAME                 201
 #define IDR_TOOLBAR_MAIN                202
-#define IDB_FILE                        203
-#define IDB_DEVICE                      204
-#define IDB_PROCESS                     205
+#define IDR_SVG_DEVICE_OPEN             203
+#define IDR_SVG_FILE_NEW                204
+#define IDR_SVG_FILE_OPEN               205
+#define IDR_SVG_PROCESS_OPEN            206
+#define IDR_SVG_SAVE                    207
 #define IDC_LINK_HEXER                  300
 #define IDC_LINK_HEXCTRL                301
 #define IDC_STATIC_BUILDTIME            302
@@ -101,9 +103,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        330
+#define _APS_NEXT_RESOURCE_VALUE        331
 #define _APS_NEXT_COMMAND_VALUE         32814
 #define _APS_NEXT_CONTROL_VALUE         331
-#define _APS_NEXT_SYMED_VALUE           330
+#define _APS_NEXT_SYMED_VALUE           331
 #endif
 #endif

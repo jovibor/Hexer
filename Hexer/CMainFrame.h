@@ -67,7 +67,7 @@ protected:
 	void SaveHexCtrlSettings();
 	void SavePaneData(UINT uPaneID);
 	void SavePanesSettings();
-	void UpdateTBSizes(); //Set/update toolbar and icons sizes.
+	void UpdateIconsForDPI(); //Update toolbar and menu icons and toolbar size.
 	DECLARE_DYNAMIC(CMainFrame);
 	DECLARE_MESSAGE_MAP();
 private:

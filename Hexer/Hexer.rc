@@ -80,12 +80,6 @@ IDR_HEXER_FRAME         ICON                    "res\\IDR_HEXER_FRAME.ico"
 
 IDR_TOOLBAR_MAIN        BITMAP                  "res\\IDR_TOOLBAR_MAIN.bmp"
 
-IDB_DEVICE              BITMAP                  "res\\IDB_DEVICE.bmp"
-
-IDB_PROCESS             BITMAP                  "res\\IDB_PROCESS.bmp"
-
-IDB_FILE                BITMAP                  "res\\IDB_FILE.bmp"
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -584,6 +578,22 @@ BEGIN
     0,
     0, 0, 100, 100
 END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// SVG
+//
+
+IDR_SVG_DEVICE_OPEN     SVG                     "res\\IDR_SVG_DEVICE_OPEN.svg"
+
+IDR_SVG_FILE_NEW        SVG                     "res\\IDR_SVG_FILE_NEW.svg"
+
+IDR_SVG_FILE_OPEN       SVG                     "res\\IDR_SVG_FILE_OPEN.svg"
+
+IDR_SVG_PROCESS_OPEN    SVG                     "res\\IDR_SVG_PROCESS_OPEN.svg"
+
+IDR_SVG_SAVE            SVG                     "res\\IDR_SVG_SAVE.svg"
 
 
 /////////////////////////////////////////////////////////////////////////////
