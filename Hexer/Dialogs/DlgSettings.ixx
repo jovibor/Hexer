@@ -247,17 +247,16 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_grid);
 	m_grid.MarkModifiedProperties(TRUE, FALSE);
 	m_grid.EnableHeaderCtrl(TRUE);
-	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 190 };
+	HDITEMW hdPropGrid { .mask { HDI_WIDTH }, .cxy { std::lround(190 * flDPIScale) } };
 	m_grid.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
 
-	//Set new bigger font to the property.
+	//Set a new bigger font to the property grid.
 	const auto pFont = m_grid.GetFont();
 	LOGFONTW lf;
 	pFont->GetLogFont(&lf);
-
-	const auto flDPIScale = ut::GetDPIScaleForHWND(m_grid);
 	const auto flFontSizePoints = ut::FontPointsFromPixels(lf.lfHeight) / flDPIScale + 1.F; //Convert font height to size in points.
 	lf.lfHeight = -std::lround(ut::FontPixelsFromPoints(flFontSizePoints) * flDPIScale); //Convert point size to size in pixels.
 	m_fntGrid.CreateFontIndirectW(&lf);
@@ -520,17 +519,16 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_grid);
 	m_grid.MarkModifiedProperties(TRUE, FALSE);
 	m_grid.EnableHeaderCtrl(TRUE);
-	HDITEMW hdPropGrid { .mask = HDI_WIDTH, .cxy = 150 };
+	HDITEMW hdPropGrid { .mask { HDI_WIDTH }, .cxy { std::lround(150 * flDPIScale) } };
 	m_grid.GetHeaderCtrl().SetItem(0, &hdPropGrid); //Property grid left column width.
 
-	//Set new bigger font to the property.
+	//Set a new bigger font to the property grid.
 	const auto pFont = m_grid.GetFont();
 	LOGFONTW lf;
 	pFont->GetLogFont(&lf);
-
-	const auto flDPIScale = ut::GetDPIScaleForHWND(m_grid);
 	const auto flFontSizePoints = ut::FontPointsFromPixels(lf.lfHeight) / flDPIScale + 1.F; //Convert font height to size in points.
 	lf.lfHeight = -std::lround(ut::FontPixelsFromPoints(flFontSizePoints) * flDPIScale); //Convert point size to size in pixels.
 	m_fntGrid.CreateFontIndirectW(&lf);

@@ -94,12 +94,13 @@ BOOL CDlgOpenDrive::OnInitDialog()
 	pLayout->Create(this);
 	pLayout->AddItem(IDC_OPENDRIVE_LIST, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
 
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
 	m_List.Create({ .hWndParent { m_hWnd }, .uID { IDC_OPENDRIVE_LIST }, .dwGridWidth { 0 }, .fDialogCtrl { true } });
 	m_List.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	m_List.InsertColumn(0, L"Drive Name", 0, 200);
-	m_List.InsertColumn(1, L"Size", 0, 70);
-	m_List.InsertColumn(2, L"Path", 0, 120);
-	m_List.InsertColumn(3, L"Bus Type", 0, 100);
+	m_List.InsertColumn(0, L"Drive Name", 0, std::lround(200 * flDPIScale));
+	m_List.InsertColumn(1, L"Size", 0, std::lround(70 * flDPIScale));
+	m_List.InsertColumn(2, L"Path", 0, std::lround(120 * flDPIScale));
+	m_List.InsertColumn(3, L"Bus Type", 0, std::lround(100 * flDPIScale));
 
 	auto vecDrives = GetDeviceDrives();
 	std::ranges::sort(vecDrives, { }, &DEVICE_DRIVE::wstrDrivePath);
@@ -328,15 +329,16 @@ BOOL CDlgOpenVolume::OnInitDialog()
 	pLayout->Create(this);
 	pLayout->AddItem(IDC_OPENVOLUME_LIST, CMFCDynamicLayout::MoveNone(), CMFCDynamicLayout::SizeHorizontalAndVertical(100, 100));
 
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
 	m_List.Create({ .hWndParent { m_hWnd }, .uID { IDC_OPENVOLUME_LIST }, .dwGridWidth { 0 }, .fDialogCtrl { true } });
 	m_List.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	m_List.InsertColumn(0, L"Mount Point", 0, 80);
-	m_List.InsertColumn(1, L"Resides In", 0, 110);
-	m_List.InsertColumn(2, L"Label", 0, 100);
-	m_List.InsertColumn(3, L"Size", 0, 70);
-	m_List.InsertColumn(4, L"Drive Type", 0, 80);
-	m_List.InsertColumn(5, L"File System", 0, 80);
-	m_List.InsertColumn(6, L"Volume Path", 0, 300);
+	m_List.InsertColumn(0, L"Mount Point", 0, std::lround(80 * flDPIScale));
+	m_List.InsertColumn(1, L"Resides In", 0, std::lround(110 * flDPIScale));
+	m_List.InsertColumn(2, L"Label", 0, std::lround(100 * flDPIScale));
+	m_List.InsertColumn(3, L"Size", 0, std::lround(70 * flDPIScale));
+	m_List.InsertColumn(4, L"Drive Type", 0, std::lround(80 * flDPIScale));
+	m_List.InsertColumn(5, L"File System", 0, std::lround(80 * flDPIScale));
+	m_List.InsertColumn(6, L"Volume Path", 0, std::lround(300 * flDPIScale));
 
 	auto vecVolumes = GetDeviceVolumes();
 	const auto rngTail = std::ranges::partition(vecVolumes, [](const DEVICE_VOLUME& ref) { return !ref.wstrMountPoint.empty(); });

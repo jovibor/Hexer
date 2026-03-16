@@ -56,7 +56,7 @@ private:
 	std::vector<MODULEDATA> m_vecModules;
 	std::vector<ut::DATAOPEN> m_vecOpenData;
 	std::wstring m_wstrTTProcPath; //Tooltip for process image full path.
-	std::locale m_locale;
+	const std::locale m_locale { std::locale("en_US.UTF-8") };
 	CButton m_btnOpen;
 	CButton m_statInfo;
 	bool m_fCurInSplitter { }; //Indicates that mouse cursor is in the splitter area.
@@ -168,15 +168,15 @@ BOOL CDlgOpenProcess::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_locale = std::locale("en_US.UTF-8");
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
 	const lex::LISTEXCREATE lcs { .hWndParent { m_hWnd }, .ptTTOffset { 9, -20 }, .uID { IDC_OPENPROCESS_LIST_PROCS },
 		.dwTTStyleCell { TTS_NOANIMATE }, .dwTTDelayTime { 500 }, .dwTTShowTime { 3000 }, .fDialogCtrl { true }, .fSortable { true } };
 	m_ListProcs.Create(lcs);
 	m_ListProcs.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT);
-	m_ListProcs.InsertColumn(0, L"№", 0, 40);
-	m_ListProcs.InsertColumn(1, L"Process Name", 0, 200);
-	m_ListProcs.InsertColumn(2, L"Process ID", 0, 70);
-	m_ListProcs.InsertColumn(3, L"Working Set", 0, 90);
+	m_ListProcs.InsertColumn(0, L"№", 0, std::lround(40 * flDPIScale));
+	m_ListProcs.InsertColumn(1, L"Process Name", 0, std::lround(200 * flDPIScale));
+	m_ListProcs.InsertColumn(2, L"Process ID", 0, std::lround(70 * flDPIScale));
+	m_ListProcs.InsertColumn(3, L"Working Set", 0, std::lround(90 * flDPIScale));
 	m_ListProcs.SetColumnSortMode(0, false);
 
 	m_ListModules.CreateDialogCtrl(IDC_OPENPROCESS_LIST_MODULES, m_hWnd);
@@ -258,9 +258,7 @@ void CDlgOpenProcess::OnListModulesGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult
 	}
 }
 
-void CDlgOpenProcess::OnListModulesDblClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
-}
+void CDlgOpenProcess::OnListModulesDblClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) { }
 
 void CDlgOpenProcess::OnListProcsColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 {
