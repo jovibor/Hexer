@@ -224,6 +224,9 @@
     <None Include="res\IDR_SVG_SAVE.svg">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="res\IDR_SVG_SETTINGS.svg">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include=".manifest">

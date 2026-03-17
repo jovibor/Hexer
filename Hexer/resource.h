@@ -23,6 +23,7 @@
 #define IDR_SVG_FILE_OPEN               205
 #define IDR_SVG_PROCESS_OPEN            206
 #define IDR_SVG_SAVE                    207
+#define IDR_SVG_SETTINGS                208
 #define IDC_LINK_HEXER                  300
 #define IDC_LINK_HEXCTRL                301
 #define IDC_STATIC_BUILDTIME            302

@@ -730,8 +730,11 @@ void CMainFrame::UpdateIconsForDPI()
 	const auto hBMPDevice = sett.GetIconDataForCmd(IDM_FILE_OPENDEVICE)->hBmp;
 	const auto hBMPProcess = sett.GetIconDataForCmd(IDM_FILE_OPENPROCESS)->hBmp;
 	const auto hBMPSave = sett.GetIconDataForCmd(IDM_FILE_SAVE)->hBmp;
-	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP }, .hbmpItem { hBMPFileNew } };
-	const auto pFileMenu = GetMenu()->GetSubMenu(0); //"File" sub-menu.
+	const auto hBMPSettings = sett.GetIconDataForCmd(IDM_TOOLS_SETTINGS)->hBmp;
+	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP } };
+	const auto pMenu = GetMenu();
+	const auto pFileMenu = pMenu->GetSubMenu(0); //"File" sub-menu.
+	mii.hbmpItem = hBMPFileNew;
 	pFileMenu->SetMenuItemInfoW(0, &mii, TRUE); //"New File..." menu.
 	mii.hbmpItem = hBMPFileOpen;
 	pFileMenu->SetMenuItemInfoW(1, &mii, TRUE); //"Open File..." menu.
@@ -740,10 +743,12 @@ void CMainFrame::UpdateIconsForDPI()
 	mii.hbmpItem = hBMPProcess;
 	pFileMenu->SetMenuItemInfoW(3, &mii, TRUE); //"Open Process..." menu.
 	mii.hbmpItem = hBMPSave;
-	pFileMenu->SetMenuItemInfoW(6, &mii, TRUE); //"Save" menu.
-	const auto pRFLSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files List" sub-menu.
+	pMenu->SetMenuItemInfoW(IDM_FILE_SAVE, &mii, FALSE); //"Save" menu.
+	mii.hbmpItem = hBMPSettings;
+	pMenu->SetMenuItemInfoW(IDM_TOOLS_SETTINGS, &mii, FALSE); //"Settings..." menu.
 
 	if (!sett.IsRFLInitialized()) {
+		const auto pRFLSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files List" sub-menu.
 		sett.RFLInitialize(pRFLSubMenu->m_hMenu, IDM_FILE_RFL00, hBMPFileOpen, hBMPDevice, hBMPProcess);
 	}
 	else {

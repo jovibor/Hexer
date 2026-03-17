@@ -290,6 +290,7 @@
     <None Include="res\IDR_SVG_FILE_OPEN.svg" />
     <None Include="res\IDR_SVG_PROCESS_OPEN.svg" />
     <None Include="res\IDR_SVG_SAVE.svg" />
+    <None Include="res\IDR_SVG_SETTINGS.svg" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include=".manifest" />

@@ -4,14 +4,18 @@
 ![](docs/img/Hexer_Main.jpg)
 
 ## Features 
-* View and edit Files, Disks, Partitions and Processes, up to **16EB** (exabyte)
+* View and edit Files, Disks, Partitions, and Processes up to **16EB** (exabytes)
 * Fully-featured **Bookmarks Manager**
 * Fully-featured **Search and Replace**
+* Fully-featured **Data Interpreter**
 * Many options to **Copy/Paste** to/from the clipboard
 * **Undo/Redo**
 * Modify data with **Filling** and many **Operations** options
 * Ability to visually divide data into pages
 * Powerful system of [Templates](#templates)
+* Customizable look and appearance, font, colors
+* High-DPI compliant
+* Utilizes AVX/AVX2 instruction set for best performance
 * And many more...
 
 ## How To Build

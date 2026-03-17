@@ -90,7 +90,12 @@ IDR_TOOLBAR_MAIN TOOLBAR 32, 34
 BEGIN
     BUTTON      IDM_FILE_NEWFILE
     BUTTON      IDM_FILE_OPENFILE
+    BUTTON      IDM_FILE_OPENDEVICE
+    BUTTON      IDM_FILE_OPENPROCESS
+    SEPARATOR
     BUTTON      IDM_FILE_SAVE
+    SEPARATOR
+    BUTTON      IDM_TOOLS_SETTINGS
 END
 
 
@@ -595,6 +600,8 @@ IDR_SVG_PROCESS_OPEN    SVG                     "res\\IDR_SVG_PROCESS_OPEN.svg"
 
 IDR_SVG_SAVE            SVG                     "res\\IDR_SVG_SAVE.svg"
 
+IDR_SVG_SETTINGS        SVG                     "res\\IDR_SVG_SETTINGS.svg"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -603,9 +610,11 @@ IDR_SVG_SAVE            SVG                     "res\\IDR_SVG_SAVE.svg"
 
 STRINGTABLE
 BEGIN
-    IDM_FILE_NEWFILE        "Create new file...\nNew File"
-    IDM_FILE_OPENFILE       "Open existing file...\nOpen File"
-    IDM_FILE_SAVE           "\nSave"
+    IDM_FILE_NEWFILE        "Create new file...\nNew File..."
+    IDM_FILE_OPENFILE       "Open existing file...\nOpen File..."
+    IDM_FILE_OPENDEVICE     "Open device, partition, or custom path...\nOpen Device..."
+    IDM_FILE_OPENPROCESS    "Open a running process...\nOpen Process..."
+    IDM_FILE_SAVE           "Save changes\nSave"
 END
 
 STRINGTABLE
@@ -625,6 +634,11 @@ END
 STRINGTABLE
 BEGIN
     AFX_IDS_APP_TITLE       "Hexer"
+END
+
+STRINGTABLE
+BEGIN
+    IDM_TOOLS_SETTINGS      "Open Settings Dialog...\nSettings..."
 END
 
 #endif    // English (United States) resources
