@@ -60,11 +60,12 @@ BOOL CDlgProcMemory::OnInitDialog()
 
 	assert(m_pVecProcMemory != nullptr);
 
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
 	m_pListProcMem.CreateDialogCtrl(IDC_PROCMEMORY_LIST, m_hWnd);
-	m_pListProcMem.InsertColumn(0, L"Address Range", LVCFMT_CENTER, 170);
-	m_pListProcMem.InsertColumn(1, L"Size", LVCFMT_CENTER, 70, -1, LVCFMT_CENTER);
-	m_pListProcMem.InsertColumn(2, L"Protection", LVCFMT_CENTER, 180);
-	m_pListProcMem.InsertColumn(3, L"Type", LVCFMT_CENTER, 100);
+	m_pListProcMem.InsertColumn(0, L"Address Range", LVCFMT_CENTER, std::lround(170 * flDPIScale));
+	m_pListProcMem.InsertColumn(1, L"Size", LVCFMT_CENTER, std::lround(70 * flDPIScale), -1, LVCFMT_CENTER);
+	m_pListProcMem.InsertColumn(2, L"Protection", LVCFMT_CENTER, std::lround(180 * flDPIScale));
+	m_pListProcMem.InsertColumn(3, L"Type", LVCFMT_CENTER, std::lround(100 * flDPIScale));
 	m_pListProcMem.SetItemCountEx(static_cast<int>(m_pVecProcMemory->size()));
 
 	const auto hIcon = AfxGetApp()->LoadIconW(IDR_HEXER_FRAME);
@@ -75,8 +76,7 @@ BOOL CDlgProcMemory::OnInitDialog()
 }
 
 void CDlgProcMemory::OnListProcMemoryColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
-}
+{ }
 
 void CDlgProcMemory::OnListProcMemoryItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {

@@ -1,5 +1,5 @@
 ## Hexer
-**Hexer** is a free, fast, multi-tab hex editor, based on the [HexCtrl](https://github.com/jovibor/HexCtrl), and developed with the MFC library. **Hexer** is mostly a hobby project developed in spare time.
+**Hexer** is a free, fast, multi-tab hex editor based on [HexCtrl](https://github.com/jovibor/HexCtrl) and developed with MFC library.
 
 ![](docs/img/Hexer_Main.jpg)
 
@@ -15,9 +15,9 @@
 * And many more...
 
 ## How To Build
-1. Clone git repo with all submodules:  
+1. Clone **Hexer**'s git repo, with all submodules:  
 `git clone https://github.com/jovibor/Hexer.git --recurse-submodules`
-1. Open `Hexer\Hexer.sln` solution in the **Visual Studio 2022** or newer
+1. Open `Hexer\Hexer.slnx` solution in the **Visual Studio**
 
 ## [](#)Templates
 ![](docs/img/HexCtrl_Templates.jpg)  

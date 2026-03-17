@@ -182,8 +182,8 @@ BOOL CDlgOpenProcess::OnInitDialog()
 	m_ListModules.CreateDialogCtrl(IDC_OPENPROCESS_LIST_MODULES, m_hWnd);
 	m_ListModules.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT);
 	m_ListModules.SetSortable(true);
-	m_ListModules.InsertColumn(0, L"Module Name", 0, 150);
-	m_ListModules.InsertColumn(1, L"Working Set", 0, 90);
+	m_ListModules.InsertColumn(0, L"Module Name", 0, std::lround(150 * flDPIScale));
+	m_ListModules.InsertColumn(1, L"Working Set", 0, std::lround(90 * flDPIScale));
 
 	const auto hIcon = AfxGetApp()->LoadIconW(IDR_HEXER_FRAME);
 	SetIcon(hIcon, TRUE);

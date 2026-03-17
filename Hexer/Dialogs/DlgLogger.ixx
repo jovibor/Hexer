@@ -111,11 +111,12 @@ BOOL CDlgLogger::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
+	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
 	m_List.CreateDialogCtrl(IDC_LOGINFO_LIST, m_hWnd);
 	m_List.SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
-	m_List.InsertColumn(0, L"№", 0, 30);
-	m_List.InsertColumn(1, L"Time", 0, 70);
-	m_List.InsertColumn(2, L"Event", 0, 1000);
+	m_List.InsertColumn(0, L"№", 0, std::lround(30 * flDPIScale));
+	m_List.InsertColumn(1, L"Time", 0, std::lround(70 * flDPIScale));
+	m_List.InsertColumn(2, L"Event", 0, std::lround(1000 * flDPIScale));
 
 	m_menuList.CreatePopupMenu();
 	m_menuList.AppendMenuW(MF_STRING, static_cast<UINT_PTR>(EMenuID::IDM_LIST_CLEARALL), L"Clear All");
