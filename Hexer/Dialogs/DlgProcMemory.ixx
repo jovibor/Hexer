@@ -24,11 +24,13 @@ public:
 	void Init(HEXCTRL::IHexCtrl* pHexCtrl, const std::vector<MEMORY_BASIC_INFORMATION>& vec);
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
+	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
 	BOOL OnInitDialog()override;
 	afx_msg void OnListProcMemoryColumnClick(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListProcMemoryGetColor(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListProcMemoryGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnListProcMemoryItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	BOOL OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)override;
 	DECLARE_MESSAGE_MAP();
 private:
@@ -41,6 +43,8 @@ BEGIN_MESSAGE_MAP(CDlgProcMemory, CDialogEx)
 	ON_NOTIFY(LVN_GETDISPINFOW, IDC_PROCMEMORY_LIST, &CDlgProcMemory::OnListProcMemoryGetDispInfo)
 	ON_NOTIFY(lex::LISTEX_MSG_GETCOLOR, IDC_PROCMEMORY_LIST, &CDlgProcMemory::OnListProcMemoryGetColor)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_PROCMEMORY_LIST, &CDlgProcMemory::OnListProcMemoryItemChanged)
+	ON_WM_MEASUREITEM()
+	ON_WM_DRAWITEM()
 END_MESSAGE_MAP()
 
 void CDlgProcMemory::Init(HEXCTRL::IHexCtrl* pHexCtrl, const std::vector<MEMORY_BASIC_INFORMATION>& vec)
@@ -54,6 +58,16 @@ void CDlgProcMemory::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 }
 
+void CDlgProcMemory::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+	if (nIDCtl == IDC_PROCMEMORY_LIST) {
+		m_pListProcMem.DrawItem(lpDrawItemStruct);
+		return;
+	}
+
+	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
+}
+
 BOOL CDlgProcMemory::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -62,6 +76,7 @@ BOOL CDlgProcMemory::OnInitDialog()
 
 	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
 	m_pListProcMem.CreateDialogCtrl(IDC_PROCMEMORY_LIST, m_hWnd);
+	m_pListProcMem.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT);
 	m_pListProcMem.InsertColumn(0, L"Address Range", LVCFMT_CENTER, std::lround(170 * flDPIScale));
 	m_pListProcMem.InsertColumn(1, L"Size", LVCFMT_CENTER, std::lround(70 * flDPIScale), -1, LVCFMT_CENTER);
 	m_pListProcMem.InsertColumn(2, L"Protection", LVCFMT_CENTER, std::lround(180 * flDPIScale));
@@ -75,8 +90,7 @@ BOOL CDlgProcMemory::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgProcMemory::OnListProcMemoryColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{ }
+void CDlgProcMemory::OnListProcMemoryColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) { }
 
 void CDlgProcMemory::OnListProcMemoryItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 {
@@ -167,6 +181,16 @@ void CDlgProcMemory::OnListProcMemoryGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResu
 	default:
 		break;
 	}
+}
+
+void CDlgProcMemory::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
+{
+	if (nIDCtl == IDC_PROCMEMORY_LIST) {
+		m_pListProcMem.MeasureItem(lpMeasureItemStruct);
+		return;
+	}
+
+	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
 BOOL CDlgProcMemory::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)

@@ -113,7 +113,7 @@ BOOL CDlgLogger::OnInitDialog()
 
 	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
 	m_List.CreateDialogCtrl(IDC_LOGINFO_LIST, m_hWnd);
-	m_List.SetExtendedStyle(LVS_EX_HEADERDRAGDROP);
+	m_List.SetExtendedStyle(LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT);
 	m_List.InsertColumn(0, L"№", 0, std::lround(30 * flDPIScale));
 	m_List.InsertColumn(1, L"Time", 0, std::lround(70 * flDPIScale));
 	m_List.InsertColumn(2, L"Event", 0, std::lround(1000 * flDPIScale));
