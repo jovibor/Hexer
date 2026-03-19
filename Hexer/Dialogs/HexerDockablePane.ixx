@@ -184,7 +184,7 @@ IMPLEMENT_SERIAL(CHexerTabbedPane, CTabbedPane, 1)
 export class CHexerDockablePane final : public CDockablePane {
 public:
 	void SetNestedHWND(HWND hWnd);
-	[[nodiscard]] auto GetNestedHWND()const->HWND;
+	[[nodiscard]] auto GetNestedHWND()const -> HWND;
 private:
 	void AdjustLayout()override;
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -216,12 +216,13 @@ void CHexerDockablePane::SetNestedHWND(HWND hWnd)
 		::ShowWindow(m_hWndNested, SW_HIDE);
 	}
 
+	//We preserve all original styles. Then remove those responsible for border, caption, and resizability.
+	//Also, set the WS_CHILD style, otherwise weird things can happen with the parent, or the main window,
+	//especially when interacting with the Windows taskbar.
 	m_llStylesOrig = ::GetWindowLongPtrW(hWnd, GWL_STYLE);
-	//We preserve all original styles, removing only those responsible for border,
-	//caption, and resizability. Some nested dialogs might be WS_CHILD, some not.
-	const auto llStylesNew = m_llStylesOrig & ~(WS_BORDER | WS_DLGFRAME | WS_THICKFRAME);
-	::SetWindowLongPtrW(hWnd, GWL_STYLE, llStylesNew);
+	const auto llStylesNew = m_llStylesOrig & ~(WS_BORDER | WS_DLGFRAME | WS_THICKFRAME | WS_POPUP) | WS_CHILD;
 	m_hWndParentOrig = ::SetParent(hWnd, m_hWnd);
+	::SetWindowLongPtrW(hWnd, GWL_STYLE, llStylesNew);
 	m_hWndNested = hWnd;
 	AdjustLayout();
 }
@@ -242,8 +243,7 @@ void CHexerDockablePane::AdjustLayout()
 
 	CRect rcClient;
 	GetClientRect(rcClient);
-	//SWP_NOACTIVATE flag doesn't send WM_ACTIVATE message which is vital to dialogs like DataInterp.
-	::SetWindowPos(m_hWndNested, nullptr, 0, 0, rcClient.Width(), rcClient.Height(), SWP_NOZORDER | SWP_SHOWWINDOW);
+	::SetWindowPos(m_hWndNested, nullptr, 0, 0, rcClient.Width(), rcClient.Height(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
 int CHexerDockablePane::OnCreate(LPCREATESTRUCT lpCreateStruct)

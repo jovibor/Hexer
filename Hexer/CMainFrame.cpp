@@ -28,6 +28,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_WM_CLOSE()
 	ON_WM_COPYDATA()
 	ON_WM_CREATE()
+	ON_WM_SYSCOMMAND()
 END_MESSAGE_MAP()
 
 void CMainFrame::AddLogEntry(const ut::Log::LOGINFO& stData)
@@ -538,6 +539,20 @@ auto CMainFrame::OnGetTabTooltip(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 	pTTI->m_strText = pFrame->GetHexerView()->GetDataInfo().wsvFriendlyName.data();
 
 	return 0;
+}
+
+void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam)
+{
+	static HWND hWndFocus { };
+	if (nID == SC_MINIMIZE) {
+		hWndFocus = ::GetFocus();
+	}
+
+	CMDIFrameWndEx::OnSysCommand(nID, lParam);
+
+	if (nID == SC_RESTORE && hWndFocus != nullptr) {
+		::SetFocus(hWndFocus);
+	}
 }
 
 void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)
