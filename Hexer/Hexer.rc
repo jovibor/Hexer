@@ -111,7 +111,7 @@ BEGIN
         MENUITEM "&New File...\tCtrl+N",        IDM_FILE_NEWFILE
         MENUITEM "&Open File...\tCtrl+O",       IDM_FILE_OPENFILE
         MENUITEM "Open Device...\tCtrl+D",      IDM_FILE_OPENDEVICE
-        MENUITEM "Open Process...",             IDM_FILE_OPENPROCESS
+        MENUITEM "Open Process...\tCtrl+P",     IDM_FILE_OPENPROCESS
         POPUP "Recent Files List"
         BEGIN
             MENUITEM "<IDM_FILE_RFL00>",            IDM_FILE_RFL00
@@ -121,7 +121,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&Close",                      ID_FILE_CLOSE
         MENUITEM SEPARATOR
-        MENUITEM "&Print...\tCtrl+P",           IDM_FILE_PRINT
+        MENUITEM "&Print...",                   IDM_FILE_PRINT
         MENUITEM SEPARATOR
         MENUITEM "E&xit",                       ID_APP_EXIT
     END
@@ -180,10 +180,11 @@ END
 
 IDR_HEXER_FRAME ACCELERATORS
 BEGIN
-    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL, NOINVERT
-    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
+    "N",            IDM_FILE_NEWFILE,       VIRTKEY, CONTROL, NOINVERT
+    "O",            IDM_FILE_OPENFILE,      VIRTKEY, CONTROL, NOINVERT
     "D",            IDM_FILE_OPENDEVICE,    VIRTKEY, CONTROL, NOINVERT
     "S",            IDM_FILE_SAVE,          VIRTKEY, CONTROL, NOINVERT
+    "P",            IDM_FILE_OPENPROCESS,   VIRTKEY, CONTROL, NOINVERT
 END
 
 

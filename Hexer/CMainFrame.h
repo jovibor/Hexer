@@ -5,6 +5,7 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #pragma once
+#include "HexCtrl.h"
 #include <afxcontrolbars.h>
 #include <chrono>
 #include <memory>
@@ -18,7 +19,7 @@ import HexerDockablePane;
 import Utility;
 
 class CHexerView; //Forward declarations.
-namespace HEXCTRL { class IHexCtrl; }
+
 class CMainFrame final : public CMDIFrameWndEx {
 public:
 	void AddLogEntry(const ut::Log::LOGINFO& stData);

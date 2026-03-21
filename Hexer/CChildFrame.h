@@ -5,19 +5,21 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #pragma once
+#include "HexCtrl.h"
+#include <vector>
 
 class CMainFrame; //Forward declarations.
 class CHexerView;
-namespace HEXCTRL { class IHexCtrl; }
+
 class CChildFrame final : public CMDIChildWndEx {
 public:
-	[[nodiscard]] auto GetHexerView()const->CHexerView*;
+	[[nodiscard]] auto GetHexerView()const -> CHexerView*;
 	[[nodiscard]] bool OnBeforeClose();
 	void SetHexerView(CHexerView* pView);
 private:
-	auto GetFrameIcon()const->HICON override;
-	[[nodiscard]] auto GetMainFrame()const->CMainFrame*;
-	[[nodiscard]] auto GetHexCtrl()const->HEXCTRL::IHexCtrl*;
+	auto GetFrameIcon()const -> HICON override;
+	[[nodiscard]] auto GetMainFrame()const -> CMainFrame*;
+	[[nodiscard]] auto GetHexCtrl()const -> HEXCTRL::IHexCtrl*;
 	afx_msg void OnClose();
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
 	afx_msg void OnDestroy();

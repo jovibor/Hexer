@@ -11,6 +11,7 @@
 #include "CHexerDoc.h"
 #include "CHexerView.h"
 #include "resource.h"
+#include <format>
 
 import Utility;
 
@@ -86,7 +87,7 @@ bool CHexerView::OnBeforeClose()
 {
 	if (m_fIsHexCtrlDataModified) {
 		const auto pDoc = GetDocument();
-		const auto wstr = std::format(L"\"{}\" is modified. Save changes?", pDoc->GetDataPath());
+		const auto wstr = std::format(L"\"{}\" was modified.\nSave changes?", pDoc->GetDataPath());
 		switch (MessageBoxW(wstr.data(), pDoc->GetFileName().data(), MB_YESNOCANCEL | MB_ICONQUESTION)) {
 		case IDYES:
 			SaveDataToDisk();
@@ -208,8 +209,7 @@ void CHexerView::OnDataIOImmediate()
 }
 
 void CHexerView::OnDraw(CDC* /*pDC*/)
-{
-}
+{ }
 
 void CHexerView::OnEditCopyHex()
 {
@@ -475,12 +475,10 @@ void CHexerView::UpdateDlgDataInterp()const
 }
 
 void CHexerView::UpdateDlgModify()const
-{
-}
+{ }
 
 void CHexerView::UpdateDlgSearch()const
-{
-}
+{ }
 
 void CHexerView::UpdateDlgTemplMgr()const
 {

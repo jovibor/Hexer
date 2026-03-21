@@ -5,7 +5,6 @@
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
 #include "stdafx.h"
-#include "CHexerApp.h"
 #include "CMainFrame.h"
 #include "CChildFrame.h"
 #include "CHexerDoc.h"
