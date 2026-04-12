@@ -432,7 +432,7 @@ public:
 	void LOLAddToList(const ut::DATAOPEN& dos);      //Last Opened List add.
 	void LOLRemoveFromList(const ut::DATAOPEN& dos); //Last Opened List remove.
 	void OnSettingsChanged();
-	void ReloadCMDIcons(int iWidth, int iHeight); //All menu and toolbar icons.
+	void RecreateCMDIcons(int iWidth, int iHeight); //All menu and toolbar icons.
 	void RFLAddToList(const ut::DATAOPEN& dos);
 	[[nodiscard]] auto RFLGetDataFromMenuID(UINT uID)const -> ut::DATAOPEN;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
@@ -463,7 +463,10 @@ private:
 		{ ICONDATA { .uIDCmd { IDM_FILE_OPENDEVICE }, .uIDSVG { IDR_SVG_DEVICE_OPEN } } },
 		{ ICONDATA { .uIDCmd { IDM_FILE_OPENPROCESS }, .uIDSVG { IDR_SVG_PROCESS_OPEN } } },
 		{ ICONDATA { .uIDCmd { IDM_FILE_SAVE }, .uIDSVG { IDR_SVG_SAVE } } },
-		{ ICONDATA { .uIDCmd { IDM_TOOLS_SETTINGS }, .uIDSVG { IDR_SVG_SETTINGS } } }
+		{ ICONDATA { .uIDCmd { IDM_TOOLS_SETTINGS }, .uIDSVG { IDR_SVG_SETTINGS } } },
+		{ ICONDATA { .uIDCmd { IDM_EDIT_COPYHEX }, .uIDSVG { IDR_SVG_CLPBRD_COPYHEX } } },
+		{ ICONDATA { .uIDCmd { IDM_EDIT_PASTEHEX }, .uIDSVG { IDR_SVG_CLPBRD_PASTEHEX } } },
+		{ ICONDATA { .uIDCmd { IDM_FIND_SEARCH }, .uIDSVG { IDR_SVG_SEARCH } } }
 	};
 
 	CAppSettingsRFL m_stRFL;
@@ -734,7 +737,7 @@ void CAppSettings::OnSettingsChanged()
 	m_stRFL.SetRFLSize(m_stGeneralData.dwRFLSize);
 }
 
-void CAppSettings::ReloadCMDIcons(int iWidth, int iHeight) {
+void CAppSettings::RecreateCMDIcons(int iWidth, int iHeight) {
 	for (auto& data : m_vecIconData) {
 		data.Clear();
 		data.hBmp = ut::SVGToBmp(data.uIDSVG, iWidth, iHeight);

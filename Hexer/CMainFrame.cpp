@@ -511,9 +511,10 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 
 auto CMainFrame::OnDPIChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
 {
+	const auto ret = Default();
 	UpdateIconsForDPI();
 
-	return 0;
+	return ret;
 }
 
 BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/)
@@ -726,7 +727,7 @@ void CMainFrame::UpdateIconsForDPI()
 	CMFCToolBar::SetSizes({ iHeightTBCurr, iHeightTBCurr }, { iHeightImg, iHeightImg });
 
 	auto& sett = theApp.GetAppSettings();
-	sett.ReloadCMDIcons(iHeightImg, iHeightImg);
+	sett.RecreateCMDIcons(iHeightImg, iHeightImg);
 
 	for (int i = 0; i < m_wndToolBar.GetCount(); ++i) {
 		UINT uID;
@@ -740,16 +741,13 @@ void CMainFrame::UpdateIconsForDPI()
 		}
 	}
 
-	const auto hBMPFileNew = sett.GetIconDataForCmd(IDM_FILE_NEWFILE)->hBmp;
 	const auto hBMPFileOpen = sett.GetIconDataForCmd(IDM_FILE_OPENFILE)->hBmp;
 	const auto hBMPDevice = sett.GetIconDataForCmd(IDM_FILE_OPENDEVICE)->hBmp;
 	const auto hBMPProcess = sett.GetIconDataForCmd(IDM_FILE_OPENPROCESS)->hBmp;
-	const auto hBMPSave = sett.GetIconDataForCmd(IDM_FILE_SAVE)->hBmp;
-	const auto hBMPSettings = sett.GetIconDataForCmd(IDM_TOOLS_SETTINGS)->hBmp;
 	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP } };
 	const auto pMenu = GetMenu();
 	const auto pFileMenu = pMenu->GetSubMenu(0); //"File" sub-menu.
-	mii.hbmpItem = hBMPFileNew;
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_FILE_NEWFILE)->hBmp;
 	pFileMenu->SetMenuItemInfoW(0, &mii, TRUE); //"New File..." menu.
 	mii.hbmpItem = hBMPFileOpen;
 	pFileMenu->SetMenuItemInfoW(1, &mii, TRUE); //"Open File..." menu.
@@ -757,10 +755,16 @@ void CMainFrame::UpdateIconsForDPI()
 	pFileMenu->SetMenuItemInfoW(2, &mii, TRUE); //"Open Device..." menu.
 	mii.hbmpItem = hBMPProcess;
 	pFileMenu->SetMenuItemInfoW(3, &mii, TRUE); //"Open Process..." menu.
-	mii.hbmpItem = hBMPSave;
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_FILE_SAVE)->hBmp;
 	pMenu->SetMenuItemInfoW(IDM_FILE_SAVE, &mii, FALSE); //"Save" menu.
-	mii.hbmpItem = hBMPSettings;
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_TOOLS_SETTINGS)->hBmp;
 	pMenu->SetMenuItemInfoW(IDM_TOOLS_SETTINGS, &mii, FALSE); //"Settings..." menu.
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_EDIT_COPYHEX)->hBmp;
+	pMenu->SetMenuItemInfoW(IDM_EDIT_COPYHEX, &mii, FALSE); //"Edit->Copy as Hex Bytes" menu.
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_EDIT_PASTEHEX)->hBmp;
+	pMenu->SetMenuItemInfoW(IDM_EDIT_PASTEHEX, &mii, FALSE); //"Edit->Paste as Hex Bytes" menu.
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_FIND_SEARCH)->hBmp;
+	pMenu->SetMenuItemInfoW(IDM_FIND_SEARCH, &mii, FALSE); //"Find->Search..." menu.
 
 	if (!sett.IsRFLInitialized()) {
 		const auto pRFLSubMenu = pFileMenu->GetSubMenu(4); //"Recent Files List" sub-menu.

@@ -270,26 +270,21 @@
     <ResourceCompile Include="Hexer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_BKMS.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_CLPBRD_COPYHEX.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_CLPBRD_PASTEHEX.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_FONTCHOOSE.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_GROUP.bmp" />
     <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_LOGO.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_MODIFY.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_MODIFY_FILLZEROS.bmp" />
-    <Image Include="dep\HexCtrl\HexCtrl\src\res\IDB_HEXCTRL_SEARCH.bmp" />
     <Image Include="res\IDR_HEXER_FRAME.ico" />
     <Image Include="res\IDR_TOOLBAR_MAIN.bmp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dep\HexCtrl\HexCtrl\src\res\IDJ_HEXCTRL_KEYBIND.json" />
     <None Include="res\Hexer.rc2" />
+    <None Include="res\IDR_SVG_CLPBRD_COPYHEX.svg" />
+    <None Include="res\IDR_SVG_CLPBRD_PASTEHEX.svg" />
     <None Include="res\IDR_SVG_DEVICE_OPEN.svg" />
     <None Include="res\IDR_SVG_FILE_NEW.svg" />
     <None Include="res\IDR_SVG_FILE_OPEN.svg" />
     <None Include="res\IDR_SVG_PROCESS_OPEN.svg" />
     <None Include="res\IDR_SVG_SAVE.svg" />
+    <None Include="res\IDR_SVG_SEARCH.svg" />
     <None Include="res\IDR_SVG_SETTINGS.svg" />
   </ItemGroup>
   <ItemGroup>

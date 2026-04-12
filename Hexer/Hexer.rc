@@ -127,11 +127,15 @@ BEGIN
     END
     POPUP "&Edit"
     BEGIN
-        MENUITEM "&Undo\tCtrl+Z",               IDM_EDIT_UNDO
-        MENUITEM "Redo",                        IDM_EDIT_REDO
-        MENUITEM SEPARATOR
         MENUITEM "&Copy as Hex Bytes\tCtrl+C",  IDM_EDIT_COPYHEX
         MENUITEM "&Paste as Hex Bytes\tCtrl+V", IDM_EDIT_PASTEHEX
+        MENUITEM SEPARATOR
+        MENUITEM "&Undo\tCtrl+Z",               IDM_EDIT_UNDO
+        MENUITEM "Redo",                        IDM_EDIT_REDO
+    END
+    POPUP "Find"
+    BEGIN
+        MENUITEM "Search...",                   IDM_FIND_SEARCH
     END
     POPUP "&View"
     BEGIN
@@ -602,6 +606,12 @@ IDR_SVG_PROCESS_OPEN    SVG                     "res\\IDR_SVG_PROCESS_OPEN.svg"
 IDR_SVG_SAVE            SVG                     "res\\IDR_SVG_SAVE.svg"
 
 IDR_SVG_SETTINGS        SVG                     "res\\IDR_SVG_SETTINGS.svg"
+
+IDR_SVG_CLPBRD_COPYHEX  SVG                     "res\\IDR_SVG_CLPBRD_COPYHEX.svg"
+
+IDR_SVG_CLPBRD_PASTEHEX SVG                     "res\\IDR_SVG_CLPBRD_PASTEHEX.svg"
+
+IDR_SVG_SEARCH          SVG                     "res\\IDR_SVG_SEARCH.svg"
 
 
 /////////////////////////////////////////////////////////////////////////////

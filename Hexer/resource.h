@@ -55,6 +55,9 @@
 #define IDC_OPENPROCESS_STAT_INFO       328
 #define IDC_PROCMEMORY_LIST             329
 #define IDC_SETTINGS_APPLY              330
+#define IDR_SVG_CLPBRD_COPYHEX          331
+#define IDR_SVG_CLPBRD_PASTEHEX         332
+#define IDR_SVG_SEARCH                  333
 #define IDM_FILE_RFL00                  32770
 #define IDM_FILE_RFL01                  32771
 #define IDM_FILE_RFL02                  32772
@@ -99,13 +102,14 @@
 #define IDM_DA_DATAIO_MMAP              32811
 #define IDM_DA_DATAIO_IOBUFF            32812
 #define IDM_DA_DATAIO_IOIMMEDIATE       32813
+#define IDM_FIND_SEARCH                 32814
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        331
-#define _APS_NEXT_COMMAND_VALUE         32814
+#define _APS_NEXT_RESOURCE_VALUE        334
+#define _APS_NEXT_COMMAND_VALUE         32815
 #define _APS_NEXT_CONTROL_VALUE         331
 #define _APS_NEXT_SYMED_VALUE           331
 #endif

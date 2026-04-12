@@ -35,6 +35,7 @@ private:
 	afx_msg void OnDataIOMMAP();
 	afx_msg void OnDataIOBuff();
 	afx_msg void OnDataIOImmediate();
+	afx_msg auto OnDPIChangedAfterParent(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	void OnDraw(CDC* pDC)override;
 	afx_msg void OnEditCopyHex();
 	afx_msg void OnEditPasteHex();
@@ -42,6 +43,7 @@ private:
 	afx_msg void OnEditRedo();
 	afx_msg void OnFilePrint();
 	afx_msg void OnFileSave();
+	afx_msg void OnFindSearch();
 	afx_msg void OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnHexCtrlSetData(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnHexCtrlSetFont(NMHDR* pNMHDR, LRESULT* pResult);
@@ -51,6 +53,11 @@ private:
 	afx_msg void OnUpdateDataAccessMode(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateDataIOMode(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFileSave(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateEditCopyHex(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateEditPasteHex(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateEditUndo(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateEditRedo(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateFindSearch(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateProcMemory(CCmdUI* pCmdUI);
 	afx_msg void OnViewProcMemory();
 	void SetPaneAlreadyLaunch(UINT uPaneID);
@@ -61,6 +68,7 @@ private:
 	void UpdateDlgSearch()const;
 	void UpdateDlgTemplMgr()const;
 	void UpdateHexCtrlDlgData(UINT uPaneID)const;
+	void UpdateHexCtrlIcons();
 	DECLARE_DYNCREATE(CHexerView);
 	DECLARE_MESSAGE_MAP();
 private:

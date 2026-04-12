@@ -24,10 +24,11 @@ IMPLEMENT_DYNCREATE(CHexerView, CView)
 BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_COMMAND(IDM_FILE_SAVE, &CHexerView::OnFileSave)
 	ON_COMMAND(IDM_FILE_PRINT, &CHexerView::OnFilePrint)
-	ON_COMMAND(IDM_EDIT_UNDO, &CHexerView::OnEditUndo)
-	ON_COMMAND(IDM_EDIT_REDO, &CHexerView::OnEditRedo)
 	ON_COMMAND(IDM_EDIT_COPYHEX, &CHexerView::OnEditCopyHex)
 	ON_COMMAND(IDM_EDIT_PASTEHEX, &CHexerView::OnEditPasteHex)
+	ON_COMMAND(IDM_EDIT_UNDO, &CHexerView::OnEditUndo)
+	ON_COMMAND(IDM_EDIT_REDO, &CHexerView::OnEditRedo)
+	ON_COMMAND(IDM_FIND_SEARCH, &CHexerView::OnFindSearch)
 	ON_COMMAND(IDM_VIEW_PROCMEMORY, &CHexerView::OnViewProcMemory)
 	ON_COMMAND(IDM_DA_RO, &CHexerView::OnDataAccessRO)
 	ON_COMMAND(IDM_DA_RWSAFE, &CHexerView::OnDataAccessRWSAFE)
@@ -35,12 +36,18 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_COMMAND(IDM_DA_DATAIO_MMAP, &CHexerView::OnDataIOMMAP)
 	ON_COMMAND(IDM_DA_DATAIO_IOBUFF, &CHexerView::OnDataIOBuff)
 	ON_COMMAND(IDM_DA_DATAIO_IOIMMEDIATE, &CHexerView::OnDataIOImmediate)
+	ON_MESSAGE(WM_DPICHANGED_AFTERPARENT, &CHexerView::OnDPIChangedAfterParent)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGBKMMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGDATAINTERP, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_DLGTEMPLMGR, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlDLG)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_SETDATA, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlSetData)
 	ON_NOTIFY(HEXCTRL::HEXCTRL_MSG_SETFONT, IDC_HEXCTRL_MAIN, &CHexerView::OnHexCtrlSetFont)
 	ON_UPDATE_COMMAND_UI(IDM_FILE_SAVE, &CHexerView::OnUpdateFileSave)
+	ON_UPDATE_COMMAND_UI(IDM_EDIT_COPYHEX, &CHexerView::OnUpdateEditCopyHex)
+	ON_UPDATE_COMMAND_UI(IDM_EDIT_PASTEHEX, &CHexerView::OnUpdateEditPasteHex)
+	ON_UPDATE_COMMAND_UI(IDM_EDIT_UNDO, &CHexerView::OnUpdateEditUndo)
+	ON_UPDATE_COMMAND_UI(IDM_EDIT_REDO, &CHexerView::OnUpdateEditRedo)
+	ON_UPDATE_COMMAND_UI(IDM_FIND_SEARCH, &CHexerView::OnUpdateFindSearch)
 	ON_UPDATE_COMMAND_UI(IDM_VIEW_PROCMEMORY, &CHexerView::OnUpdateProcMemory)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_DA_RO, IDM_DA_RWINPLACE, &CHexerView::OnUpdateDataAccessMode)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_DA_DATAIO_MMAP, IDM_DA_DATAIO_IOIMMEDIATE, &CHexerView::OnUpdateDataIOMode)
@@ -208,6 +215,13 @@ void CHexerView::OnDataIOImmediate()
 	ChangeDataIOMode(DATA_IOIMMEDIATE);
 }
 
+auto CHexerView::OnDPIChangedAfterParent(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
+{
+	const auto ret = Default();
+	UpdateHexCtrlIcons();
+	return ret;
+}
+
 void CHexerView::OnDraw(CDC* /*pDC*/)
 { }
 
@@ -239,6 +253,11 @@ void CHexerView::OnFilePrint()
 void CHexerView::OnFileSave()
 {
 	SaveDataToDisk();
+}
+
+void CHexerView::OnFindSearch()
+{
+	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_SEARCH_DLG);
 }
 
 void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
@@ -297,6 +316,7 @@ void CHexerView::OnInitialUpdate()
 	}
 
 	HexCtrlSetData();
+	UpdateHexCtrlIcons();
 }
 
 void CHexerView::OnSize(UINT nType, int cx, int cy)
@@ -395,6 +415,36 @@ void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI)
 void CHexerView::OnUpdateFileSave(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(m_fIsHexCtrlDataModified);
+}
+
+void CHexerView::OnUpdateEditCopyHex(CCmdUI* pCmdUI)
+{
+	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_CLPBRD_COPY_HEX);
+	pCmdUI->Enable(fEnable);
+}
+
+void CHexerView::OnUpdateEditPasteHex(CCmdUI* pCmdUI)
+{
+	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_CLPBRD_PASTE_HEX);
+	pCmdUI->Enable(fEnable);
+}
+
+void CHexerView::OnUpdateEditUndo(CCmdUI* pCmdUI)
+{
+	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_MODIFY_UNDO);
+	pCmdUI->Enable(fEnable);
+}
+
+void CHexerView::OnUpdateEditRedo(CCmdUI* pCmdUI)
+{
+	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_MODIFY_REDO);
+	pCmdUI->Enable(fEnable);
+}
+
+void CHexerView::OnUpdateFindSearch(CCmdUI* pCmdUI)
+{
+	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_SEARCH_DLG);
+	pCmdUI->Enable(fEnable);
 }
 
 void CHexerView::OnUpdateProcMemory(CCmdUI* pCmdUI)
@@ -540,4 +590,21 @@ void CHexerView::UpdateHexCtrlDlgData(UINT uPaneID)const
 	default:
 		break;
 	}
+}
+
+void CHexerView::UpdateHexCtrlIcons()
+{
+	using enum HEXCTRL::EHexMenuItem;
+	const auto pHex = GetHexCtrl();
+	const auto& sett = theApp.GetAppSettings();
+
+	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP } };
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_FIND_SEARCH)->hBmp;
+	pHex->SetMenuItem(IDM_SEARCH_POPUP, mii);
+	pHex->SetMenuItem(IDM_SEARCH_SEARCH, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_EDIT_COPYHEX)->hBmp;
+	pHex->SetMenuItem(IDM_CLPBRD_POPUP, mii);
+	pHex->SetMenuItem(IDM_CLPBRD_COPYHEX, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_EDIT_PASTEHEX)->hBmp;
+	pHex->SetMenuItem(IDM_CLPBRD_PASTEHEX, mii);
 }
