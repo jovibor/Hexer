@@ -607,4 +607,11 @@ void CHexerView::UpdateHexCtrlIcons()
 	pHex->SetMenuItem(IDM_CLPBRD_COPYHEX, mii);
 	mii.hbmpItem = sett.GetIconDataForCmd(IDM_EDIT_PASTEHEX)->hBmp;
 	pHex->SetMenuItem(IDM_CLPBRD_PASTEHEX, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_VIEW_BKMMGR)->hBmp;
+	pHex->SetMenuItem(IDM_BKM_POPUP, mii);
+	pHex->SetMenuItem(IDM_BKM_ADD, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDR_SVG_MODIFY)->hBmp;
+	pHex->SetMenuItem(IDM_MODIFY_POPUP, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDR_SVG_FONTCHOOSE)->hBmp;
+	pHex->SetMenuItem(IDM_APPEAR_CHOOSEFONT, mii);
 }

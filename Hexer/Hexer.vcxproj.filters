@@ -212,6 +212,9 @@
     <None Include="res\IDR_SVG_SEARCH.svg">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="res\IDR_SVG_BKM.svg" />
+    <None Include="res\IDR_SVG_MODIFY.svg" />
+    <None Include="res\IDR_SVG_FONTCHOOSE.svg" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include=".manifest">

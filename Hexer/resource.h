@@ -58,6 +58,9 @@
 #define IDR_SVG_CLPBRD_COPYHEX          331
 #define IDR_SVG_CLPBRD_PASTEHEX         332
 #define IDR_SVG_SEARCH                  333
+#define IDR_SVG_BKM                     334
+#define IDR_SVG_MODIFY                  335
+#define IDR_SVG_FONTCHOOSE              336
 #define IDM_FILE_RFL00                  32770
 #define IDM_FILE_RFL01                  32771
 #define IDM_FILE_RFL02                  32772
@@ -108,7 +111,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        334
+#define _APS_NEXT_RESOURCE_VALUE        337
 #define _APS_NEXT_COMMAND_VALUE         32815
 #define _APS_NEXT_CONTROL_VALUE         331
 #define _APS_NEXT_SYMED_VALUE           331

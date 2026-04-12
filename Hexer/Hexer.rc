@@ -135,7 +135,7 @@ BEGIN
     END
     POPUP "Find"
     BEGIN
-        MENUITEM "Search...",                   IDM_FIND_SEARCH
+        MENUITEM "Search and Replace...\tCtrl+F", IDM_FIND_SEARCH
     END
     POPUP "&View"
     BEGIN
@@ -612,6 +612,12 @@ IDR_SVG_CLPBRD_COPYHEX  SVG                     "res\\IDR_SVG_CLPBRD_COPYHEX.svg
 IDR_SVG_CLPBRD_PASTEHEX SVG                     "res\\IDR_SVG_CLPBRD_PASTEHEX.svg"
 
 IDR_SVG_SEARCH          SVG                     "res\\IDR_SVG_SEARCH.svg"
+
+IDR_SVG_BKM             SVG                     "res\\IDR_SVG_BKM.svg"
+
+IDR_SVG_MODIFY          SVG                     "res\\IDR_SVG_MODIFY.svg"
+
+IDR_SVG_FONTCHOOSE      SVG                     "res\\IDR_SVG_FONTCHOOSE.svg"
 
 
 /////////////////////////////////////////////////////////////////////////////

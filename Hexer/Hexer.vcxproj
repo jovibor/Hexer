@@ -277,11 +277,14 @@
   <ItemGroup>
     <None Include="dep\HexCtrl\HexCtrl\src\res\IDJ_HEXCTRL_KEYBIND.json" />
     <None Include="res\Hexer.rc2" />
+    <None Include="res\IDR_SVG_BKM.svg" />
     <None Include="res\IDR_SVG_CLPBRD_COPYHEX.svg" />
     <None Include="res\IDR_SVG_CLPBRD_PASTEHEX.svg" />
     <None Include="res\IDR_SVG_DEVICE_OPEN.svg" />
     <None Include="res\IDR_SVG_FILE_NEW.svg" />
     <None Include="res\IDR_SVG_FILE_OPEN.svg" />
+    <None Include="res\IDR_SVG_FONTCHOOSE.svg" />
+    <None Include="res\IDR_SVG_MODIFY.svg" />
     <None Include="res\IDR_SVG_PROCESS_OPEN.svg" />
     <None Include="res\IDR_SVG_SAVE.svg" />
     <None Include="res\IDR_SVG_SEARCH.svg" />
