@@ -9,6 +9,7 @@ module;
 #include "resource.h"
 #include <afxwin.h>
 #include "HexCtrl.h"
+#include "sqlite3.h"
 #include <algorithm>
 #include <cassert>
 #include <bitset>
@@ -19,6 +20,13 @@ module;
 #include <utility>
 #include <vector>
 export module AppSettings;
+
+#ifdef _DEBUG
+#define SQLITE_LIBNAME "dep\\sqlite\\sqlite3d.lib"
+#else
+#define SQLITE_LIBNAME "dep\\sqlite\\sqlite3.lib"
+#endif
+#pragma comment (lib, SQLITE_LIBNAME)
 
 import Utility;
 

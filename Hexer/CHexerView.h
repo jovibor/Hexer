@@ -27,6 +27,7 @@ private:
 	[[nodiscard]] auto GetChildFrame()const -> CChildFrame*;
 	[[nodiscard]] auto GetMainFrame()const -> CMainFrame*;
 	void HexCtrlSetData(bool fAdjust = false);
+	void HexCtrlUpdateIcons();
 	[[nodiscard]] bool IsPaneAlreadyLaunch(UINT uPaneID)const;
 	void OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView)override;
 	afx_msg void OnDataAccessRO();
@@ -68,7 +69,6 @@ private:
 	void UpdateDlgSearch()const;
 	void UpdateDlgTemplMgr()const;
 	void UpdateHexCtrlDlgData(UINT uPaneID)const;
-	void UpdateHexCtrlIcons();
 	DECLARE_DYNCREATE(CHexerView);
 	DECLARE_MESSAGE_MAP();
 private:

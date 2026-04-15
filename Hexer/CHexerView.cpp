@@ -68,6 +68,11 @@ auto CHexerView::GetDlgProcMemory()const->HWND
 	return m_dlgProcMem;
 }
 
+auto CHexerView::GetDocument()const->CHexerDoc*
+{
+	return reinterpret_cast<CHexerDoc*>(m_pDocument);
+}
+
 auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
 {
 	return &*m_pHexCtrl;
@@ -114,20 +119,6 @@ bool CHexerView::OnBeforeClose()
 
 //Private methods.
 
-auto CHexerView::GetMainFrame()const->CMainFrame*
-{
-	return static_cast<CMainFrame*>(AfxGetMainWnd());
-}
-
-void CHexerView::HexCtrlSetData(bool fAdjust)
-{
-	const auto pDoc = GetDocument();
-	const auto fMutable = pDoc->IsDataAccessRW();
-	GetHexCtrl()->SetData({ .spnData { pDoc->GetFileMMAPData(), pDoc->GetDataSize() },
-		.pHexVirtData { pDoc->GetIHexVirtData() }, .ullMaxVirtOffset { pDoc->GetMaxVirtOffset() },
-		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { fMutable } }, fAdjust);
-}
-
 void CHexerView::ChangeDataAccessMode(ut::DATAACCESS stDAC)
 {
 	const auto pDoc = GetDocument();
@@ -156,14 +147,47 @@ void CHexerView::ChangeDataIOMode(ut::EDataIOMode eDataIOMode)
 	ut::Log::AddLogEntryInfo(wstr);
 }
 
+auto CHexerView::GetMainFrame()const->CMainFrame*
+{
+	return static_cast<CMainFrame*>(AfxGetMainWnd());
+}
+
 auto CHexerView::GetChildFrame()const->CChildFrame*
 {
 	return static_cast<CChildFrame*>(GetParentFrame());
 }
 
-auto CHexerView::GetDocument()const->CHexerDoc*
+void CHexerView::HexCtrlSetData(bool fAdjust)
 {
-	return reinterpret_cast<CHexerDoc*>(m_pDocument);
+	const auto pDoc = GetDocument();
+	const auto fMutable = pDoc->IsDataAccessRW();
+	GetHexCtrl()->SetData({ .spnData { pDoc->GetFileMMAPData(), pDoc->GetDataSize() },
+		.pHexVirtData { pDoc->GetIHexVirtData() }, .ullMaxVirtOffset { pDoc->GetMaxVirtOffset() },
+		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { fMutable } }, fAdjust);
+}
+
+void CHexerView::HexCtrlUpdateIcons()
+{
+	using enum HEXCTRL::EHexMenuItem;
+	const auto pHex = GetHexCtrl();
+	const auto& sett = theApp.GetAppSettings();
+
+	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP } };
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_FIND_SEARCH)->hBmp;
+	pHex->SetMenuItem(IDM_SEARCH_POPUP, mii);
+	pHex->SetMenuItem(IDM_SEARCH_SEARCH, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_EDIT_COPYHEX)->hBmp;
+	pHex->SetMenuItem(IDM_CLPBRD_POPUP, mii);
+	pHex->SetMenuItem(IDM_CLPBRD_COPYHEX, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_EDIT_PASTEHEX)->hBmp;
+	pHex->SetMenuItem(IDM_CLPBRD_PASTEHEX, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDM_VIEW_BKMMGR)->hBmp;
+	pHex->SetMenuItem(IDM_BKM_POPUP, mii);
+	pHex->SetMenuItem(IDM_BKM_ADD, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDR_SVG_MODIFY)->hBmp;
+	pHex->SetMenuItem(IDM_MODIFY_POPUP, mii);
+	mii.hbmpItem = sett.GetIconDataForCmd(IDR_SVG_FONTCHOOSE)->hBmp;
+	pHex->SetMenuItem(IDM_APPEAR_CHOOSEFONT, mii);
 }
 
 bool CHexerView::IsPaneAlreadyLaunch(UINT uPaneID)const
@@ -218,7 +242,7 @@ void CHexerView::OnDataIOImmediate()
 auto CHexerView::OnDPIChangedAfterParent(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
 {
 	const auto ret = Default();
-	UpdateHexCtrlIcons();
+	HexCtrlUpdateIcons();
 	return ret;
 }
 
@@ -300,23 +324,23 @@ void CHexerView::OnInitialUpdate()
 	GetChildFrame()->SetHexerView(this);
 	const auto pDoc = GetDocument();
 	const auto pHex = GetHexCtrl();
-	const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlSettings();
-	pHex->Create({ .hWndParent { m_hWnd }, .pColors { &refHexSet.stClrs }, .pLogFont { &refHexSet.stLogFont },
-		.uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD }, .dwCapacity { refHexSet.dwCapacity },
-		.dwGroupSize { refHexSet.dwGroupSize }, .flScrollRatio { refHexSet.flScrollRatio },
-		.fScrollLines { refHexSet.fScrollLines }, .fInfoBar { refHexSet.fInfoBar }, .fOffsetHex { refHexSet.fOffsetHex } });
-	pHex->SetCharsExtraSpace(refHexSet.dwCharsExtraSpace);
-	pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
-	pHex->SetPageSize(pDoc->IsProcess() ? pDoc->GetMemPageSize() : refHexSet.dwPageSize);
-	pHex->SetUnprintableChar(refHexSet.wchUnprintable);
-	pHex->SetHexCharsCase(refHexSet.fHexCharsCaseUpper);
+	const auto& HexSett = theApp.GetAppSettings().GetHexCtrlSettings();
+	pHex->Create({ .hWndParent { m_hWnd }, .pColors { &HexSett.stClrs }, .pLogFont { &HexSett.stLogFont },
+		.uID { IDC_HEXCTRL_MAIN }, .dwStyle { WS_VISIBLE | WS_CHILD }, .dwCapacity { HexSett.dwCapacity },
+		.dwGroupSize { HexSett.dwGroupSize }, .flScrollRatio { HexSett.flScrollRatio },
+		.fScrollLines { HexSett.fScrollLines }, .fInfoBar { HexSett.fInfoBar }, .fOffsetHex { HexSett.fOffsetHex } });
+	pHex->SetCharsExtraSpace(HexSett.dwCharsExtraSpace);
+	pHex->SetDateInfo(HexSett.dwDateFormat, HexSett.wchDateSepar);
+	pHex->SetPageSize(pDoc->IsProcess() ? pDoc->GetMemPageSize() : HexSett.dwPageSize);
+	pHex->SetUnprintableChar(HexSett.wchUnprintable);
+	pHex->SetHexCharsCase(HexSett.fHexCharsCaseUpper);
 
 	for (const auto& p : theApp.GetAppSettings().GetHexCtrlTemplates()) {
 		pHex->GetTemplates()->AddTemplate(*p);
 	}
 
 	HexCtrlSetData();
-	UpdateHexCtrlIcons();
+	HexCtrlUpdateIcons();
 }
 
 void CHexerView::OnSize(UINT nType, int cx, int cy)
@@ -331,21 +355,21 @@ void CHexerView::OnSize(UINT nType, int cx, int cy)
 void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
 {
 	if (lHint == ut::WM_APP_SETTINGS_CHANGED) {
-		const auto& refHexSet = theApp.GetAppSettings().GetHexCtrlSettings();
+		const auto& HexSett = theApp.GetAppSettings().GetHexCtrlSettings();
 		const auto pHex = GetHexCtrl();
 		pHex->SetRedraw(false);
-		pHex->SetCapacity(refHexSet.dwCapacity);
-		pHex->SetGroupSize(refHexSet.dwGroupSize);
-		pHex->SetPageSize(refHexSet.dwPageSize);
-		pHex->SetUnprintableChar(refHexSet.wchUnprintable);
-		pHex->SetDateInfo(refHexSet.dwDateFormat, refHexSet.wchDateSepar);
-		pHex->SetScrollRatio(refHexSet.flScrollRatio, refHexSet.fScrollLines);
-		pHex->ShowInfoBar(refHexSet.fInfoBar);
-		pHex->SetOffsetMode(refHexSet.fOffsetHex);
-		pHex->SetHexCharsCase(refHexSet.fHexCharsCaseUpper);
-		pHex->SetCharsExtraSpace(refHexSet.dwCharsExtraSpace);
-		pHex->SetFont(refHexSet.stLogFont);
-		pHex->SetColors(refHexSet.stClrs);
+		pHex->SetCapacity(HexSett.dwCapacity);
+		pHex->SetGroupSize(HexSett.dwGroupSize);
+		pHex->SetPageSize(HexSett.dwPageSize);
+		pHex->SetUnprintableChar(HexSett.wchUnprintable);
+		pHex->SetDateInfo(HexSett.dwDateFormat, HexSett.wchDateSepar);
+		pHex->SetScrollRatio(HexSett.flScrollRatio, HexSett.fScrollLines);
+		pHex->ShowInfoBar(HexSett.fInfoBar);
+		pHex->SetOffsetMode(HexSett.fOffsetHex);
+		pHex->SetHexCharsCase(HexSett.fHexCharsCaseUpper);
+		pHex->SetCharsExtraSpace(HexSett.dwCharsExtraSpace);
+		pHex->SetFont(HexSett.stLogFont);
+		pHex->SetColors(HexSett.stClrs);
 		pHex->SetRedraw(true);
 		pHex->Redraw();
 	}
@@ -590,28 +614,4 @@ void CHexerView::UpdateHexCtrlDlgData(UINT uPaneID)const
 	default:
 		break;
 	}
-}
-
-void CHexerView::UpdateHexCtrlIcons()
-{
-	using enum HEXCTRL::EHexMenuItem;
-	const auto pHex = GetHexCtrl();
-	const auto& sett = theApp.GetAppSettings();
-
-	MENUITEMINFOW mii { .cbSize { sizeof(MENUITEMINFOW) }, .fMask { MIIM_BITMAP } };
-	mii.hbmpItem = sett.GetIconDataForCmd(IDM_FIND_SEARCH)->hBmp;
-	pHex->SetMenuItem(IDM_SEARCH_POPUP, mii);
-	pHex->SetMenuItem(IDM_SEARCH_SEARCH, mii);
-	mii.hbmpItem = sett.GetIconDataForCmd(IDM_EDIT_COPYHEX)->hBmp;
-	pHex->SetMenuItem(IDM_CLPBRD_POPUP, mii);
-	pHex->SetMenuItem(IDM_CLPBRD_COPYHEX, mii);
-	mii.hbmpItem = sett.GetIconDataForCmd(IDM_EDIT_PASTEHEX)->hBmp;
-	pHex->SetMenuItem(IDM_CLPBRD_PASTEHEX, mii);
-	mii.hbmpItem = sett.GetIconDataForCmd(IDM_VIEW_BKMMGR)->hBmp;
-	pHex->SetMenuItem(IDM_BKM_POPUP, mii);
-	pHex->SetMenuItem(IDM_BKM_ADD, mii);
-	mii.hbmpItem = sett.GetIconDataForCmd(IDR_SVG_MODIFY)->hBmp;
-	pHex->SetMenuItem(IDM_MODIFY_POPUP, mii);
-	mii.hbmpItem = sett.GetIconDataForCmd(IDR_SVG_FONTCHOOSE)->hBmp;
-	pHex->SetMenuItem(IDM_APPEAR_CHOOSEFONT, mii);
 }
