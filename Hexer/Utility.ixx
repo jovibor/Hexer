@@ -203,6 +203,25 @@ export namespace ut {
 		return wstrAppName;
 	}
 
+	[[nodiscard]] auto GetModulePath(HMODULE hMod = nullptr) -> std::wstring {
+		std::wstring wstrPath;
+		wstrPath.resize_and_overwrite(MAX_PATH, [hMod](wchar_t* pData, std::size_t szSize) {
+			return ::GetModuleFileNameW(hMod, pData, static_cast<DWORD>(szSize)); });
+		return wstrPath;
+	}
+
+	[[nodiscard]] auto GetModuleDir(HMODULE hMod = nullptr) -> std::wstring {
+		auto wstrDir = GetModulePath(hMod);
+		wstrDir = wstrDir.substr(0, wstrDir.find_last_of(L'\\'));
+		return wstrDir;
+	}
+
+	[[nodiscard]] auto GetSQLiteDBName() -> std::wstring {
+		auto wstrDB = GetModuleDir();
+		wstrDB += L"\\Hexer.db";
+		return wstrDB;
+	}
+
 	[[nodiscard]] constexpr auto GetEHexWndFromPaneID(UINT uPaneID) -> std::optional<HEXCTRL::EHexWnd> {
 		switch (uPaneID) {
 		case IDC_PANE_BKMMGR:

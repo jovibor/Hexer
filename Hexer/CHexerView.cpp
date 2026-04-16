@@ -97,23 +97,31 @@ auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 
 bool CHexerView::OnBeforeClose()
 {
+	bool fClose { true };
 	if (m_fIsHexCtrlDataModified) {
 		const auto pDoc = GetDocument();
 		const auto wstr = std::format(L"\"{}\" was modified.\nSave changes?", pDoc->GetDataPath());
 		switch (MessageBoxW(wstr.data(), pDoc->GetFileName().data(), MB_YESNOCANCEL | MB_ICONQUESTION)) {
 		case IDYES:
 			SaveDataToDisk();
-			return true;
+			fClose = true;
+			break;
 		case IDNO:
-			return true;
+			fClose = true;
+			break;
 		case IDCANCEL:
-			return false;
+			fClose = false;
+			break;
 		default:
-			return true;
+			fClose = false;
 		}
 	}
 
-	return true;
+	if (fClose) {
+		HexCtrlSaveBkms();
+	}
+
+	return fClose;
 }
 
 
@@ -155,6 +163,32 @@ auto CHexerView::GetMainFrame()const->CMainFrame*
 auto CHexerView::GetChildFrame()const->CChildFrame*
 {
 	return static_cast<CChildFrame*>(GetParentFrame());
+}
+
+void CHexerView::HexCtrlLoadSavedBkms()
+{
+	const auto pDoc = GetDocument();
+	const auto pHex = GetHexCtrl();
+	const auto vecBkm = theApp.GetAppSettings().GetSavedBkms(pDoc->GetDataPath());
+	const auto pBkm = pHex->GetBookmarks();
+	for (const auto& bkm : vecBkm) {
+		pBkm->AddBkm(bkm, false);
+	}
+}
+
+void CHexerView::HexCtrlSaveBkms()
+{
+	const auto pDoc = GetDocument();
+	const auto pHex = GetHexCtrl();
+	const auto pBkm = pHex->GetBookmarks();
+	using VecBkm = std::vector<HEXCTRL::HEXBKM>;
+
+	VecBkm vecBkm;
+	vecBkm.reserve(pBkm->GetCount());
+	for (auto i = 0; i < pBkm->GetCount(); ++i) {
+		vecBkm.emplace_back(*pBkm->GetByIndex(i));
+	}
+	theApp.GetAppSettings().SaveBkms(pDoc->GetDataPath(), vecBkm);
 }
 
 void CHexerView::HexCtrlSetData(bool fAdjust)
@@ -341,6 +375,7 @@ void CHexerView::OnInitialUpdate()
 
 	HexCtrlSetData();
 	HexCtrlUpdateIcons();
+	HexCtrlLoadSavedBkms();
 }
 
 void CHexerView::OnSize(UINT nType, int cx, int cy)

@@ -26,6 +26,8 @@ private:
 	void ChangeDataIOMode(ut::EDataIOMode eDataIOMode);
 	[[nodiscard]] auto GetChildFrame()const -> CChildFrame*;
 	[[nodiscard]] auto GetMainFrame()const -> CMainFrame*;
+	void HexCtrlLoadSavedBkms();
+	void HexCtrlSaveBkms();
 	void HexCtrlSetData(bool fAdjust = false);
 	void HexCtrlUpdateIcons();
 	[[nodiscard]] bool IsPaneAlreadyLaunch(UINT uPaneID)const;
