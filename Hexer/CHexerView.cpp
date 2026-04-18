@@ -172,7 +172,7 @@ void CHexerView::HexCtrlLoadSavedBkms()
 	const auto vecBkm = theApp.GetAppSettings().GetSavedBkms(pDoc->GetDataPath());
 	const auto pBkm = pHex->GetBookmarks();
 	for (const auto& bkm : vecBkm) {
-		pBkm->AddBkm(bkm, false);
+		pBkm->AddBkm(bkm);
 	}
 }
 
@@ -181,14 +181,7 @@ void CHexerView::HexCtrlSaveBkms()
 	const auto pDoc = GetDocument();
 	const auto pHex = GetHexCtrl();
 	const auto pBkm = pHex->GetBookmarks();
-	using VecBkm = std::vector<HEXCTRL::HEXBKM>;
-
-	VecBkm vecBkm;
-	vecBkm.reserve(pBkm->GetCount());
-	for (auto i = 0; i < pBkm->GetCount(); ++i) {
-		vecBkm.emplace_back(*pBkm->GetByIndex(i));
-	}
-	theApp.GetAppSettings().SaveBkms(pDoc->GetDataPath(), vecBkm);
+	theApp.GetAppSettings().SaveBkms(pDoc->GetDataPath(), pBkm->GetAllAsArray());
 }
 
 void CHexerView::HexCtrlSetData(bool fAdjust)

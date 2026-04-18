@@ -108,7 +108,7 @@ IDR_HEXER_FRAME MENU
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "&New File...\tCtrl+N",        IDM_FILE_NEWFILE
+        MENUITEM "&New File...",                IDM_FILE_NEWFILE
         MENUITEM "&Open File...\tCtrl+O",       IDM_FILE_OPENFILE
         MENUITEM "Open Device...\tCtrl+D",      IDM_FILE_OPENDEVICE
         MENUITEM "Open Process...\tCtrl+P",     IDM_FILE_OPENPROCESS
@@ -184,11 +184,10 @@ END
 
 IDR_HEXER_FRAME ACCELERATORS
 BEGIN
-    "N",            IDM_FILE_NEWFILE,       VIRTKEY, CONTROL, NOINVERT
-    "O",            IDM_FILE_OPENFILE,      VIRTKEY, CONTROL, NOINVERT
     "D",            IDM_FILE_OPENDEVICE,    VIRTKEY, CONTROL, NOINVERT
-    "S",            IDM_FILE_SAVE,          VIRTKEY, CONTROL, NOINVERT
+    "O",            IDM_FILE_OPENFILE,      VIRTKEY, CONTROL, NOINVERT
     "P",            IDM_FILE_OPENPROCESS,   VIRTKEY, CONTROL, NOINVERT
+    "S",            IDM_FILE_SAVE,          VIRTKEY, CONTROL, NOINVERT
 END
 
 

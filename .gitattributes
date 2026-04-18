@@ -1,2 +1,3 @@
 *.rc	diff
 *.rc2	diff
+Hexer/dep/sqlite/* linguist-vendored

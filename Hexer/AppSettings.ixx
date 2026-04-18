@@ -375,6 +375,7 @@ export class CAppSettings final {
 public:
 	using VecTemplates = std::vector<std::unique_ptr<HEXCTRL::HEXTEMPLATE>>;
 	using VecBkm = std::vector<HEXCTRL::HEXBKM>;
+	using SpnBkm = std::span<HEXCTRL::HEXBKM>;
 	using VecSpan = std::vector<HEXCTRL::HEXSPAN>;
 	using uptr_sqlite = std::unique_ptr < sqlite3, decltype([](sqlite3* pDB) {
 		auto res = sqlite3_close(pDB);
@@ -452,7 +453,7 @@ public:
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	void RFLRemoveFromList(const ut::DATAOPEN& dos);
 	void RFLUpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
-	void SaveBkms(std::wstring_view wsvDataName, const VecBkm& vecBkm);
+	void SaveBkms(std::wstring_view wsvDataName, SpnBkm spnBkm);
 	void SaveSettings();
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
 	void SetPaneStatus(UINT uPaneID, bool fVisible, bool fActive);
@@ -473,7 +474,7 @@ private:
 	[[nodiscard]] static auto DBGetDataIDByName(sqlite3* pDB, std::wstring_view wsvName) -> std::int64_t;
 	[[nodiscard]] static auto DBLoadBkmForDataID(sqlite3* pDB, std::int64_t i64DataID) -> VecBkm;
 	[[nodiscard]] static auto DBOpenDB(const wchar_t* pwszPathDB) -> sqlite3*;
-	static void DBSaveBkmForDataID(sqlite3* pDB, std::int64_t i64DataID, const VecBkm& vecBkm);
+	static void DBSaveBkmForDataID(sqlite3* pDB, std::int64_t i64DataID, SpnBkm spnBkm);
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
@@ -816,16 +817,16 @@ void CAppSettings::RFLUpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBIT
 	m_stRFL.UpdateMenuIcons(hBMPFile, hBMPDevice, hBMPProcess);
 }
 
-void CAppSettings::SaveBkms(std::wstring_view wsvDataName, const VecBkm& vecBkm)
+void CAppSettings::SaveBkms(std::wstring_view wsvDataName, SpnBkm spnBkm)
 {
-	if (vecBkm.empty()) {
+	if (spnBkm.empty()) {
 		return;
 	}
 
 	const uptr_sqlite pDB { DBOpenDB(ut::GetSQLiteDBName().data()) };
 	DBCreateTables(pDB.get());
 	const auto i64DataID = DBGetDataIDByName(pDB.get(), wsvDataName);
-	DBSaveBkmForDataID(pDB.get(), i64DataID, vecBkm);
+	DBSaveBkmForDataID(pDB.get(), i64DataID, spnBkm);
 }
 
 void CAppSettings::SaveSettings()
@@ -1189,7 +1190,7 @@ auto CAppSettings::DBOpenDB(const wchar_t* pwszPathDB)->sqlite3*
 	return pDB;
 }
 
-void CAppSettings::DBSaveBkmForDataID(sqlite3* pDB, std::int64_t i64DataID, const VecBkm& vecBkm)
+void CAppSettings::DBSaveBkmForDataID(sqlite3* pDB, std::int64_t i64DataID, SpnBkm spnBkm)
 {
 	//Remove all existing bookmarks.
 	const auto sql = std::format(L"DELETE FROM Bookmarks WHERE DataID = '{}'", i64DataID);
@@ -1201,14 +1202,14 @@ void CAppSettings::DBSaveBkmForDataID(sqlite3* pDB, std::int64_t i64DataID, cons
 	res = sqlite3_finalize(pSTMT);
 	assert(res == SQLITE_OK);
 
-	for (const auto vec : vecBkm) {
+	for (const auto bkm : spnBkm) {
 		std::wstring wstrVecSpan;
-		for (const auto vecSpan : vec.vecSpan) {
+		for (const auto vecSpan : bkm.vecSpan) {
 			wstrVecSpan += std::format(L"{},{},", vecSpan.ullOffset, vecSpan.ullSize);
 		}
-		const auto wstrHEXCOLOR = std::format(L"{},{}", vec.stClr.clrBk, vec.stClr.clrText);
+		const auto wstrHEXCOLOR = std::format(L"{},{}", bkm.stClr.clrBk, bkm.stClr.clrText);
 		const auto wstrInsert = std::format(L"INSERT INTO Bookmarks (DataID, VecSpan, Desc, HEXCOLOR)"
-			L"VALUES ('{}','{}','{}','{}');", i64DataID, wstrVecSpan, vec.wstrDesc, wstrHEXCOLOR);
+			L"VALUES ('{}','{}','{}','{}');", i64DataID, wstrVecSpan, bkm.wstrDesc, wstrHEXCOLOR);
 		sqlite3_stmt* pstmtInsert;
 		res = sqlite3_prepare16_v2(pDB, wstrInsert.data(), -1, &pstmtInsert, nullptr);
 		assert(res == SQLITE_OK);
