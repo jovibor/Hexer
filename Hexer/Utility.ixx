@@ -495,7 +495,8 @@ export namespace ut {
 	constexpr auto HEXCTRL_FLAG_TEMPLMGR_SWAP { 0x10ULL };
 	constexpr auto HEXCTRL_FLAG_DATAINTERP_HEX { 0x1ULL }; //Data Interpreter.
 	constexpr auto HEXCTRL_FLAG_DATAINTERP_BE { 0x2ULL };
-	constexpr auto HEXCTRL_FLAG_BKMMGR_HEX { 0x1ULL };	   //Bookmark Manager.
+	constexpr auto HEXCTRL_FLAG_BKMMGR_HEX { 0x1ULL };     //Bookmark Manager Hex.
+	constexpr auto HEXCTRL_FLAG_BKMMGR_TT { 0x2ULL };      //Bookmark Manager Tooltips.
 
 
 	namespace Log {

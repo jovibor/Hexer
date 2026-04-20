@@ -549,10 +549,16 @@ void CHexerView::UpdateDlgBkmMgr()const
 	const auto pHex = GetHexCtrl();
 	const auto u64Data = theApp.GetAppSettings().GetPaneData(IDC_PANE_BKMMGR);
 
-	const auto hWnd = pHex->GetDlgItemHandle(BKMMGR_CHK_HEX);
-	const auto pBtn = static_cast<CButton*>(CWnd::FromHandle(hWnd));
-	if (pBtn->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_BKMMGR_HEX) > 0) {
-		pBtn->SendMessageW(BM_CLICK);
+	const auto hWndHex = pHex->GetDlgItemHandle(BKMMGR_CHK_HEX);
+	const auto pBtnHex = static_cast<CButton*>(CWnd::FromHandle(hWndHex));
+	if (pBtnHex->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_BKMMGR_HEX) > 0) {
+		pBtnHex->SendMessageW(BM_CLICK);
+	}
+
+	const auto hWndTT = pHex->GetDlgItemHandle(BKMMGR_CHK_TT);
+	const auto pBtnTT = static_cast<CButton*>(CWnd::FromHandle(hWndTT));
+	if (pBtnTT->GetCheck() != (u64Data & ut::HEXCTRL_FLAG_BKMMGR_TT) > 0) {
+		pBtnTT->SendMessageW(BM_CLICK);
 	}
 }
 

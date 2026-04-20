@@ -147,6 +147,12 @@ auto CMainFrame::GetDlgDataBkmMgr()->std::uint64_t
 		ullData |= ut::HEXCTRL_FLAG_BKMMGR_HEX;
 	}
 
+	const auto hWndTT = pHex->GetDlgItemHandle(BKMMGR_CHK_TT);
+	const auto pBtnTT = static_cast<CButton*>(CWnd::FromHandle(hWndTT));
+	if (pBtnTT->GetCheck()) {
+		ullData |= ut::HEXCTRL_FLAG_BKMMGR_TT;
+	}
+
 	return ullData;
 }
 
