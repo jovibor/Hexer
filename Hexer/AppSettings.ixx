@@ -380,6 +380,9 @@ public:
 	using uptr_sqlite = std::unique_ptr < sqlite3, decltype([](sqlite3* pDB) {
 		auto res = sqlite3_close(pDB);
 		assert(res == SQLITE_OK); }) > ;
+	using uptr_stmt = std::unique_ptr < sqlite3_stmt, decltype([](sqlite3_stmt* pSTMT) {
+		auto res = sqlite3_finalize(pSTMT);
+		assert(res == SQLITE_OK); }) > ;
 	struct PANESTATUS {
 		bool fVisible : 1{};
 		bool fActive : 1{};
@@ -468,13 +471,15 @@ private:
 	[[nodiscard]] auto GetRegLOLPath()const -> const std::wstring&; //Last Opened List.
 	[[nodiscard]] auto GetRegRFLPath()const -> const std::wstring&; //Recent Files List.
 	[[nodiscard]] auto GetRegSettingsPath()const -> const std::wstring&;
+	[[nodiscard]] auto GetSQLiteDB()const -> sqlite3*;
 	void LoadHexCtrlTemplates();
 	void ShowInWindowsContextMenu(bool fShow);
 	static void DBCreateTables(sqlite3* pDB);
-	[[nodiscard]] static auto DBGetDataIDByName(sqlite3* pDB, std::wstring_view wsvName) -> std::int64_t;
-	[[nodiscard]] static auto DBLoadBkmForDataID(sqlite3* pDB, std::int64_t i64DataID) -> VecBkm;
-	[[nodiscard]] static auto DBOpenDB(const wchar_t* pwszPathDB) -> sqlite3*;
-	static void DBSaveBkmForDataID(sqlite3* pDB, std::int64_t i64DataID, SpnBkm spnBkm);
+	[[nodiscard]] static auto DBGetFileIDByName(sqlite3* pDB, std::wstring_view wsvFileName) -> std::int64_t;
+	[[nodiscard]] static auto DBLoadBkmForFileID(sqlite3* pDB, std::int64_t i64FileID) -> VecBkm;
+	[[nodiscard]] static auto DBOpenDB(const wchar_t* pwszPathDB) -> uptr_sqlite;
+	static void DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, SpnBkm spnBkm);
+	static void DBSaveHexCtrlSettings(sqlite3* pDB, const HEXCTRLSETTINGS& sett);
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
@@ -499,6 +504,7 @@ private:
 	std::wstring m_wstrAppName;         //Application name for registry paths.
 	VecDataOpen m_vecLOL;               //Last Opened Files list.
 	VecTemplates m_vecHexCtrlTemplates; //HexCtrl loaded templates.
+	uptr_sqlite m_upSQLiteDB;           //SQLite database pointer.
 	bool m_fLoaded { false };           //LoadSettings has succeeded.
 };
 
@@ -579,10 +585,8 @@ auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 
 auto CAppSettings::GetSavedBkms(std::wstring_view wsvDataName)const->VecBkm
 {
-	const uptr_sqlite pDB { DBOpenDB(ut::GetSQLiteDBName().data()) };
-	DBCreateTables(pDB.get());
-	const auto i64DataID = DBGetDataIDByName(pDB.get(), wsvDataName);
-	return DBLoadBkmForDataID(pDB.get(), i64DataID);
+	const auto pDB = GetSQLiteDB();
+	return DBLoadBkmForFileID(pDB, DBGetFileIDByName(pDB, wsvDataName));
 }
 
 bool CAppSettings::IsRFLInitialized()const {
@@ -594,6 +598,11 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 	assert(!wsvAppName.empty());
 	if (wsvAppName.empty())
 		return;
+
+	if (m_upSQLiteDB == nullptr) {
+		m_upSQLiteDB = DBOpenDB(ut::GetSQLiteDBName().data());
+		DBCreateTables(m_upSQLiteDB.get());
+	}
 
 	m_wstrAppName = wsvAppName;
 
@@ -819,14 +828,9 @@ void CAppSettings::RFLUpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBIT
 
 void CAppSettings::SaveBkms(std::wstring_view wsvDataName, SpnBkm spnBkm)
 {
-	if (spnBkm.empty()) {
-		return;
-	}
-
-	const uptr_sqlite pDB { DBOpenDB(ut::GetSQLiteDBName().data()) };
-	DBCreateTables(pDB.get());
-	const auto i64DataID = DBGetDataIDByName(pDB.get(), wsvDataName);
-	DBSaveBkmForDataID(pDB.get(), i64DataID, spnBkm);
+	const auto pDB = GetSQLiteDB();
+	const auto i64FileID = DBGetFileIDByName(pDB, wsvDataName);
+	DBSaveBkmForFileID(pDB, i64FileID, spnBkm);
 }
 
 void CAppSettings::SaveSettings()
@@ -1035,6 +1039,11 @@ auto CAppSettings::GetRegSettingsPath()const->const std::wstring&
 	return wstrSettings;
 }
 
+auto CAppSettings::GetSQLiteDB()const->sqlite3*
+{
+	return m_upSQLiteDB.get();
+}
+
 void CAppSettings::LoadHexCtrlTemplates()
 {
 	auto wstrDir = ut::GetModuleDir();
@@ -1083,75 +1092,65 @@ void CAppSettings::ShowInWindowsContextMenu(bool fShow)
 
 void CAppSettings::DBCreateTables(sqlite3* pDB)
 {
-	const wchar_t* sqlModulesCreate = L"CREATE TABLE IF NOT EXISTS Modules ("
-		L"DataID INTEGER NOT NULL UNIQUE,"
-		L"Name TEXT NOT NULL UNIQUE,"
-		L"PRIMARY KEY(DataID AUTOINCREMENT));";
+	const wchar_t* sqlModulesCreate = L"CREATE TABLE IF NOT EXISTS Files ("
+		L"FileID INTEGER PRIMARY KEY,"
+		L"Name   TEXT NOT NULL UNIQUE);";
 
-	sqlite3_stmt* pSTMT;
-	auto res = sqlite3_prepare16_v2(pDB, sqlModulesCreate, -1, &pSTMT, nullptr);
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlModulesCreate, -1, std::out_ptr(pSTMT), nullptr);
 	assert(res == SQLITE_OK);
-	res = sqlite3_step(pSTMT);
+	res = sqlite3_step(pSTMT.get());
 	assert(res == SQLITE_DONE);
-	res = sqlite3_finalize(pSTMT);
-	assert(res == SQLITE_OK);
 
 	const wchar_t* sqlBkmsCreate = L"CREATE TABLE IF NOT EXISTS Bookmarks ("
-		L"DataID   INTEGER NOT NULL,"
+		L"FileID   INTEGER NOT NULL,"
 		L"VecSpan  TEXT NOT NULL,"
 		L"Desc     TEXT,"
 		L"HEXCOLOR TEXT);";
-	res = sqlite3_prepare16_v2(pDB, sqlBkmsCreate, -1, &pSTMT, nullptr);
+	res = sqlite3_prepare16_v2(pDB, sqlBkmsCreate, -1, std::out_ptr(pSTMT), nullptr);
 	assert(res == SQLITE_OK);
-	res = sqlite3_step(pSTMT);
+	res = sqlite3_step(pSTMT.get());
 	assert(res == SQLITE_DONE);
-	res = sqlite3_finalize(pSTMT);
+
+	const wchar_t* sqlSettHexCtrlCreate = L"CREATE TABLE IF NOT EXISTS Settings_HexCtrl ("
+		L"Name TEXT PRIMARY KEY,"
+		L"Data TEXT NOT NULL);";
+	res = sqlite3_prepare16_v2(pDB, sqlSettHexCtrlCreate, -1, std::out_ptr(pSTMT), nullptr);
 	assert(res == SQLITE_OK);
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
 }
 
-auto CAppSettings::DBGetDataIDByName(sqlite3* pDB, std::wstring_view wsvName)->std::int64_t
+auto CAppSettings::DBGetFileIDByName(sqlite3* pDB, std::wstring_view wsvFileName)->std::int64_t
 {
-	const auto sql = std::format(L"Select DataID FROM Modules WHERE Name = '{}'", wsvName);
-	sqlite3_stmt* pSTMT;
-	auto res = sqlite3_prepare16_v2(pDB, sql.data(), -1, &pSTMT, nullptr);
+	const auto sqlSelect = std::format(L"Select FileID FROM Files WHERE Name = '{}'", wsvFileName);
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlSelect.data(), -1, std::out_ptr(pSTMT), nullptr);
 	assert(res == SQLITE_OK);
 
-	std::int64_t i64ID { };
-	if (sqlite3_step(pSTMT) == SQLITE_ROW) {
-		i64ID = sqlite3_column_int64(pSTMT, 0);
-	}
-	else {
-		const auto wstrInsert = std::format(L"INSERT INTO MODULES (Name) VALUES ('{}');", wsvName);
-		sqlite3_stmt* pstmtInsert;
-		res = sqlite3_prepare16_v2(pDB, wstrInsert.data(), -1, &pstmtInsert, nullptr);
-		assert(res == SQLITE_OK);
-		res = sqlite3_step(pstmtInsert);
-		assert(res == SQLITE_DONE);
-		res = sqlite3_finalize(pstmtInsert);
-		assert(res == SQLITE_OK);
-
-		if (sqlite3_step(pSTMT) == SQLITE_ROW) {
-			i64ID = sqlite3_column_int64(pSTMT, 0);
-		}
+	if (sqlite3_step(pSTMT.get()) == SQLITE_ROW) {
+		return sqlite3_column_int64(pSTMT.get(), 0);
 	}
 
-	res = sqlite3_finalize(pSTMT);
+	const auto sqlInsert = std::format(L"INSERT INTO Files (Name) VALUES ('{}');", wsvFileName);
+	res = sqlite3_prepare16_v2(pDB, sqlInsert.data(), -1, std::out_ptr(pSTMT), nullptr);
 	assert(res == SQLITE_OK);
-
-	return i64ID;
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
+	return sqlite3_last_insert_rowid(pDB);
 }
 
-auto CAppSettings::DBLoadBkmForDataID(sqlite3* pDB, std::int64_t i64DataID)->VecBkm
+auto CAppSettings::DBLoadBkmForFileID(sqlite3* pDB, std::int64_t i64FileID)->VecBkm
 {
-	const auto sql = std::format(L"Select * FROM Bookmarks WHERE DataID = '{}'", i64DataID);
-	sqlite3_stmt* pSTMT;
-	auto res = sqlite3_prepare16_v2(pDB, sql.data(), -1, &pSTMT, nullptr);
+	const auto sqlSelect = std::format(L"Select * FROM Bookmarks WHERE FileID = '{}'", i64FileID);
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlSelect.data(), -1, std::out_ptr(pSTMT), nullptr);
 	assert(res == SQLITE_OK);
 
 	VecBkm vecBkm;
-	while (sqlite3_step(pSTMT) == SQLITE_ROW) {
+	while (sqlite3_step(pSTMT.get()) == SQLITE_ROW) {
 		VecSpan vecSpan;
-		const std::wstring_view wsvVecSpan = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT, 1)); //VecSpan.
+		const std::wstring_view wsvVecSpan = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 1)); //VecSpan.
 		std::uint64_t ullOffset { };
 		for (const auto [index, digits] : wsvVecSpan | std::views::split(L',') | std::views::enumerate) {
 			const auto ullCurr = stn::StrToUInt64(std::wstring_view { digits }).value_or(0ULL);
@@ -1163,8 +1162,8 @@ auto CAppSettings::DBLoadBkmForDataID(sqlite3* pDB, std::int64_t i64DataID)->Vec
 			}
 		}
 
-		const auto pwszDesc = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT, 2)); //Desc.
-		const std::wstring_view wsvHEXCOLOR = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT, 3)); //HEXCOLOR.
+		const auto pwszDesc = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 2)); //Desc.
+		const std::wstring_view wsvHEXCOLOR = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 3)); //HEXCOLOR.
 		auto rngClr = wsvHEXCOLOR | std::views::split(L',');
 		HEXCTRL::HEXCOLOR clr;
 		if (auto it = rngClr.begin(); it != rngClr.end()) {
@@ -1176,48 +1175,56 @@ auto CAppSettings::DBLoadBkmForDataID(sqlite3* pDB, std::int64_t i64DataID)->Vec
 		vecBkm.emplace_back(HEXCTRL::HEXBKM { .vecSpan { std::move(vecSpan) }, .wstrDesc { pwszDesc }, .stClr { clr } });
 	}
 
-	res = sqlite3_finalize(pSTMT);
-	assert(res == SQLITE_OK);
-
 	return vecBkm;
 }
 
-auto CAppSettings::DBOpenDB(const wchar_t* pwszPathDB)->sqlite3*
+auto CAppSettings::DBOpenDB(const wchar_t* pwszPathDB)->uptr_sqlite
 {
 	sqlite3* pDB;
 	auto res = sqlite3_open16(pwszPathDB, &pDB);
 	assert(res == SQLITE_OK);
-	return pDB;
+	return uptr_sqlite(pDB);
 }
 
-void CAppSettings::DBSaveBkmForDataID(sqlite3* pDB, std::int64_t i64DataID, SpnBkm spnBkm)
+void CAppSettings::DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, SpnBkm spnBkm)
 {
-	//Remove all existing bookmarks.
-	const auto sql = std::format(L"DELETE FROM Bookmarks WHERE DataID = '{}'", i64DataID);
-	sqlite3_stmt* pSTMT;
-	auto res = sqlite3_prepare16_v2(pDB, sql.data(), -1, &pSTMT, nullptr);
+	//Remove all existing bookmarks for given FileID.
+	const auto sqlDelete = std::format(L"DELETE FROM Bookmarks WHERE FileID = '{}'", i64FileID);
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlDelete.data(), -1, std::out_ptr(pSTMT), nullptr);
 	assert(res == SQLITE_OK);
-	res = sqlite3_step(pSTMT);
+	res = sqlite3_step(pSTMT.get());
 	assert(res == SQLITE_DONE);
-	res = sqlite3_finalize(pSTMT);
-	assert(res == SQLITE_OK);
 
+	//Save current bookmarks.
 	for (const auto bkm : spnBkm) {
 		std::wstring wstrVecSpan;
 		for (const auto vecSpan : bkm.vecSpan) {
 			wstrVecSpan += std::format(L"{},{},", vecSpan.ullOffset, vecSpan.ullSize);
 		}
 		const auto wstrHEXCOLOR = std::format(L"{},{}", bkm.stClr.clrBk, bkm.stClr.clrText);
-		const auto wstrInsert = std::format(L"INSERT INTO Bookmarks (DataID, VecSpan, Desc, HEXCOLOR)"
-			L"VALUES ('{}','{}','{}','{}');", i64DataID, wstrVecSpan, bkm.wstrDesc, wstrHEXCOLOR);
-		sqlite3_stmt* pstmtInsert;
-		res = sqlite3_prepare16_v2(pDB, wstrInsert.data(), -1, &pstmtInsert, nullptr);
+		const auto sqlInsert = std::format(L"INSERT INTO Bookmarks (FileID, VecSpan, Desc, HEXCOLOR)"
+			L"VALUES ('{}','{}','{}','{}');", i64FileID, wstrVecSpan, bkm.wstrDesc, wstrHEXCOLOR);
+		res = sqlite3_prepare16_v2(pDB, sqlInsert.data(), -1, std::out_ptr(pSTMT), nullptr);
 		assert(res == SQLITE_OK);
-		res = sqlite3_step(pstmtInsert);
+		res = sqlite3_step(pSTMT.get());
 		assert(res == SQLITE_DONE);
-		res = sqlite3_finalize(pstmtInsert);
-		assert(res == SQLITE_OK);
 	}
+}
+
+void CAppSettings::DBSaveHexCtrlSettings(sqlite3* pDB, const HEXCTRLSETTINGS& sett)
+{
+	(void)sett.dwCapacity;
+	const auto sqlHexSettInsert = L"INSERT INTO Settings_HexCtrl(Name, Data)"
+		L"VALUES({HexCtrlSettName}, {SettData})"
+		L"ON CONFLICT(Name)"
+		L"DO UPDATE SET Data = excluded.Data";
+
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlHexSettInsert, -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
 }
 
 auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS

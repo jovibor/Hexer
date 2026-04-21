@@ -169,7 +169,7 @@ void CHexerView::HexCtrlLoadSavedBkms()
 {
 	const auto pDoc = GetDocument();
 	const auto pHex = GetHexCtrl();
-	const auto vecBkm = theApp.GetAppSettings().GetSavedBkms(pDoc->GetDataPath());
+	const auto vecBkm = theApp.GetAppSettings().GetSavedBkms(pDoc->GetUniqueDocName());
 	const auto pBkm = pHex->GetBookmarks();
 	for (const auto& bkm : vecBkm) {
 		pBkm->AddBkm(bkm);
@@ -181,7 +181,7 @@ void CHexerView::HexCtrlSaveBkms()
 	const auto pDoc = GetDocument();
 	const auto pHex = GetHexCtrl();
 	const auto pBkm = pHex->GetBookmarks();
-	theApp.GetAppSettings().SaveBkms(pDoc->GetDataPath(), pBkm->GetAllAsArray());
+	theApp.GetAppSettings().SaveBkms(pDoc->GetUniqueDocName(), pBkm->GetAllAsArray());
 }
 
 void CHexerView::HexCtrlSetData(bool fAdjust)

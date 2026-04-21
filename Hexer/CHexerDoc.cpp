@@ -81,6 +81,11 @@ auto CHexerDoc::GetProcID()const->DWORD {
 	return m_stDataLoader.GetProcID();
 }
 
+auto CHexerDoc::GetUniqueDocName()->std::wstring_view
+{
+	return m_strPathName.GetString();
+}
+
 auto CHexerDoc::GetVecProcMemory()const->const std::vector<MEMORY_BASIC_INFORMATION>& {
 	return m_stDataLoader.GetVecProcMemory();
 }
@@ -132,10 +137,10 @@ bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
 	m_wstrDataPath = dos.wstrDataPath;
 	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 	m_wstrFriendlyName = dos.wstrFriendlyName;
-	auto& refSett = theApp.GetAppSettings();
-	if (const auto expOpen = m_stDataLoader.Open(dos, refSett.GetGeneralSettings().stDAC,
-		refSett.GetGeneralSettings().eDataIOMode); !expOpen) {
-		refSett.RFLRemoveFromList(dos);
+	auto& sett = theApp.GetAppSettings();
+	if (const auto expOpen = m_stDataLoader.Open(dos, sett.GetGeneralSettings().stDAC,
+		sett.GetGeneralSettings().eDataIOMode); !expOpen) {
+		sett.RFLRemoveFromList(dos);
 		const auto wstrLog = std::format(L"{} open failed: {} \r\n{}", ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
 			ut::GetLastErrorWstr(expOpen.error()));
 		MessageBoxW(AfxGetMainWnd()->m_hWnd, wstrLog.data(), L"Opening error", MB_ICONERROR);
@@ -144,8 +149,8 @@ bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
 		return false;
 	}
 
-	refSett.RFLAddToList(dos);
-	refSett.LOLAddToList(dos);
+	sett.RFLAddToList(dos);
+	sett.LOLAddToList(dos);
 	m_strPathName = GetUniqueDocName(dos).data();
 	m_bEmbedded = FALSE;
 	SetTitle(GetDocTitle(dos).data());
@@ -166,7 +171,7 @@ bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
 		}
 		}();
 
-	m_hDocIcon = refSett.GetIconDataForCmd(uCmdID)->hIcon;
+	m_hDocIcon = sett.GetIconDataForCmd(uCmdID)->hIcon;
 	const auto wstrLog = std::format(L"{} opened: {} ({})", ut::GetWstrEOpenMode(GetOpenMode()), GetFileName(),
 		ut::GetWstrDATAACCESS(GetDataAccessMode()));
 	ut::Log::AddLogEntryInfo(wstrLog);
