@@ -317,13 +317,7 @@ public:
 		bool     fScrollLines { };
 		bool     fInfoBar { };
 	};
-	struct ICONDATA {
-		UINT uIDCmd { };
-		UINT uIDSVG { };
-		HBITMAP hBmp { };
-		HICON hIcon { };
-		void Clear()const { ::DeleteObject(hBmp); ::DestroyIcon(hIcon); }
-	};
+	struct ICONDATA;
 	CAppSettings() = default;
 	CAppSettings(const CAppSettings&) = delete;
 	CAppSettings(CAppSettings&&) = delete;
@@ -374,39 +368,49 @@ private:
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
-	std::vector<ICONDATA> m_vecIconData {
-		{ ICONDATA { .uIDCmd { IDM_FILE_NEWFILE }, .uIDSVG { IDR_SVG_FILE_NEW } } },
-		{ ICONDATA { .uIDCmd { IDM_FILE_OPENFILE }, .uIDSVG { IDR_SVG_FILE_OPEN } } },
-		{ ICONDATA { .uIDCmd { IDM_FILE_OPENDEVICE }, .uIDSVG { IDR_SVG_DEVICE_OPEN } } },
-		{ ICONDATA { .uIDCmd { IDM_FILE_OPENPROCESS }, .uIDSVG { IDR_SVG_PROCESS_OPEN } } },
-		{ ICONDATA { .uIDCmd { IDM_FILE_SAVE }, .uIDSVG { IDR_SVG_SAVE } } },
-		{ ICONDATA { .uIDCmd { IDM_TOOLS_SETTINGS }, .uIDSVG { IDR_SVG_SETTINGS } } },
-		{ ICONDATA { .uIDCmd { IDM_EDIT_COPYHEX }, .uIDSVG { IDR_SVG_CLPBRD_COPYHEX } } },
-		{ ICONDATA { .uIDCmd { IDM_EDIT_PASTEHEX }, .uIDSVG { IDR_SVG_CLPBRD_PASTEHEX } } },
-		{ ICONDATA { .uIDCmd { IDM_FIND_SEARCH }, .uIDSVG { IDR_SVG_SEARCH } } },
-		{ ICONDATA { .uIDCmd { IDM_VIEW_BKMMGR }, .uIDSVG { IDR_SVG_BKM } } },
-		{ ICONDATA { .uIDCmd { IDR_SVG_MODIFY }, .uIDSVG { IDR_SVG_MODIFY } } },
-		{ ICONDATA { .uIDCmd { IDR_SVG_FONTCHOOSE }, .uIDSVG { IDR_SVG_FONTCHOOSE } } }
-	};
+	static std::vector<ICONDATA> m_vecIconData;
 	CAppSettingsRFL m_stRFL;
-	PANESETTINGS m_stPaneSettings;      //"Panes" settings data.
-	GENERALSETTINGS m_stGeneralData;    //"General" settings data.
-	HEXCTRLSETTINGS m_stHexCtrlData;    //"HexCtrl" settings data.
+	PANESETTINGS m_stPaneSett;          //"Panes" settings data.
+	GENERALSETTINGS m_stGeneralSett;    //"General" settings data.
+	HEXCTRLSETTINGS m_stHexCtrlSett;    //"HexCtrl" settings data.
 	VecTemplates m_vecHexCtrlTemplates; //HexCtrl loaded templates.
 	std::wstring m_wstrAppName;         //Application name for registry paths.
 	uptr_sqlite m_upSQLiteDB;           //SQLite database pointer.
 	bool m_fLoaded { false };           //LoadSettings has succeeded.
 };
 
+struct CAppSettings::ICONDATA {
+	UINT uIDCmd { };
+	UINT uIDSVG { };
+	HBITMAP hBmp { };
+	HICON hIcon { };
+	void Clear()const { ::DeleteObject(hBmp); ::DestroyIcon(hIcon); }
+};
+
+std::vector<CAppSettings::ICONDATA> CAppSettings::m_vecIconData {
+	{ ICONDATA { .uIDCmd { IDM_FILE_NEWFILE }, .uIDSVG { IDR_SVG_FILE_NEW } } },
+	{ ICONDATA { .uIDCmd { IDM_FILE_OPENFILE }, .uIDSVG { IDR_SVG_FILE_OPEN } } },
+	{ ICONDATA { .uIDCmd { IDM_FILE_OPENDEVICE }, .uIDSVG { IDR_SVG_DEVICE_OPEN } } },
+	{ ICONDATA { .uIDCmd { IDM_FILE_OPENPROCESS }, .uIDSVG { IDR_SVG_PROCESS_OPEN } } },
+	{ ICONDATA { .uIDCmd { IDM_FILE_SAVE }, .uIDSVG { IDR_SVG_SAVE } } },
+	{ ICONDATA { .uIDCmd { IDM_TOOLS_SETTINGS }, .uIDSVG { IDR_SVG_SETTINGS } } },
+	{ ICONDATA { .uIDCmd { IDM_EDIT_COPYHEX }, .uIDSVG { IDR_SVG_CLPBRD_COPYHEX } } },
+	{ ICONDATA { .uIDCmd { IDM_EDIT_PASTEHEX }, .uIDSVG { IDR_SVG_CLPBRD_PASTEHEX } } },
+	{ ICONDATA { .uIDCmd { IDM_FIND_SEARCH }, .uIDSVG { IDR_SVG_SEARCH } } },
+	{ ICONDATA { .uIDCmd { IDM_VIEW_BKMMGR }, .uIDSVG { IDR_SVG_BKM } } },
+	{ ICONDATA { .uIDCmd { IDR_SVG_MODIFY }, .uIDSVG { IDR_SVG_MODIFY } } },
+	{ ICONDATA { .uIDCmd { IDR_SVG_FONTCHOOSE }, .uIDSVG { IDR_SVG_FONTCHOOSE } } }
+};
+
 
 auto CAppSettings::GetGeneralSettings()->GENERALSETTINGS&
 {
-	return m_stGeneralData;
+	return m_stGeneralSett;
 }
 
 auto CAppSettings::GetHexCtrlSettings()->HEXCTRLSETTINGS&
 {
-	return m_stHexCtrlData;
+	return m_stHexCtrlSett;
 }
 
 auto CAppSettings::GetHexCtrlTemplates()const->const VecTemplates&
@@ -653,8 +657,8 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 
 void CAppSettings::OnSettingsChanged()
 {
-	ShowInWindowsContextMenu(m_stGeneralData.fWindowsMenu);
-	m_stRFL.SetRFLSize(m_stGeneralData.dwRFLSize);
+	ShowInWindowsContextMenu(m_stGeneralSett.fWindowsMenu);
+	m_stRFL.SetRFLSize(m_stGeneralSett.dwRFLSize);
 }
 
 void CAppSettings::RecreateCMDIcons(int iWidth, int iHeight) {
@@ -885,11 +889,11 @@ auto CAppSettings::GetAppName()const->const std::wstring& {
 }
 
 auto CAppSettings::GetPanesSettings()->PANESETTINGS& {
-	return m_stPaneSettings;
+	return m_stPaneSett;
 }
 
 auto CAppSettings::GetPanesSettings()const->const PANESETTINGS& {
-	return m_stPaneSettings;
+	return m_stPaneSett;
 }
 
 auto CAppSettings::GetRegBasePath()const->const std::wstring&
@@ -977,7 +981,7 @@ void CAppSettings::DBCreateTables(sqlite3* pDB)
 		L"FileID   INTEGER NOT NULL,"
 		L"VecSpan  TEXT NOT NULL,"
 		L"Desc     TEXT,"
-		L"HEXCOLOR TEXT);";
+		L"HEXCOLOR INTEGER NOT NULL);";
 	res = sqlite3_prepare16_v2(pDB, sqlBkmsCreate, -1, std::out_ptr(pSTMT), nullptr);
 	assert(res == SQLITE_OK);
 	res = sqlite3_step(pSTMT.get());
@@ -1060,15 +1064,9 @@ auto CAppSettings::DBLoadBkmForFileID(sqlite3* pDB, std::int64_t i64FileID)->Vec
 		}
 
 		const auto pwszDesc = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 2)); //Desc.
-		const std::wstring_view wsvHEXCOLOR = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 3)); //HEXCOLOR.
-		auto rngClr = wsvHEXCOLOR | std::views::split(L',');
-		HEXCTRL::HEXCOLOR clr;
-		if (auto it = rngClr.begin(); it != rngClr.end()) {
-			clr.clrBk = stn::StrToUInt32(std::wstring_view { *it }).value_or(0UL);
-			if (++it != rngClr.end()) {
-				clr.clrText = stn::StrToUInt32(std::wstring_view { *it }).value_or(0UL);
-			}
-		}
+		const std::uint64_t u64Clr = sqlite3_column_int64(pSTMT.get(), 3);
+		const HEXCTRL::HEXCOLOR clr { .clrBk { static_cast<DWORD>((u64Clr >> 32) & 0xFFFFFFFFU) },
+			.clrText { static_cast<DWORD>(u64Clr & 0xFFFFFFFFU) } };
 		vecBkm.emplace_back(HEXCTRL::HEXBKM { .vecSpan { std::move(vecSpan) }, .wstrDesc { pwszDesc }, .stClr { clr } });
 	}
 
@@ -1118,9 +1116,11 @@ void CAppSettings::DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, SpnB
 		for (const auto& vecSpan : bkm.vecSpan) {
 			wstrVecSpan += std::format(L"{},{},", vecSpan.ullOffset, vecSpan.ullSize);
 		}
-		const auto wstrHEXCOLOR = std::format(L"{},{}", bkm.stClr.clrBk, bkm.stClr.clrText);
+
+		//Combine two HEXCOLOR DWORDs into one std::uint64_t, for storing.
+		const std::uint64_t u64Clr = static_cast<std::uint64_t>(bkm.stClr.clrBk) << 32 | bkm.stClr.clrText;
 		const auto sqlInsert = std::format(L"INSERT INTO Bookmarks (FileID, VecSpan, Desc, HEXCOLOR)"
-			L"VALUES ('{}','{}','{}','{}');", i64FileID, wstrVecSpan, bkm.wstrDesc, wstrHEXCOLOR);
+			L"VALUES ('{}','{}','{}','{}');", i64FileID, wstrVecSpan, bkm.wstrDesc, u64Clr);
 		res = sqlite3_prepare16_v2(pDB, sqlInsert.data(), -1, std::out_ptr(pSTMT), nullptr);
 		assert(res == SQLITE_OK);
 		res = sqlite3_step(pSTMT.get());
