@@ -472,7 +472,7 @@ export namespace ut {
 		};
 	};
 
-	struct DATAINFO { //Data for the CDlgLogger dialog.
+	struct DATAINFO { //Data for the CDlgDataInfo dialog.
 		std::wstring_view wsvDataPath;
 		std::wstring_view wsvFileName;
 		std::wstring_view wsvFriendlyName;

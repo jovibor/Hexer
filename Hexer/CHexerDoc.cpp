@@ -41,8 +41,13 @@ auto CHexerDoc::GetDataIOMode()const->ut::EDataIOMode {
 	return m_stDataLoader.GetDataIOMode();
 }
 
+auto CHexerDoc::GetDataOpen()const->const ut::DATAOPEN&
+{
+	return m_dos;
+}
+
 auto CHexerDoc::GetDataPath()const->const std::wstring& {
-	return m_wstrDataPath;
+	return m_dos.wstrDataPath;
 }
 
 auto CHexerDoc::GetDataSize()const->std::uint64_t {
@@ -62,7 +67,7 @@ auto CHexerDoc::GetFileName()const->const std::wstring& {
 }
 
 auto CHexerDoc::GetFriendlyName()const->const std::wstring& {
-	return m_wstrFriendlyName;
+	return m_dos.wstrFriendlyName;
 }
 
 auto CHexerDoc::GetMaxVirtOffset()const->std::uint64_t {
@@ -134,9 +139,8 @@ bool CHexerDoc::IsProcess()const {
 
 bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
 {
-	m_wstrDataPath = dos.wstrDataPath;
-	m_wstrFileName = m_wstrDataPath.substr(m_wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
-	m_wstrFriendlyName = dos.wstrFriendlyName;
+	m_dos = dos;
+	m_wstrFileName = m_dos.wstrDataPath.substr(m_dos.wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 	auto& sett = theApp.GetAppSettings();
 	if (const auto expOpen = m_stDataLoader.Open(dos, sett.GetGeneralSettings().stDAC,
 		sett.GetGeneralSettings().eDataIOMode); !expOpen) {
@@ -150,7 +154,6 @@ bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
 	}
 
 	sett.RFLAddToList(dos);
-	sett.LOLAddToList(dos);
 	m_strPathName = GetUniqueDocName(dos).data();
 	m_bEmbedded = FALSE;
 	SetTitle(GetDocTitle(dos).data());
@@ -209,7 +212,6 @@ void CHexerDoc::OnCloseDocument()
 		}
 
 		ut::Log::AddLogEntryInfo(wstrInfo);
-		theApp.GetAppSettings().LOLRemoveFromList({ .wstrDataPath { GetDataPath() }, .dwProcID { GetProcID() } });
 	}
 
 	CDocument::OnCloseDocument();

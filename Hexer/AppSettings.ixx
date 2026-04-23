@@ -30,7 +30,11 @@ export module AppSettings;
 
 import Utility;
 
+using uptr_stmt = std::unique_ptr < sqlite3_stmt, decltype([](sqlite3_stmt* pSTMT) {
+	auto res = sqlite3_finalize(pSTMT);
+	assert(res == SQLITE_OK); }) > ;
 using VecDataOpen = std::vector<ut::DATAOPEN>;
+using SpnDataOpen = std::span<const ut::DATAOPEN>;
 
 //CAppSettingsRFL.
 class CAppSettingsRFL final //Recent Files List.
@@ -39,23 +43,20 @@ public:
 	CAppSettingsRFL() = default;
 	void AddToList(const ut::DATAOPEN& dos);
 	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const -> ut::DATAOPEN;
-	void Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry, HBITMAP hBMPFile, HBITMAP hBMPDevice,
-		HBITMAP hBMPProcess, const std::wstring& wstrRFLRegPath);
+	void Initialize(sqlite3* pDB, HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
+		HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	[[nodiscard]] bool IsInitialized()const;
 	void RemoveFromList(const ut::DATAOPEN& dos);
 	void SetRFLSize(DWORD dwRFLSize);
-	void SaveSettings()const;
+	void SaveSettings(sqlite3* pDB)const;
 	void UpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
-	[[nodiscard]] static void AddToListBeginning(const ut::DATAOPEN& dos, VecDataOpen& vecData);
-	[[nodiscard]] static auto ReadRegData(const wchar_t* pwszRegPath) -> VecDataOpen;
-	[[nodiscard]] static void SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen& vecData);
+	[[nodiscard]] static auto DBLoadRecentFiles(sqlite3* pDB) -> VecDataOpen;
+	static void DBSaveRecentFiles(sqlite3* pDB, SpnDataOpen spnDataOpen);
 private:
-	[[nodiscard]] auto GetRegRFLPath()const -> const wchar_t*;
 	void RebuildRFLMenu();
 	void UpdateMenuIcons();
 private:
 	VecDataOpen m_vecRFL;      //Recent Files List data.
-	const wchar_t* m_pwszRFLRegPath { };
 	HMENU m_hMenu { };
 	HBITMAP m_hBMPFile { };    //Bitmap for file icon.
 	HBITMAP m_hBMPDevice { };  //Bitmap for device icon.
@@ -67,7 +68,15 @@ private:
 
 void CAppSettingsRFL::AddToList(const ut::DATAOPEN& dos)
 {
-	AddToListBeginning(dos, m_vecRFL);
+	using enum ut::EOpenMode;
+
+	//Remove any duplicates. Processes can have same names but different IDs.
+	std::erase_if(m_vecRFL, [&dos](const ut::DATAOPEN& refData) { return refData == dos; });
+	const auto eOpenMode = dos.eOpenMode == NEW_FILE ? OPEN_FILE : dos.eOpenMode;
+	m_vecRFL.emplace(m_vecRFL.begin(), ut::DATAOPEN {
+		.wstrDataPath { dos.wstrDataPath }, .wstrFriendlyName { dos.wstrFriendlyName },
+		.dwProcID { dos.dwProcID }, .eOpenMode { eOpenMode } });
+
 	if (m_vecRFL.size() > m_dwRFLSize) {
 		m_vecRFL.resize(m_dwRFLSize);
 	}
@@ -88,8 +97,8 @@ auto CAppSettingsRFL::GetDataFromMenuID(UINT uID)const->ut::DATAOPEN
 	return m_vecRFL[uIndex];
 }
 
-void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
-	HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess, const std::wstring& wstrRFLRegPath) {
+void CAppSettingsRFL::Initialize(sqlite3* pDB, HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
+	HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess) {
 	assert(IsMenu(hMenu));
 	if (!IsMenu(hMenu)) {
 		return;
@@ -101,9 +110,9 @@ void CAppSettingsRFL::Initialize(HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
 	m_hBMPFile = hBMPFile;
 	m_hBMPDevice = hBMPDevice;
 	m_hBMPProcess = hBMPProcess;
-	m_pwszRFLRegPath = wstrRFLRegPath.data();
 	m_fInit = true;
-	m_vecRFL = ReadRegData(GetRegRFLPath());
+	m_vecRFL = DBLoadRecentFiles(pDB);
+
 	if (m_vecRFL.size() > m_dwRFLSize) {
 		m_vecRFL.resize(m_dwRFLSize);
 	}
@@ -137,13 +146,13 @@ void CAppSettingsRFL::SetRFLSize(DWORD dwRFLSize)
 	}
 }
 
-void CAppSettingsRFL::SaveSettings()const
+void CAppSettingsRFL::SaveSettings(sqlite3* pDB)const
 {
 	assert(m_fInit);
 	if (!m_fInit)
 		return;
 
-	SaveRegData(GetRegRFLPath(), m_vecRFL);
+	DBSaveRecentFiles(pDB, m_vecRFL);
 }
 
 void CAppSettingsRFL::UpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess) {
@@ -153,157 +162,43 @@ void CAppSettingsRFL::UpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBIT
 	UpdateMenuIcons();
 }
 
-auto CAppSettingsRFL::GetRegRFLPath()const->const wchar_t*
+auto CAppSettingsRFL::DBLoadRecentFiles(sqlite3* pDB)->VecDataOpen
 {
-	return m_pwszRFLRegPath;
-}
+	const auto sqlSelect = L"Select * FROM RecentFiles";
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlSelect, -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
 
-void CAppSettingsRFL::AddToListBeginning(const ut::DATAOPEN& dos, VecDataOpen& vecData)
-{
-	using enum ut::EOpenMode;
-	//Remove any duplicates. Processes can have same names but different IDs.
-	std::erase_if(vecData, [&dos](const ut::DATAOPEN& refData) { return refData == dos; });
-	const auto eOpenMode = dos.eOpenMode == NEW_FILE ? OPEN_FILE : dos.eOpenMode;
-	vecData.emplace(vecData.begin(), ut::DATAOPEN {
-		.wstrDataPath { dos.wstrDataPath }, .wstrFriendlyName { dos.wstrFriendlyName },
-		.dwProcID { dos.dwProcID }, .eOpenMode { eOpenMode } });
-}
-
-auto CAppSettingsRFL::ReadRegData(const wchar_t* pwszRegPath)->VecDataOpen
-{
-	CRegKey reg;
-	if (reg.Open(HKEY_CURRENT_USER, pwszRegPath) != ERROR_SUCCESS) {
-		return { };
+	VecDataOpen vecDataOpen;
+	while (sqlite3_step(pSTMT.get()) == SQLITE_ROW) {
+		const auto pwszFilePath = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 0)); //FilePath.
+		const auto dwProcID = sqlite3_column_int(pSTMT.get(), 1);  //ProcID.
+		const auto eOpenMode = sqlite3_column_int(pSTMT.get(), 2); //EOpenMode.
+		vecDataOpen.emplace_back(ut::DATAOPEN { .wstrDataPath { pwszFilePath },
+			.dwProcID { static_cast<DWORD>(dwProcID) }, .eOpenMode { static_cast<ut::EOpenMode>(eOpenMode) } });
 	}
 
-	VecDataOpen vecRet;
-	int iCode { };
-	wchar_t buffName[32];
-	wchar_t buffData[MAX_PATH];
-	DWORD dwIndex = 0;
-	while (iCode != ERROR_NO_MORE_ITEMS) {
-		DWORD dwNameSize { sizeof(buffName) / sizeof(wchar_t) };
-		DWORD dwDataType { };
-		DWORD dwDataSize { MAX_PATH * sizeof(wchar_t) };
-		iCode = RegEnumValueW(reg, dwIndex++, buffName, &dwNameSize, nullptr, &dwDataType,
-			reinterpret_cast<LPBYTE>(&buffData), &dwDataSize);
-
-		if (iCode == ERROR_SUCCESS && dwDataType == REG_SZ) {
-			const auto wsvName = std::wstring_view { buffName };
-
-			using enum ut::EOpenMode;
-			ut::EOpenMode eOpenMode { };
-			if (const auto it = wsvName.find(L':'); it != std::wstring_view::npos) {
-				const auto wsvMode = wsvName.substr(it + 1);
-				const auto optEOpenMode = ut::GetEOpenModeWstr(wsvMode);
-				if (!optEOpenMode)
-					continue;
-
-				eOpenMode = *optEOpenMode;
-			}
-
-			ut::DATAOPEN stDOS { .eOpenMode { eOpenMode } };
-			const auto wsvData = std::wstring_view { buffData };
-			if (eOpenMode == OPEN_PROC) {
-				const auto nID = wsvData.find(L"ID:");
-				if (nID == std::wstring_view::npos) {
-					continue;
-				}
-
-				const auto nIDStart = nID + 3;
-				const auto nIDEnd = wsvData.find(L';', nIDStart);
-				if (nIDEnd == std::wstring_view::npos) {
-					continue;
-				}
-
-				const auto optID = stn::StrToUInt32(wsvData.substr(nIDStart, nIDEnd - nIDStart));
-				if (!optID) {
-					continue;
-				}
-
-				stDOS.dwProcID = *optID; //Process ID.
-
-				const auto nName = wsvData.find(L"Name:", nIDEnd + 1);
-				if (nName == std::wstring_view::npos) {
-					continue;
-				}
-
-				const auto nNameStart = nName + 5;
-				const auto nNameEnd = wsvData.find(L';', nNameStart);
-				if (nNameEnd == std::wstring_view::npos) {
-					continue;
-				}
-
-				stDOS.wstrDataPath = wsvData.substr(nNameStart, nNameEnd - nNameStart); //Process name.
-			}
-			else if (eOpenMode == OPEN_DRIVE) {
-				const auto nPath = wsvData.find(L"Path:");
-				if (nPath == std::wstring_view::npos) {
-					continue;
-				}
-
-				const auto nPathStart = nPath + 5;
-				const auto nPathEnd = wsvData.find(L';', nPathStart);
-				if (nPathEnd == std::wstring_view::npos) {
-					continue;
-				}
-
-				stDOS.wstrDataPath = wsvData.substr(nPathStart, nPathEnd - nPathStart); //Path.
-
-				const auto nName = wsvData.find(L"FriendlyName:", nPathEnd + 1);
-				if (nName == std::wstring_view::npos) {
-					continue;
-				}
-
-				const auto nNameStart = nName + 13 /*length of "FriendlyName:"*/;
-				const auto nNameEnd = wsvData.find(L';', nNameStart);
-				if (nNameEnd == std::wstring_view::npos) {
-					continue;
-				}
-
-				stDOS.wstrFriendlyName = wsvData.substr(nNameStart, nNameEnd - nNameStart); //Friendly name.
-			}
-			else {
-				stDOS.wstrDataPath = wsvData;
-			}
-
-			vecRet.emplace_back(stDOS);
-		}
-
-		if (dwIndex > 50) { //Sentinel.
-			break;
-		}
-	}
-
-	return vecRet;
+	return vecDataOpen;
 }
 
-void CAppSettingsRFL::SaveRegData(const wchar_t* pwszRegPath, const VecDataOpen& vecData)
+void CAppSettingsRFL::DBSaveRecentFiles(sqlite3* pDB, SpnDataOpen spnDataOpen)
 {
-	using enum ut::EOpenMode;
-	const auto wsv = std::wstring_view { pwszRegPath };
-	const auto wsvRegKeyName = wsv.substr(wsv.find_last_of(L'\\') + 1);
-	const auto wstrRegPathWithoutKey = std::wstring { wsv.substr(0, wsv.find_last_of(L'\\')) };
+	//Remove all from RecentFiles.
+	const auto sqlDelete = L"DELETE FROM RecentFiles;";
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlDelete, -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
 
-	CRegKey reg;
-	if (reg.Open(HKEY_CURRENT_USER, wstrRegPathWithoutKey.data()) == ERROR_SUCCESS) {
-		reg.RecurseDeleteKey(wsvRegKeyName.data()); //Remove all data in the key.
-	}
-
-	reg.Create(HKEY_CURRENT_USER, pwszRegPath);
-	for (const auto& [idx, ref] : vecData | std::views::enumerate) {
-		if (ref.eOpenMode == OPEN_PROC) {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
-				std::format(L"ID:{};Name:{};", ref.dwProcID, ref.wstrDataPath).data());
-		}
-		else if (ref.eOpenMode == OPEN_DRIVE) {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
-				std::format(L"Path:{};FriendlyName:{};", ref.wstrDataPath, ref.wstrFriendlyName).data());
-		}
-		else {
-			reg.SetStringValue(std::format(L"{:02d}:{}", idx, ut::GetWstrEOpenMode(ref.eOpenMode)).data(),
-				ref.wstrDataPath.data());
-		}
+	//Save spnDataOpen to DB.
+	for (const auto& data : spnDataOpen) {
+		const auto sqlInsert = std::format(L"INSERT INTO RecentFiles (FilePath, ProcID, EOpenMode)"
+			L"VALUES ('{}','{}','{}');", data.wstrDataPath, data.dwProcID, std::to_underlying(data.eOpenMode));
+		res = sqlite3_prepare16_v2(pDB, sqlInsert.data(), -1, std::out_ptr(pSTMT), nullptr);
+		assert(res == SQLITE_OK);
+		res = sqlite3_step(pSTMT.get());
+		assert(res == SQLITE_DONE);
 	}
 }
 
@@ -376,12 +271,9 @@ public:
 	using VecTemplates = std::vector<std::unique_ptr<HEXCTRL::HEXTEMPLATE>>;
 	using VecBkm = std::vector<HEXCTRL::HEXBKM>;
 	using SpnBkm = std::span<HEXCTRL::HEXBKM>;
-	using VecSpan = std::vector<HEXCTRL::HEXSPAN>;
+	using VecHexSpan = HEXCTRL::VecSpan;
 	using uptr_sqlite = std::unique_ptr < sqlite3, decltype([](sqlite3* pDB) {
 		auto res = sqlite3_close(pDB);
-		assert(res == SQLITE_OK); }) > ;
-	using uptr_stmt = std::unique_ptr < sqlite3_stmt, decltype([](sqlite3_stmt* pSTMT) {
-		auto res = sqlite3_finalize(pSTMT);
 		assert(res == SQLITE_OK); }) > ;
 	struct PANESTATUS {
 		bool fVisible : 1{};
@@ -441,14 +333,12 @@ public:
 	[[nodiscard]] auto GetHexCtrlSettings() -> HEXCTRLSETTINGS&;
 	[[nodiscard]] auto GetHexCtrlTemplates()const -> const VecTemplates&;
 	[[nodiscard]] auto GetIconDataForCmd(UINT uCMD)const -> const ICONDATA*;
-	[[nodiscard]] auto GetLastOpenedList()const -> VecDataOpen;
+	[[nodiscard]] auto GetLastOpenFiles()const -> VecDataOpen;
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const -> std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const -> PANESTATUS;
-	[[nodiscard]] auto GetSavedBkms(std::wstring_view wsvDataName)const -> VecBkm;
+	[[nodiscard]] auto GetSavedBkms(std::wstring_view wsvFileName)const -> VecBkm;
 	[[nodiscard]] bool IsRFLInitialized()const;
 	void LoadSettings(std::wstring_view wsvAppName);
-	void LOLAddToList(const ut::DATAOPEN& dos);      //Last Opened List add.
-	void LOLRemoveFromList(const ut::DATAOPEN& dos); //Last Opened List remove.
 	void OnSettingsChanged();
 	void RecreateCMDIcons(int iWidth, int iHeight); //All menu and toolbar icons.
 	void RFLAddToList(const ut::DATAOPEN& dos);
@@ -457,6 +347,7 @@ public:
 	void RFLRemoveFromList(const ut::DATAOPEN& dos);
 	void RFLUpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	void SaveBkms(std::wstring_view wsvDataName, SpnBkm spnBkm);
+	void SaveLastOpenFiles(SpnDataOpen spnDataOpen);
 	void SaveSettings();
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
 	void SetPaneStatus(UINT uPaneID, bool fVisible, bool fActive);
@@ -468,8 +359,6 @@ private:
 	[[nodiscard]] auto GetPanesSettings()const -> const PANESETTINGS&;
 	[[nodiscard]] auto GetRegBasePath()const -> const std::wstring&;
 	[[nodiscard]] auto GetRegHexCtrlSettingsPath()const -> const std::wstring&;
-	[[nodiscard]] auto GetRegLOLPath()const -> const std::wstring&; //Last Opened List.
-	[[nodiscard]] auto GetRegRFLPath()const -> const std::wstring&; //Recent Files List.
 	[[nodiscard]] auto GetRegSettingsPath()const -> const std::wstring&;
 	[[nodiscard]] auto GetSQLiteDB()const -> sqlite3*;
 	void LoadHexCtrlTemplates();
@@ -477,9 +366,11 @@ private:
 	static void DBCreateTables(sqlite3* pDB);
 	[[nodiscard]] static auto DBGetFileIDByName(sqlite3* pDB, std::wstring_view wsvFileName) -> std::int64_t;
 	[[nodiscard]] static auto DBLoadBkmForFileID(sqlite3* pDB, std::int64_t i64FileID) -> VecBkm;
+	[[nodiscard]] static auto DBLoadLastOpenFiles(sqlite3* pDB) -> VecDataOpen;
 	[[nodiscard]] static auto DBOpenDB(const wchar_t* pwszPathDB) -> uptr_sqlite;
 	static void DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, SpnBkm spnBkm);
 	static void DBSaveHexCtrlSettings(sqlite3* pDB, const HEXCTRLSETTINGS& sett);
+	static void DBSaveLastOpenFiles(sqlite3* pDB, SpnDataOpen spnDataOpen);
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
@@ -501,9 +392,8 @@ private:
 	PANESETTINGS m_stPaneSettings;      //"Panes" settings data.
 	GENERALSETTINGS m_stGeneralData;    //"General" settings data.
 	HEXCTRLSETTINGS m_stHexCtrlData;    //"HexCtrl" settings data.
-	std::wstring m_wstrAppName;         //Application name for registry paths.
-	VecDataOpen m_vecLOL;               //Last Opened Files list.
 	VecTemplates m_vecHexCtrlTemplates; //HexCtrl loaded templates.
+	std::wstring m_wstrAppName;         //Application name for registry paths.
 	uptr_sqlite m_upSQLiteDB;           //SQLite database pointer.
 	bool m_fLoaded { false };           //LoadSettings has succeeded.
 };
@@ -530,13 +420,13 @@ auto CAppSettings::GetIconDataForCmd(UINT uCmd)const->const ICONDATA*
 	return it != std::ranges::end(m_vecIconData) ? &*it : nullptr;
 }
 
-auto CAppSettings::GetLastOpenedList()const->VecDataOpen
+auto CAppSettings::GetLastOpenFiles()const->VecDataOpen
 {
 	assert(m_fLoaded);
 	if (!m_fLoaded)
 		return { };
 
-	return CAppSettingsRFL::ReadRegData(GetRegLOLPath().data());
+	return DBLoadLastOpenFiles(GetSQLiteDB());
 }
 
 auto CAppSettings::GetPaneData(UINT uPaneID)const->std::uint64_t
@@ -583,10 +473,14 @@ auto CAppSettings::GetPaneStatus(UINT uPaneID)const->PANESTATUS
 	}
 }
 
-auto CAppSettings::GetSavedBkms(std::wstring_view wsvDataName)const->VecBkm
+auto CAppSettings::GetSavedBkms(std::wstring_view wsvFileName)const->VecBkm
 {
+	assert(m_fLoaded);
+	if (!m_fLoaded)
+		return { };
+
 	const auto pDB = GetSQLiteDB();
-	return DBLoadBkmForFileID(pDB, DBGetFileIDByName(pDB, wsvDataName));
+	return DBLoadBkmForFileID(pDB, DBGetFileIDByName(pDB, wsvFileName));
 }
 
 bool CAppSettings::IsRFLInitialized()const {
@@ -757,20 +651,6 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 	m_fLoaded = true;
 }
 
-void CAppSettings::LOLAddToList(const ut::DATAOPEN& dos)
-{
-	CAppSettingsRFL::AddToListBeginning(dos, m_vecLOL);
-
-	if (m_vecLOL.size() > 20) { //Sentinel.
-		m_vecLOL.resize(20);
-	}
-}
-
-void CAppSettings::LOLRemoveFromList(const ut::DATAOPEN& dos)
-{
-	std::erase_if(m_vecLOL, [&dos](const ut::DATAOPEN& refData) { return refData == dos; });
-}
-
 void CAppSettings::OnSettingsChanged()
 {
 	ShowInWindowsContextMenu(m_stGeneralData.fWindowsMenu);
@@ -809,8 +689,8 @@ void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile
 	if (!m_fLoaded)
 		return;
 
-	m_stRFL.Initialize(hMenu, iIDMenuFirst, GetGeneralSettings().dwRFLSize,
-		hBMPFile, hBMPDevice, hBMPProcess, GetRegRFLPath());
+	m_stRFL.Initialize(GetSQLiteDB(), hMenu, iIDMenuFirst, GetGeneralSettings().dwRFLSize,
+		hBMPFile, hBMPDevice, hBMPProcess);
 }
 
 void CAppSettings::RFLRemoveFromList(const ut::DATAOPEN& dos)
@@ -833,13 +713,16 @@ void CAppSettings::SaveBkms(std::wstring_view wsvDataName, SpnBkm spnBkm)
 	DBSaveBkmForFileID(pDB, i64FileID, spnBkm);
 }
 
+void CAppSettings::SaveLastOpenFiles(SpnDataOpen spnDataOpen)
+{
+	const auto pDB = GetSQLiteDB();
+	DBSaveLastOpenFiles(pDB, spnDataOpen);
+}
+
 void CAppSettings::SaveSettings()
 {
 	//Recent Files List.
-	m_stRFL.SaveSettings();
-
-	//Last Opened List.
-	CAppSettingsRFL::SaveRegData(GetRegLOLPath().data(), m_vecLOL);
+	m_stRFL.SaveSettings(GetSQLiteDB());
 
 	//Settings.
 	CRegKey regSettings;
@@ -1021,18 +904,6 @@ auto CAppSettings::GetRegHexCtrlSettingsPath()const->const std::wstring&
 	return wstrHexCtrlSett;
 }
 
-auto CAppSettings::GetRegLOLPath()const->const std::wstring&
-{
-	static const auto wstrLOL = GetRegBasePath() + L"\\Last Opened List";
-	return wstrLOL;
-}
-
-auto CAppSettings::GetRegRFLPath()const->const std::wstring&
-{
-	static const auto wstrRFL = GetRegBasePath() + L"\\Recent Files List";
-	return wstrRFL;
-}
-
 auto CAppSettings::GetRegSettingsPath()const->const std::wstring&
 {
 	static const auto wstrSettings = GetRegBasePath() + L"\\Settings";
@@ -1092,7 +963,7 @@ void CAppSettings::ShowInWindowsContextMenu(bool fShow)
 
 void CAppSettings::DBCreateTables(sqlite3* pDB)
 {
-	const wchar_t* sqlModulesCreate = L"CREATE TABLE IF NOT EXISTS Files ("
+	const auto sqlModulesCreate = L"CREATE TABLE IF NOT EXISTS Files ("
 		L"FileID INTEGER PRIMARY KEY,"
 		L"Name   TEXT NOT NULL UNIQUE);";
 
@@ -1102,7 +973,7 @@ void CAppSettings::DBCreateTables(sqlite3* pDB)
 	res = sqlite3_step(pSTMT.get());
 	assert(res == SQLITE_DONE);
 
-	const wchar_t* sqlBkmsCreate = L"CREATE TABLE IF NOT EXISTS Bookmarks ("
+	const auto sqlBkmsCreate = L"CREATE TABLE IF NOT EXISTS Bookmarks ("
 		L"FileID   INTEGER NOT NULL,"
 		L"VecSpan  TEXT NOT NULL,"
 		L"Desc     TEXT,"
@@ -1112,10 +983,36 @@ void CAppSettings::DBCreateTables(sqlite3* pDB)
 	res = sqlite3_step(pSTMT.get());
 	assert(res == SQLITE_DONE);
 
-	const wchar_t* sqlSettHexCtrlCreate = L"CREATE TABLE IF NOT EXISTS Settings_HexCtrl ("
+	const auto sqlSettGeneralCreate = L"CREATE TABLE IF NOT EXISTS SettingsGeneral ("
+		L"Name TEXT PRIMARY KEY,"
+		L"Data TEXT NOT NULL);";
+	res = sqlite3_prepare16_v2(pDB, sqlSettGeneralCreate, -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
+
+	const auto sqlSettHexCtrlCreate = L"CREATE TABLE IF NOT EXISTS SettingsHexCtrl ("
 		L"Name TEXT PRIMARY KEY,"
 		L"Data TEXT NOT NULL);";
 	res = sqlite3_prepare16_v2(pDB, sqlSettHexCtrlCreate, -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
+
+	const auto sqlLOFCreate = L"CREATE TABLE IF NOT EXISTS LastOpenFiles ("
+		L"FilePath  TEXT NOT NULL,"
+		L"ProcID    INTEGER,"
+		L"EOpenMode INTEGER NOT NULL);"; //EOpenMode enum data.
+	res = sqlite3_prepare16_v2(pDB, sqlLOFCreate, -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
+
+	const auto sqlRFCreate = L"CREATE TABLE IF NOT EXISTS RecentFiles ("
+		L"FilePath  TEXT NOT NULL,"
+		L"ProcID    INTEGER,"
+		L"EOpenMode INTEGER NOT NULL);"; //EOpenMode enum data.
+	res = sqlite3_prepare16_v2(pDB, sqlRFCreate, -1, std::out_ptr(pSTMT), nullptr);
 	assert(res == SQLITE_OK);
 	res = sqlite3_step(pSTMT.get());
 	assert(res == SQLITE_DONE);
@@ -1149,8 +1046,8 @@ auto CAppSettings::DBLoadBkmForFileID(sqlite3* pDB, std::int64_t i64FileID)->Vec
 
 	VecBkm vecBkm;
 	while (sqlite3_step(pSTMT.get()) == SQLITE_ROW) {
-		VecSpan vecSpan;
-		const std::wstring_view wsvVecSpan = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 1)); //VecSpan.
+		VecHexSpan vecSpan;
+		const std::wstring_view wsvVecSpan = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 1)); //VecHexSpan.
 		std::uint64_t ullOffset { };
 		for (const auto [index, digits] : wsvVecSpan | std::views::split(L',') | std::views::enumerate) {
 			const auto ullCurr = stn::StrToUInt64(std::wstring_view { digits }).value_or(0ULL);
@@ -1178,6 +1075,25 @@ auto CAppSettings::DBLoadBkmForFileID(sqlite3* pDB, std::int64_t i64FileID)->Vec
 	return vecBkm;
 }
 
+auto CAppSettings::DBLoadLastOpenFiles(sqlite3* pDB)->VecDataOpen
+{
+	const auto sqlSelect = L"Select * FROM LastOpenFiles";
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlSelect, -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+
+	VecDataOpen vecDataOpen;
+	while (sqlite3_step(pSTMT.get()) == SQLITE_ROW) {
+		const auto pwszFilePath = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 0)); //FilePath.
+		const auto dwProcID = sqlite3_column_int(pSTMT.get(), 1);  //ProcID.
+		const auto eOpenMode = sqlite3_column_int(pSTMT.get(), 2); //EOpenMode.
+		vecDataOpen.emplace_back(ut::DATAOPEN { .wstrDataPath { pwszFilePath },
+			.dwProcID { static_cast<DWORD>(dwProcID) }, .eOpenMode { static_cast<ut::EOpenMode>(eOpenMode) } });
+	}
+
+	return vecDataOpen;
+}
+
 auto CAppSettings::DBOpenDB(const wchar_t* pwszPathDB)->uptr_sqlite
 {
 	sqlite3* pDB;
@@ -1197,9 +1113,9 @@ void CAppSettings::DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, SpnB
 	assert(res == SQLITE_DONE);
 
 	//Save current bookmarks.
-	for (const auto bkm : spnBkm) {
+	for (const auto& bkm : spnBkm) {
 		std::wstring wstrVecSpan;
-		for (const auto vecSpan : bkm.vecSpan) {
+		for (const auto& vecSpan : bkm.vecSpan) {
 			wstrVecSpan += std::format(L"{},{},", vecSpan.ullOffset, vecSpan.ullSize);
 		}
 		const auto wstrHEXCOLOR = std::format(L"{},{}", bkm.stClr.clrBk, bkm.stClr.clrText);
@@ -1225,6 +1141,27 @@ void CAppSettings::DBSaveHexCtrlSettings(sqlite3* pDB, const HEXCTRLSETTINGS& se
 	assert(res == SQLITE_OK);
 	res = sqlite3_step(pSTMT.get());
 	assert(res == SQLITE_DONE);
+}
+
+void CAppSettings::DBSaveLastOpenFiles(sqlite3* pDB, SpnDataOpen spnDataOpen)
+{
+	//Remove all from LastOpenFiles.
+	const auto sqlDelete = L"DELETE FROM LastOpenFiles;";
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlDelete, -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
+
+	//Save spnDataOpen to DB.
+	for (const auto& data : spnDataOpen) {
+		const auto sqlInsert = std::format(L"INSERT INTO LastOpenFiles (FilePath, ProcID, EOpenMode)"
+			L"VALUES ('{}','{}','{}');", data.wstrDataPath, data.dwProcID, std::to_underlying(data.eOpenMode));
+		res = sqlite3_prepare16_v2(pDB, sqlInsert.data(), -1, std::out_ptr(pSTMT), nullptr);
+		assert(res == SQLITE_OK);
+		res = sqlite3_step(pSTMT.get());
+		assert(res == SQLITE_DONE);
+	}
 }
 
 auto CAppSettings::DWORD2PaneStatus(DWORD dw)->PANESTATUS

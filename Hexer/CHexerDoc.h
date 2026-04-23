@@ -19,6 +19,7 @@ public:
 	[[nodiscard]] auto GetCacheSize()const -> DWORD;
 	[[nodiscard]] auto GetDataAccessMode()const -> ut::DATAACCESS;
 	[[nodiscard]] auto GetDataIOMode()const -> ut::EDataIOMode;
+	[[nodiscard]] auto GetDataOpen()const -> const ut::DATAOPEN&;
 	[[nodiscard]] auto GetDataPath()const -> const std::wstring&;
 	[[nodiscard]] auto GetDataSize()const -> std::uint64_t;
 	[[nodiscard]] auto GetDocIcon()const -> HICON;
@@ -53,9 +54,8 @@ private:
 	DECLARE_MESSAGE_MAP();
 private:
 	CDataLoader m_stDataLoader;
-	std::wstring m_wstrDataPath;
+	ut::DATAOPEN m_dos;
 	std::wstring m_wstrFileName;
-	std::wstring m_wstrFriendlyName;
 	HICON m_hDocIcon { };     //Document icon.
 	bool m_fOpened { false }; //Document was successfully opened or not.
 };

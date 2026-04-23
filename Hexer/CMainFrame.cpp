@@ -9,6 +9,7 @@
 #include "CHexerApp.h"
 #include "CMainFrame.h"
 #include "CChildFrame.h"
+#include "CHexerDoc.h"
 #include "CHexerView.h"
 
 #ifdef _DEBUG
@@ -392,6 +393,20 @@ void CMainFrame::OnClose()
 	SavePanesSettings();   //It's called either here or in the OnChildFrameCloseLast.
 	SaveHexCtrlSettings(); //It's called either here or in the OnChildFrameCloseLast.
 	HideAllPanes();        //It's called either here or in the OnChildFrameCloseLast.
+
+	//Last Open Files.
+	std::vector<ut::DATAOPEN> vecData;
+	auto posDocTempl = theApp.GetFirstDocTemplatePosition();
+	while (posDocTempl != nullptr) {
+		const auto pDocTempl = theApp.GetNextDocTemplate(posDocTempl);
+		auto posDoc = pDocTempl->GetFirstDocPosition();
+		while (posDoc != nullptr) {
+			const auto& data = static_cast<CHexerDoc*>(pDocTempl->GetNextDoc(posDoc))->GetDataOpen();
+			vecData.emplace_back(data);
+		}
+	}
+
+	theApp.GetAppSettings().SaveLastOpenFiles(vecData);
 
 	CMDIFrameWndEx::OnClose();
 }

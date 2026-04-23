@@ -112,7 +112,7 @@ BEGIN
         MENUITEM "&Open File...\tCtrl+O",       IDM_FILE_OPENFILE
         MENUITEM "Open Device...\tCtrl+D",      IDM_FILE_OPENDEVICE
         MENUITEM "Open Process...\tCtrl+P",     IDM_FILE_OPENPROCESS
-        POPUP "Recent Files List"
+        POPUP "Recent Files"
         BEGIN
             MENUITEM "<IDM_FILE_RFL00>",            IDM_FILE_RFL00
         END

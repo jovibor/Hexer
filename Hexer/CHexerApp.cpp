@@ -388,8 +388,8 @@ BOOL CHexerApp::InitInstance()
 		}
 		break;
 	case CAppSettings::EOnStartup::RESTORE_LAST_OPENED:
-		for (const auto& refData : GetAppSettings().GetLastOpenedList()) {
-			OpenDocumentCustom(refData);
+		for (const auto& data : GetAppSettings().GetLastOpenFiles()) {
+			OpenDocumentCustom(data);
 		}
 		break;
 	default:
