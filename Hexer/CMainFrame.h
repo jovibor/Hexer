@@ -59,8 +59,10 @@ protected:
 	BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)override;
 	auto OnDPIChanged(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg BOOL OnEraseMDIClientBackground(CDC* pDC)override;
+	afx_msg void OnFileRFClearList();
 	auto OnGetTabTooltip(WPARAM wParam, LPARAM lParam) -> LRESULT;
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
+	afx_msg void OnUpdateFileRFClearList(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateRangePanes(CCmdUI* pCmdUI);
 	afx_msg void OnViewCustomize();
 	afx_msg void OnViewRangePanes(UINT uMenuID);

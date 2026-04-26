@@ -20,11 +20,13 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWndEx)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_COMMAND(IDM_TOOLBAR_CUSTOMIZE, &CMainFrame::OnViewCustomize)
+	ON_COMMAND(IDM_FILE_RFL_CLEARLIST, &CMainFrame::OnFileRFClearList)
 	ON_COMMAND_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnViewRangePanes)
 	ON_MESSAGE(ut::WM_APP_SETTINGS_CHANGED, &CMainFrame::OnAppSettingsChanged)
 	ON_MESSAGE(ut::WM_ADD_LOG_ENTRY, &CMainFrame::OnAddLogEntry)
 	ON_MESSAGE(WM_DPICHANGED, &CMainFrame::OnDPIChanged)
 	ON_REGISTERED_MESSAGE(AFX_WM_ON_GET_TAB_TOOLTIP, &CMainFrame::OnGetTabTooltip)
+	ON_UPDATE_COMMAND_UI(IDM_FILE_RFL_CLEARLIST, &CMainFrame::OnUpdateFileRFClearList)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_VIEW_DATAINFO, IDM_VIEW_LOGGER, &CMainFrame::OnUpdateRangePanes)
 	ON_WM_CLOSE()
 	ON_WM_COPYDATA()
@@ -543,6 +545,11 @@ BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/)
 	return TRUE;
 }
 
+void CMainFrame::OnFileRFClearList()
+{
+	theApp.GetAppSettings().RFLClearList();
+}
+
 auto CMainFrame::OnGetTabTooltip(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 {
 	const auto pTTI = reinterpret_cast<CMFCTabToolTipInfo*>(lParam);
@@ -575,6 +582,11 @@ void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam)
 	if (nID == SC_RESTORE && hWndFocus != nullptr) {
 		::SetFocus(hWndFocus);
 	}
+}
+
+void CMainFrame::OnUpdateFileRFClearList(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(!theApp.GetAppSettings().RFLIsEmpty());
 }
 
 void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)

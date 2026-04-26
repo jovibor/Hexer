@@ -42,9 +42,11 @@ class CAppSettingsRFL final //Recent Files List.
 public:
 	CAppSettingsRFL() = default;
 	void AddToList(const ut::DATAOPEN& dos);
+	void ClearList();
 	[[nodiscard]] auto GetDataFromMenuID(UINT uID)const -> ut::DATAOPEN;
 	void Initialize(sqlite3* pDB, HMENU hMenu, int iIDMenuFirst, int iMaxEntry,
 		HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
+	[[nodiscard]] bool IsEmpty()const;
 	[[nodiscard]] bool IsInitialized()const;
 	void RemoveFromList(const ut::DATAOPEN& dos);
 	void SetRFLSize(DWORD dwRFLSize);
@@ -68,6 +70,10 @@ private:
 
 void CAppSettingsRFL::AddToList(const ut::DATAOPEN& dos)
 {
+	assert(m_fInit);
+	if (!m_fInit)
+		return;
+
 	using enum ut::EOpenMode;
 
 	//Remove any duplicates. Processes can have same names but different IDs.
@@ -81,6 +87,16 @@ void CAppSettingsRFL::AddToList(const ut::DATAOPEN& dos)
 		m_vecRFL.resize(m_dwRFLSize);
 	}
 
+	RebuildRFLMenu();
+}
+
+void CAppSettingsRFL::ClearList()
+{
+	assert(m_fInit);
+	if (!m_fInit)
+		return;
+
+	m_vecRFL.clear();
 	RebuildRFLMenu();
 }
 
@@ -120,6 +136,15 @@ void CAppSettingsRFL::Initialize(sqlite3* pDB, HMENU hMenu, int iIDMenuFirst, in
 	RebuildRFLMenu();
 }
 
+bool CAppSettingsRFL::IsEmpty()const
+{
+	assert(m_fInit);
+	if (!m_fInit)
+		return true;
+
+	return m_vecRFL.empty();
+}
+
 bool CAppSettingsRFL::IsInitialized()const {
 	return m_fInit;
 }
@@ -144,6 +169,8 @@ void CAppSettingsRFL::SetRFLSize(DWORD dwRFLSize)
 	if (m_vecRFL.size() > m_dwRFLSize) {
 		m_vecRFL.resize(m_dwRFLSize);
 	}
+
+	RebuildRFLMenu();
 }
 
 void CAppSettingsRFL::SaveSettings(sqlite3* pDB)const
@@ -156,6 +183,10 @@ void CAppSettingsRFL::SaveSettings(sqlite3* pDB)const
 }
 
 void CAppSettingsRFL::UpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess) {
+	assert(m_fInit);
+	if (!m_fInit)
+		return;
+
 	m_hBMPFile = hBMPFile;
 	m_hBMPDevice = hBMPDevice;
 	m_hBMPProcess = hBMPProcess;
@@ -212,37 +243,39 @@ void CAppSettingsRFL::RebuildRFLMenu()
 	if (!m_fInit)
 		return;
 
-	while (GetMenuItemCount(m_hMenu) > 0) {
-		DeleteMenu(m_hMenu, 0, MF_BYPOSITION); //Removing all RFL menu items.
+	while (::GetMenuItemCount(m_hMenu) > 0) {
+		::DeleteMenu(m_hMenu, 0, MF_BYPOSITION); //Removing all RFL menu items.
 	}
 
-	for (const auto& [idx, refData] : m_vecRFL | std::views::enumerate) {
+	for (const auto& [idx, vec] : m_vecRFL | std::views::enumerate) {
 		if (idx >= m_dwRFLSize) //Adding no more than m_dwRFLSize.
 			break;
 
 		std::wstring wstrMenu;
-		if (refData.eOpenMode == OPEN_PROC) {
-			wstrMenu = std::format(L"{} {}: {} (ID: {})", idx + 1, ut::GetWstrEOpenMode(refData.eOpenMode), refData.wstrDataPath,
-				refData.dwProcID);
+		if (vec.eOpenMode == OPEN_PROC) {
+			wstrMenu = std::format(L"{} {}: {} (ID: {})", idx + 1, ut::GetWstrEOpenMode(vec.eOpenMode), vec.wstrDataPath,
+				vec.dwProcID);
 		}
 		else {
-			wstrMenu = std::format(L"{} {}: {}", idx + 1, ut::GetWstrEOpenMode(refData.eOpenMode), refData.wstrDataPath);
+			wstrMenu = std::format(L"{} {}: {}", idx + 1, ut::GetWstrEOpenMode(vec.eOpenMode), vec.wstrDataPath);
 		}
 
 		const auto uMenuID = static_cast<UINT>(m_iIDMenuFirst + idx);
-		AppendMenuW(m_hMenu, MF_STRING, uMenuID, wstrMenu.data());
+		::AppendMenuW(m_hMenu, MF_STRING, uMenuID, wstrMenu.data());
 	}
 
+	::AppendMenuW(m_hMenu, MF_SEPARATOR, 0, nullptr);
+	::AppendMenuW(m_hMenu, MF_STRING, IDM_FILE_RFL_CLEARLIST, L"Clear List");
 	UpdateMenuIcons();
 }
 
 void CAppSettingsRFL::UpdateMenuIcons() {
-	for (const auto& [idx, refData] : m_vecRFL | std::views::enumerate) {
+	for (const auto& [idx, vec] : m_vecRFL | std::views::enumerate) {
 		if (idx >= m_dwRFLSize) //Adding not more than m_dwRFLSize.
 			break;
 
 		HBITMAP hBmp { };
-		switch (refData.eOpenMode) {
+		switch (vec.eOpenMode) {
 		case OPEN_FILE:
 			hBmp = m_hBMPFile;
 			break;
@@ -340,8 +373,10 @@ public:
 	void OnSettingsChanged();
 	void RecreateCMDIcons(int iWidth, int iHeight); //All menu and toolbar icons.
 	void RFLAddToList(const ut::DATAOPEN& dos);
+	void RFLClearList();
 	[[nodiscard]] auto RFLGetDataFromMenuID(UINT uID)const -> ut::DATAOPEN;
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
+	[[nodiscard]] bool RFLIsEmpty()const;
 	void RFLRemoveFromList(const ut::DATAOPEN& dos);
 	void RFLUpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	void SaveBkms(std::wstring_view wsvFileName, HEXCTRL::SpanHexBkm spnBkm);
@@ -695,6 +730,11 @@ void CAppSettings::RFLAddToList(const ut::DATAOPEN& dos)
 	m_stRFL.AddToList(dos);
 }
 
+void CAppSettings::RFLClearList()
+{
+	m_stRFL.ClearList();
+}
+
 auto CAppSettings::RFLGetDataFromMenuID(UINT uID)const->ut::DATAOPEN
 {
 	assert(m_fLoaded);
@@ -712,6 +752,11 @@ void CAppSettings::RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile
 
 	m_stRFL.Initialize(GetSQLiteDB(), hMenu, iIDMenuFirst, GetGeneralSettings().dwRFLSize,
 		hBMPFile, hBMPDevice, hBMPProcess);
+}
+
+bool CAppSettings::RFLIsEmpty()const
+{
+	return m_stRFL.IsEmpty();
 }
 
 void CAppSettings::RFLRemoveFromList(const ut::DATAOPEN& dos)
