@@ -270,8 +270,11 @@ export class CAppSettings final {
 public:
 	using VecTemplates = std::vector<std::unique_ptr<HEXCTRL::HEXTEMPLATE>>;
 	using VecBkm = std::vector<HEXCTRL::HEXBKM>;
-	using SpnBkm = std::span<HEXCTRL::HEXBKM>;
-	using VecHexSpan = HEXCTRL::VecSpan;
+	struct DBTEMPLAPPLIED {
+		ULONGLONG ullOffset { };
+		std::wstring wstrTemplateName;
+	};
+	using VecTemplApplied = std::vector<DBTEMPLAPPLIED>;
 	using uptr_sqlite = std::unique_ptr < sqlite3, decltype([](sqlite3* pDB) {
 		auto res = sqlite3_close(pDB);
 		assert(res == SQLITE_OK); }) > ;
@@ -331,6 +334,7 @@ public:
 	[[nodiscard]] auto GetPaneData(UINT uPaneID)const -> std::uint64_t;
 	[[nodiscard]] auto GetPaneStatus(UINT uPaneID)const -> PANESTATUS;
 	[[nodiscard]] auto GetSavedBkms(std::wstring_view wsvFileName)const -> VecBkm;
+	[[nodiscard]] auto GetSavedTemplApplied(std::wstring_view wsvFileName)const -> VecTemplApplied;
 	[[nodiscard]] bool IsRFLInitialized()const;
 	void LoadSettings(std::wstring_view wsvAppName);
 	void OnSettingsChanged();
@@ -340,9 +344,10 @@ public:
 	void RFLInitialize(HMENU hMenu, int iIDMenuFirst, HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
 	void RFLRemoveFromList(const ut::DATAOPEN& dos);
 	void RFLUpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBITMAP hBMPProcess);
-	void SaveBkms(std::wstring_view wsvDataName, SpnBkm spnBkm);
+	void SaveBkms(std::wstring_view wsvFileName, HEXCTRL::SpanHexBkm spnBkm);
 	void SaveLastOpenFiles(SpnDataOpen spnDataOpen);
 	void SaveSettings();
+	void SaveTemplApplied(std::wstring_view wsvFileName, HEXCTRL::SpanHexTemplApplied spnApplied);
 	void SetPaneData(UINT uPaneID, std::uint64_t ullData);
 	void SetPaneStatus(UINT uPaneID, bool fVisible, bool fActive);
 	[[nodiscard]] static auto GetGeneralDefs() -> const GENERALSETTINGS&;
@@ -361,10 +366,12 @@ private:
 	[[nodiscard]] static auto DBGetFileIDByName(sqlite3* pDB, std::wstring_view wsvFileName) -> std::int64_t;
 	[[nodiscard]] static auto DBLoadBkmForFileID(sqlite3* pDB, std::int64_t i64FileID) -> VecBkm;
 	[[nodiscard]] static auto DBLoadLastOpenFiles(sqlite3* pDB) -> VecDataOpen;
+	[[nodiscard]] static auto DBLoadTemplApliedForFileID(sqlite3* pDB, std::int64_t i64FileID) -> VecTemplApplied;
 	[[nodiscard]] static auto DBOpenDB(const wchar_t* pwszPathDB) -> uptr_sqlite;
-	static void DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, SpnBkm spnBkm);
+	static void DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, HEXCTRL::SpanHexBkm spnHexBkm);
 	static void DBSaveHexCtrlSettings(sqlite3* pDB, const HEXCTRLSETTINGS& sett);
 	static void DBSaveLastOpenFiles(sqlite3* pDB, SpnDataOpen spnDataOpen);
+	static void DBSaveTemplAppliedForFileID(sqlite3* pDB, std::int64_t i64FileID, HEXCTRL::SpanHexTemplApplied spnApplied);
 	[[nodiscard]] static auto DWORD2PaneStatus(DWORD dw) -> PANESTATUS;
 	[[nodiscard]] static auto PaneStatus2DWORD(PANESTATUS ps) -> DWORD;
 private:
@@ -485,6 +492,16 @@ auto CAppSettings::GetSavedBkms(std::wstring_view wsvFileName)const->VecBkm
 
 	const auto pDB = GetSQLiteDB();
 	return DBLoadBkmForFileID(pDB, DBGetFileIDByName(pDB, wsvFileName));
+}
+
+auto CAppSettings::GetSavedTemplApplied(std::wstring_view wsvFileName)const->VecTemplApplied
+{
+	assert(m_fLoaded);
+	if (!m_fLoaded)
+		return { };
+
+	const auto pDB = GetSQLiteDB();
+	return DBLoadTemplApliedForFileID(pDB, DBGetFileIDByName(pDB, wsvFileName));
 }
 
 bool CAppSettings::IsRFLInitialized()const {
@@ -710,10 +727,10 @@ void CAppSettings::RFLUpdateMenuIcons(HBITMAP hBMPFile, HBITMAP hBMPDevice, HBIT
 	m_stRFL.UpdateMenuIcons(hBMPFile, hBMPDevice, hBMPProcess);
 }
 
-void CAppSettings::SaveBkms(std::wstring_view wsvDataName, SpnBkm spnBkm)
+void CAppSettings::SaveBkms(std::wstring_view wsvFileName, HEXCTRL::SpanHexBkm spnBkm)
 {
 	const auto pDB = GetSQLiteDB();
-	const auto i64FileID = DBGetFileIDByName(pDB, wsvDataName);
+	const auto i64FileID = DBGetFileIDByName(pDB, wsvFileName);
 	DBSaveBkmForFileID(pDB, i64FileID, spnBkm);
 }
 
@@ -817,6 +834,13 @@ void CAppSettings::SaveSettings()
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrScrollBar", refClrs.clrScrollBar);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrScrollThumb", refClrs.clrScrollThumb);
 	regHexCtrl.SetDWORDValue(L"HexCtrlClrScrollArrow", refClrs.clrScrollArrow);
+}
+
+void CAppSettings::SaveTemplApplied(std::wstring_view wsvFileName, HEXCTRL::SpanHexTemplApplied spnApplied)
+{
+	const auto pDB = GetSQLiteDB();
+	const auto i64FileID = DBGetFileIDByName(pDB, wsvFileName);
+	DBSaveTemplAppliedForFileID(pDB, i64FileID, spnApplied);
 }
 
 void CAppSettings::SetPaneData(UINT uPaneID, std::uint64_t ullData)
@@ -987,6 +1011,15 @@ void CAppSettings::DBCreateTables(sqlite3* pDB)
 	res = sqlite3_step(pSTMT.get());
 	assert(res == SQLITE_DONE);
 
+	const auto sqlTemplAppliedCreate = L"CREATE TABLE IF NOT EXISTS TemplatesApplied ("
+		L"FileID       INTEGER NOT NULL,"
+		L"TemplateName TEXT NOT NULL,"
+		L"Offset       INTEGER NOT NULL);";
+	res = sqlite3_prepare16_v2(pDB, sqlTemplAppliedCreate, -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
+
 	const auto sqlSettGeneralCreate = L"CREATE TABLE IF NOT EXISTS SettingsGeneral ("
 		L"Name TEXT PRIMARY KEY,"
 		L"Data TEXT NOT NULL);";
@@ -1050,7 +1083,7 @@ auto CAppSettings::DBLoadBkmForFileID(sqlite3* pDB, std::int64_t i64FileID)->Vec
 
 	VecBkm vecBkm;
 	while (sqlite3_step(pSTMT.get()) == SQLITE_ROW) {
-		VecHexSpan vecSpan;
+		HEXCTRL::VecHexSpan vecSpan;
 		const std::wstring_view wsvVecSpan = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 1)); //VecHexSpan.
 		std::uint64_t ullOffset { };
 		for (const auto [index, digits] : wsvVecSpan | std::views::split(L',') | std::views::enumerate) {
@@ -1092,6 +1125,23 @@ auto CAppSettings::DBLoadLastOpenFiles(sqlite3* pDB)->VecDataOpen
 	return vecDataOpen;
 }
 
+auto CAppSettings::DBLoadTemplApliedForFileID(sqlite3* pDB, std::int64_t i64FileID)->VecTemplApplied
+{
+	const auto sqlSelect = std::format(L"Select * FROM TemplatesApplied WHERE FileID = '{}'", i64FileID);
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlSelect.data(), -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+
+	VecTemplApplied vecApplied;
+	while (sqlite3_step(pSTMT.get()) == SQLITE_ROW) {
+		const auto pwszTemplName = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(pSTMT.get(), 1)); //Template name.
+		const auto u64Offset = static_cast<std::uint64_t>(sqlite3_column_int64(pSTMT.get(), 2)); //Offset.
+		vecApplied.emplace_back(DBTEMPLAPPLIED { .ullOffset { u64Offset }, .wstrTemplateName { pwszTemplName } });
+	}
+
+	return vecApplied;
+}
+
 auto CAppSettings::DBOpenDB(const wchar_t* pwszPathDB)->uptr_sqlite
 {
 	sqlite3* pDB;
@@ -1100,9 +1150,9 @@ auto CAppSettings::DBOpenDB(const wchar_t* pwszPathDB)->uptr_sqlite
 	return uptr_sqlite(pDB);
 }
 
-void CAppSettings::DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, SpnBkm spnBkm)
+void CAppSettings::DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, HEXCTRL::SpanHexBkm spnBkm)
 {
-	//Remove all existing bookmarks for given FileID.
+	//Remove all existing records for given FileID.
 	const auto sqlDelete = std::format(L"DELETE FROM Bookmarks WHERE FileID = '{}'", i64FileID);
 	uptr_stmt pSTMT;
 	auto res = sqlite3_prepare16_v2(pDB, sqlDelete.data(), -1, std::out_ptr(pSTMT), nullptr);
@@ -1110,7 +1160,6 @@ void CAppSettings::DBSaveBkmForFileID(sqlite3* pDB, std::int64_t i64FileID, SpnB
 	res = sqlite3_step(pSTMT.get());
 	assert(res == SQLITE_DONE);
 
-	//Save current bookmarks.
 	for (const auto& bkm : spnBkm) {
 		std::wstring wstrVecSpan;
 		for (const auto& vecSpan : bkm.vecSpan) {
@@ -1157,6 +1206,26 @@ void CAppSettings::DBSaveLastOpenFiles(sqlite3* pDB, SpnDataOpen spnDataOpen)
 	for (const auto& data : spnDataOpen) {
 		const auto sqlInsert = std::format(L"INSERT INTO LastOpenFiles (FilePath, ProcID, EOpenMode)"
 			L"VALUES ('{}','{}','{}');", data.wstrDataPath, data.dwProcID, std::to_underlying(data.eOpenMode));
+		res = sqlite3_prepare16_v2(pDB, sqlInsert.data(), -1, std::out_ptr(pSTMT), nullptr);
+		assert(res == SQLITE_OK);
+		res = sqlite3_step(pSTMT.get());
+		assert(res == SQLITE_DONE);
+	}
+}
+
+void CAppSettings::DBSaveTemplAppliedForFileID(sqlite3* pDB, std::int64_t i64FileID, HEXCTRL::SpanHexTemplApplied spnApplied)
+{
+	//Remove all existing records for given FileID.
+	const auto sqlDelete = std::format(L"DELETE FROM TemplatesApplied WHERE FileID = '{}'", i64FileID);
+	uptr_stmt pSTMT;
+	auto res = sqlite3_prepare16_v2(pDB, sqlDelete.data(), -1, std::out_ptr(pSTMT), nullptr);
+	assert(res == SQLITE_OK);
+	res = sqlite3_step(pSTMT.get());
+	assert(res == SQLITE_DONE);
+
+	for (const auto& applied : spnApplied) {
+		const auto sqlInsert = std::format(L"INSERT INTO TemplatesApplied (FileID, TemplateName, Offset)"
+			L"VALUES ('{}','{}','{}');", i64FileID, applied.pTemplate->wstrName, applied.ullOffset);
 		res = sqlite3_prepare16_v2(pDB, sqlInsert.data(), -1, std::out_ptr(pSTMT), nullptr);
 		assert(res == SQLITE_OK);
 		res = sqlite3_step(pSTMT.get());

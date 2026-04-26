@@ -119,6 +119,7 @@ bool CHexerView::OnBeforeClose()
 
 	if (fClose) {
 		HexCtrlSaveBkms();
+		HexCtrlSaveTemplApplied();
 	}
 
 	return fClose;
@@ -167,21 +168,32 @@ auto CHexerView::GetChildFrame()const->CChildFrame*
 
 void CHexerView::HexCtrlLoadSavedBkms()
 {
-	const auto pDoc = GetDocument();
-	const auto pHex = GetHexCtrl();
-	const auto vecBkm = theApp.GetAppSettings().GetSavedBkms(pDoc->GetUniqueDocName());
-	const auto pBkm = pHex->GetBookmarks();
+	const auto vecBkm = theApp.GetAppSettings().GetSavedBkms(GetDocument()->GetUniqueDocName());
+	const auto pBkm = GetHexCtrl()->GetBookmarks();
 	for (const auto& bkm : vecBkm) {
 		pBkm->AddBkm(bkm);
 	}
 }
 
+void CHexerView::HexCtrlLoadSavedTemplApplied()
+{
+	const auto vecTemplApplied = theApp.GetAppSettings().GetSavedTemplApplied(GetDocument()->GetUniqueDocName());
+	const auto pTemplates = GetHexCtrl()->GetTemplates();
+	for (const auto& applied : vecTemplApplied) {
+		pTemplates->ApplyTemplate(applied.ullOffset, applied.wstrTemplateName);
+	}
+}
+
 void CHexerView::HexCtrlSaveBkms()
 {
-	const auto pDoc = GetDocument();
-	const auto pHex = GetHexCtrl();
-	const auto pBkm = pHex->GetBookmarks();
-	theApp.GetAppSettings().SaveBkms(pDoc->GetUniqueDocName(), pBkm->GetAllAsArray());
+	const auto pBkm = GetHexCtrl()->GetBookmarks();
+	theApp.GetAppSettings().SaveBkms(GetDocument()->GetUniqueDocName(), pBkm->GetAllBkms());
+}
+
+void CHexerView::HexCtrlSaveTemplApplied()
+{
+	const auto pTemplates = GetHexCtrl()->GetTemplates();
+	theApp.GetAppSettings().SaveTemplApplied(GetDocument()->GetUniqueDocName(), pTemplates->GetAllApplied());
 }
 
 void CHexerView::HexCtrlSetData(bool fAdjust)
@@ -369,6 +381,7 @@ void CHexerView::OnInitialUpdate()
 	HexCtrlSetData();
 	HexCtrlUpdateIcons();
 	HexCtrlLoadSavedBkms();
+	HexCtrlLoadSavedTemplApplied();
 }
 
 void CHexerView::OnSize(UINT nType, int cx, int cy)

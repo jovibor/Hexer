@@ -27,7 +27,9 @@ private:
 	[[nodiscard]] auto GetChildFrame()const -> CChildFrame*;
 	[[nodiscard]] auto GetMainFrame()const -> CMainFrame*;
 	void HexCtrlLoadSavedBkms();
+	void HexCtrlLoadSavedTemplApplied();
 	void HexCtrlSaveBkms();
+	void HexCtrlSaveTemplApplied();
 	void HexCtrlSetData(bool fAdjust = false);
 	void HexCtrlUpdateIcons();
 	[[nodiscard]] bool IsPaneAlreadyLaunch(UINT uPaneID)const;
