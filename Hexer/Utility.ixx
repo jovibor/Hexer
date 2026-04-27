@@ -8,6 +8,9 @@ module;
 #include <SDKDDKVer.h>
 #include "resource.h"
 #include <afxwin.h>
+#include <Shlobj.h>
+#include <d2d1_3.h>
+#include <winioctl.h>
 #include "HexCtrl.h"
 #include <cassert>
 #include <compare>
@@ -15,8 +18,6 @@ module;
 #include <expected>
 #include <memory>
 #include <string>
-#include <winioctl.h>
-#include <d2d1_3.h>
 export module Utility;
 
 #pragma comment(lib, "d2d1")
@@ -216,9 +217,20 @@ export namespace ut {
 		return wstrDir;
 	}
 
-	[[nodiscard]] auto GetSQLiteDBName() -> std::wstring {
-		auto wstrDB = GetModuleDir();
-		wstrDB += L"\\Hexer.db";
+	[[nodiscard]] auto GetAppDataDir() -> const std::wstring& {
+		static const auto wstrADD = [] {
+			PWSTR pwsz { };
+			::SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &pwsz);
+			auto wstr = std::wstring { pwsz } + L"\\" + GetAppName();
+			::CoTaskMemFree(pwsz);
+			return wstr;
+			}
+		();
+		return wstrADD;
+	}
+
+	[[nodiscard]] auto GetSQLiteDBPath() -> const std::wstring& {
+		static const auto wstrDB = GetAppDataDir() + L"\\" + GetAppName() + L".cfg";
 		return wstrDB;
 	}
 

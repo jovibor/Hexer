@@ -550,7 +550,8 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 		return;
 
 	if (m_upSQLiteDB == nullptr) {
-		m_upSQLiteDB = DBOpenDB(ut::GetSQLiteDBName().data());
+		::CreateDirectoryW(ut::GetAppDataDir().data(), nullptr);
+		m_upSQLiteDB = DBOpenDB(ut::GetSQLiteDBPath().data());
 		DBCreateTables(m_upSQLiteDB.get());
 	}
 
