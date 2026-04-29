@@ -101,12 +101,12 @@ auto CHexerDoc::GetIHexVirtData()->HEXCTRL::IHexVirtData* {
 
 bool CHexerDoc::IsDataAccessRWINPLACE() const {
 	const auto stDAC = GetDataAccessMode();
-	return stDAC.fMutable && stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_INPLACE;
+	return stDAC.fMutable && stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_RWINPLACE;
 }
 
 bool CHexerDoc::IsDataAccessRWSAFE()const {
 	const auto stDAC = GetDataAccessMode();
-	return stDAC.fMutable && stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_SAFE;
+	return stDAC.fMutable && stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_RWSAFE;
 }
 
 bool CHexerDoc::IsDataAccessRO() {

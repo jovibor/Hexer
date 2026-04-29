@@ -33,6 +33,7 @@ public:
 	void OnChildFrameCloseLast();   //When the last child frame is closed.
 	void OnChildFrameDisactivate();
 	void OnChildFrameOpenFirst();   //When the first child frame is opened.
+	BOOL PreTranslateMessage(MSG* pMsg)override;
 	void ShowPane(UINT uPaneID, bool fShow, bool fActivate);
 	void UpdatePaneFileInfo();
 protected:
@@ -67,7 +68,6 @@ protected:
 	afx_msg void OnViewCustomize();
 	afx_msg void OnViewRangePanes(UINT uMenuID);
 	BOOL PreCreateWindow(CREATESTRUCT& cs)override;
-	BOOL PreTranslateMessage(MSG* pMsg)override;
 	void SaveHexCtrlSettings();
 	void SavePaneData(UINT uPaneID);
 	void SavePanesSettings();

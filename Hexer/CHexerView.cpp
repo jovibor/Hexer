@@ -32,7 +32,6 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_COMMAND(IDM_VIEW_PROCMEMORY, &CHexerView::OnViewProcMemory)
 	ON_COMMAND(IDM_DA_RO, &CHexerView::OnDataAccessRO)
 	ON_COMMAND(IDM_DA_RWSAFE, &CHexerView::OnDataAccessRWSAFE)
-	ON_COMMAND(IDM_DA_RWINPLACE, &CHexerView::OnDataAccessRWINPLACE)
 	ON_COMMAND(IDM_DA_DATAIO_MMAP, &CHexerView::OnDataIOMMAP)
 	ON_COMMAND(IDM_DA_DATAIO_IOBUFF, &CHexerView::OnDataIOBuff)
 	ON_COMMAND(IDM_DA_DATAIO_IOIMMEDIATE, &CHexerView::OnDataIOImmediate)
@@ -49,7 +48,7 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_UPDATE_COMMAND_UI(IDM_EDIT_REDO, &CHexerView::OnUpdateEditRedo)
 	ON_UPDATE_COMMAND_UI(IDM_FIND_SEARCH, &CHexerView::OnUpdateFindSearch)
 	ON_UPDATE_COMMAND_UI(IDM_VIEW_PROCMEMORY, &CHexerView::OnUpdateProcMemory)
-	ON_UPDATE_COMMAND_UI_RANGE(IDM_DA_RO, IDM_DA_RWINPLACE, &CHexerView::OnUpdateDataAccessMode)
+	ON_UPDATE_COMMAND_UI_RANGE(IDM_DA_RO, IDM_DA_RWSAFE, &CHexerView::OnUpdateDataAccessMode)
 	ON_UPDATE_COMMAND_UI_RANGE(IDM_DA_DATAIO_MMAP, IDM_DA_DATAIO_IOIMMEDIATE, &CHexerView::OnUpdateDataIOMode)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
@@ -260,21 +259,24 @@ void CHexerView::OnDataAccessRWSAFE()
 
 void CHexerView::OnDataAccessRWINPLACE()
 {
-	ChangeDataAccessMode({ 2 });
+	//ChangeDataAccessMode({ 2 });
 }
 
 void CHexerView::OnDataIOMMAP()
 {
+	ChangeDataAccessMode({ 2 });
 	ChangeDataIOMode(DATA_MMAP);
 }
 
 void CHexerView::OnDataIOBuff()
 {
+	ChangeDataAccessMode({ 2 });
 	ChangeDataIOMode(DATA_IOBUFF);
 }
 
 void CHexerView::OnDataIOImmediate()
 {
+	ChangeDataAccessMode({ 2 });
 	ChangeDataIOMode(DATA_IOIMMEDIATE);
 }
 
@@ -419,7 +421,6 @@ void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
 void CHexerView::OnUpdateDataAccessMode(CCmdUI* pCmdUI)
 {
 	const auto pDoc = GetDocument();
-	const auto fRW = pDoc->IsDataWritable();
 	const auto stDAC = pDoc->GetDataAccessMode();
 
 	bool fEnable { false };
@@ -432,11 +433,7 @@ void CHexerView::OnUpdateDataAccessMode(CCmdUI* pCmdUI)
 		break;
 	case IDM_DA_RWSAFE:
 		fEnable = pDoc->IsDataOKForDASAFE();
-		fCheck = stDAC.fMutable && stDAC.eDataAccessMode == ACCESS_SAFE;
-		break;
-	case IDM_DA_RWINPLACE:
-		fEnable = fRW;
-		fCheck = stDAC.fMutable && stDAC.eDataAccessMode == ACCESS_INPLACE;
+		fCheck = stDAC.fMutable && stDAC.eDataAccessMode == ACCESS_RWSAFE;
 		break;
 	default:
 		break;
@@ -458,15 +455,15 @@ void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI)
 	using enum ut::EDataIOMode;
 	switch (pCmdUI->m_nID) {
 	case IDM_DA_DATAIO_MMAP:
-		fEnable = fModeAllowed && fIsFile;
+		fEnable = fIsFile;
 		fCheck = fModeAllowed && eDataIOMode == DATA_MMAP;
 		break;
 	case IDM_DA_DATAIO_IOBUFF:
-		fEnable = fModeAllowed && fIsFile;
+		fEnable = fIsFile;
 		fCheck = fModeAllowed && eDataIOMode == DATA_IOBUFF;
 		break;
 	case IDM_DA_DATAIO_IOIMMEDIATE:
-		fEnable = fModeAllowed;
+		fEnable = true;
 		fCheck = fModeAllowed && eDataIOMode == DATA_IOIMMEDIATE;
 		break;
 	default:

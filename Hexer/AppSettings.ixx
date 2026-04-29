@@ -607,7 +607,7 @@ void CAppSettings::LoadSettings(std::wstring_view wsvAppName)
 		refGeneral.fWindowsMenu = dwWindowsMenu;
 		DWORD dwDataAccessMode { };
 		regSettings.QueryDWORDValue(L"GeneralDataAccessMode", dwDataAccessMode);
-		refGeneral.stDAC = (std::min)(dwDataAccessMode, static_cast<DWORD>(ut::EDataAccessMode::ACCESS_INPLACE));
+		refGeneral.stDAC = (std::min)(dwDataAccessMode, static_cast<DWORD>(ut::EDataAccessMode::ACCESS_RWINPLACE));
 		DWORD dwDataIOMode { };
 		regSettings.QueryDWORDValue(L"GeneralDataIOMode", dwDataIOMode);
 		refGeneral.eDataIOMode = (std::min)(static_cast<ut::EDataIOMode>(dwDataIOMode), ut::EDataIOMode::DATA_IOIMMEDIATE);

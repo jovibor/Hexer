@@ -13,11 +13,11 @@ class CHexerView;
 
 class CChildFrame final : public CMDIChildWndEx {
 public:
+	auto GetFrameIcon()const -> HICON override;
 	[[nodiscard]] auto GetHexerView()const -> CHexerView*;
 	[[nodiscard]] bool OnBeforeClose();
 	void SetHexerView(CHexerView* pView);
 private:
-	auto GetFrameIcon()const -> HICON override;
 	[[nodiscard]] auto GetMainFrame()const -> CMainFrame*;
 	[[nodiscard]] auto GetHexCtrl()const -> HEXCTRL::IHexCtrl*;
 	afx_msg void OnClose();

@@ -144,7 +144,7 @@ BOOL CDlgDataInfo::OnInitDialog()
 void CDlgDataInfo::UpdateGridData()
 {
 	const auto lmbSetValue = [&](CHexerPropGridProp* pProp) {
-		using enum EPropName;
+		using enum EPropName; using enum ut::EDataAccessMode;
 		auto wstr = std::wstring { ut::GetWstrEOpenMode(m_dis.eOpenMode) };
 		switch (static_cast<EPropName>(pProp->GetData())) {
 		case DATA_PATH:
@@ -173,10 +173,10 @@ void CDlgDataInfo::UpdateGridData()
 			}
 			else {
 				switch (m_dis.stDAC.eDataAccessMode) {
-				case ACCESS_SAFE:
+				case ACCESS_RWSAFE:
 					clr = RGB(20, 200, 20);
 					break;
-				case ACCESS_INPLACE:
+				case ACCESS_RWINPLACE:
 					clr = RGB(200, 20, 20);
 					break;
 				default:
@@ -187,7 +187,7 @@ void CDlgDataInfo::UpdateGridData()
 			pProp->SetValueColor(clr);
 			break;
 		case IO_MODE:
-			if (m_dis.stDAC.fMutable && m_dis.stDAC.eDataAccessMode == ut::EDataAccessMode::ACCESS_INPLACE) {
+			if (m_dis.stDAC.fMutable && m_dis.stDAC.eDataAccessMode == ACCESS_RWINPLACE) {
 				pProp->SetValue(ut::GetWstrEDataIOMode(m_dis.eDataIOMode));
 			}
 			else {

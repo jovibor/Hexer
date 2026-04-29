@@ -13,16 +13,16 @@ import AppSettings;
 
 class CHexerApp final : public CWinAppEx {
 public:
+	int ExitInstance()override;
+	BOOL InitInstance()override;
 	void NotifyTabsOnSettingsChange();
 	afx_msg void OnFileOpenFile();
 	[[nodiscard]] auto GetAppSettings() -> CAppSettings&;
-	[[nodiscard]] auto GetClassName()const->LPCWSTR;
+	[[nodiscard]] auto GetClassName()const -> LPCWSTR;
 	auto OpenDocumentCustom(LPCWSTR pwszPath, bool fDontLNK) -> CDocument*;
 	auto OpenDocumentCustom(const ut::DATAOPEN& dos) -> CDocument*;
 	auto OpenDocumentFile(LPCWSTR pwszPath) -> CDocument* override;
 private:
-	BOOL InitInstance()override;
-	int ExitInstance()override;
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileNewFile();
 	afx_msg void OnFileOpenDevice();

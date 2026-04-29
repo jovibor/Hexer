@@ -24,6 +24,16 @@ BEGIN_MESSAGE_MAP(CChildFrame, CMDIChildWndEx)
 	ON_WM_MDIACTIVATE()
 END_MESSAGE_MAP()
 
+auto CChildFrame::GetFrameIcon()const->HICON
+{
+	const auto pView = GetHexerView();
+	if (pView == nullptr) {
+		return { };
+	}
+
+	return pView->GetDocument()->GetDocIcon();
+}
+
 auto CChildFrame::GetHexerView()const->CHexerView*
 {
 	return m_pHexerView;
@@ -45,16 +55,6 @@ void CChildFrame::SetHexerView(CHexerView* pView)
 
 
 //Private methods.
-
-auto CChildFrame::GetFrameIcon()const->HICON
-{
-	const auto pView = GetHexerView();
-	if (pView == nullptr) {
-		return { };
-	}
-
-	return pView->GetDocument()->GetDocIcon();
-}
 
 auto CChildFrame::GetMainFrame()const->CMainFrame*
 {

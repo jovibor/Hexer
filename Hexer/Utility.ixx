@@ -338,7 +338,7 @@ export namespace ut {
 	};
 
 	enum class EDataAccessMode : std::uint8_t {
-		ACCESS_SAFE = 0x1, ACCESS_INPLACE = 0x2
+		ACCESS_RWSAFE = 0x1, ACCESS_RWINPLACE = 0x2
 	};
 
 	struct DATAACCESS {
@@ -350,11 +350,11 @@ export namespace ut {
 				break;
 			case 1:
 				fMutable = true;
-				eDataAccessMode = EDataAccessMode::ACCESS_SAFE;
+				eDataAccessMode = EDataAccessMode::ACCESS_RWSAFE;
 				break;
 			case 2:
 				fMutable = true;
-				eDataAccessMode = EDataAccessMode::ACCESS_INPLACE;
+				eDataAccessMode = EDataAccessMode::ACCESS_RWINPLACE;
 				break;
 			default:
 				fMutable = false;
@@ -413,9 +413,9 @@ export namespace ut {
 		}
 
 		switch (stDAC.eDataAccessMode) {
-		case ACCESS_SAFE:
+		case ACCESS_RWSAFE:
 			return L"Read/Write Safe";
-		case ACCESS_INPLACE:
+		case ACCESS_RWINPLACE:
 			return L"Read/Write In-Place";
 		default:
 			return L"";

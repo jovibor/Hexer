@@ -154,9 +154,7 @@ BEGIN
         BEGIN
             MENUITEM "Read Only",                   IDM_DA_RO
             MENUITEM "Read/Write Safe",             IDM_DA_RWSAFE
-            MENUITEM "Read/Write In-Place",         IDM_DA_RWINPLACE
-            MENUITEM SEPARATOR
-            POPUP "Data IO Mode"
+            POPUP "Read/Write In-Place"
             BEGIN
                 MENUITEM "Memory Mapped File",          IDM_DA_DATAIO_MMAP
                 MENUITEM "Data IO Buffered",            IDM_DA_DATAIO_IOBUFF
