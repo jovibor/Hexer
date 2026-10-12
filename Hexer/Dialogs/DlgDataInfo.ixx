@@ -43,8 +43,7 @@ END_MESSAGE_MAP()
 
 //Private methods.
 
-void CDlgDataInfo::SetDataInfo(const ut::DATAINFO& dis)
-{
+void CDlgDataInfo::SetDataInfo(const ut::DATAINFO& dis) {
 	m_dis = dis;
 
 	if (IsWindow(m_hWnd)) {
@@ -55,14 +54,12 @@ void CDlgDataInfo::SetDataInfo(const ut::DATAINFO& dis)
 
 //Private methods.
 
-void CDlgDataInfo::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgDataInfo::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_FILEINFO_GRID, m_gridDataInfo);
 }
 
-BOOL CDlgDataInfo::OnInitDialog()
-{
+BOOL CDlgDataInfo::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	m_gridDataInfo.SetVSDotNetLook();
@@ -141,8 +138,7 @@ BOOL CDlgDataInfo::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgDataInfo::UpdateGridData()
-{
+void CDlgDataInfo::UpdateGridData() {
 	const auto lmbSetValue = [&](CHexerPropGridProp* pProp) {
 		using enum EPropName; using enum ut::EDataAccessMode;
 		auto wstr = std::wstring { ut::GetWstrEOpenMode(m_dis.eOpenMode) };

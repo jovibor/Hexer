@@ -53,8 +53,7 @@ BEGIN_MESSAGE_MAP(CHexerView, CView)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
-auto CHexerView::GetDataInfo()const->ut::DATAINFO
-{
+auto CHexerView::GetDataInfo()const->ut::DATAINFO {
 	const auto pDoc = GetDocument();
 	return { .wsvDataPath { pDoc->GetDataPath() }, .wsvFileName { pDoc->GetFileName() },
 		.wsvFriendlyName { pDoc->GetFriendlyName() }, .ullDataSize { pDoc->GetDataSize() },
@@ -62,23 +61,19 @@ auto CHexerView::GetDataInfo()const->ut::DATAINFO
 		.stDAC { pDoc->GetDataAccessMode() }, .eDataIOMode { pDoc->GetDataIOMode() } };
 }
 
-auto CHexerView::GetDlgProcMemory()const->HWND
-{
+auto CHexerView::GetDlgProcMemory()const->HWND {
 	return m_dlgProcMem;
 }
 
-auto CHexerView::GetDocument()const->CHexerDoc*
-{
+auto CHexerView::GetDocument()const->CHexerDoc* {
 	return reinterpret_cast<CHexerDoc*>(m_pDocument);
 }
 
-auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl*
-{
+auto CHexerView::GetHexCtrl()const->HEXCTRL::IHexCtrl* {
 	return &*m_pHexCtrl;
 }
 
-auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
-{
+auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND {
 	//If Pane with HexCtrl's dialog inside.
 	if (const auto optDlg = ut::GetEHexWndFromPaneID(uPaneID); optDlg) {
 		const auto hWnd = GetHexCtrl()->GetWndHandle(*optDlg);
@@ -94,8 +89,7 @@ auto CHexerView::GetHWNDForPane(UINT uPaneID)->HWND
 	return { };
 }
 
-bool CHexerView::OnBeforeClose()
-{
+bool CHexerView::OnBeforeClose() {
 	bool fClose { true };
 	if (m_fIsHexCtrlDataModified) {
 		const auto pDoc = GetDocument();
@@ -127,8 +121,7 @@ bool CHexerView::OnBeforeClose()
 
 //Private methods.
 
-void CHexerView::ChangeDataAccessMode(ut::DATAACCESS stDAC)
-{
+void CHexerView::ChangeDataAccessMode(ut::DATAACCESS stDAC) {
 	const auto pDoc = GetDocument();
 	if (pDoc->GetDataAccessMode() == stDAC)
 		return;
@@ -141,8 +134,7 @@ void CHexerView::ChangeDataAccessMode(ut::DATAACCESS stDAC)
 	ut::Log::AddLogEntryInfo(wstr);
 }
 
-void CHexerView::ChangeDataIOMode(ut::EDataIOMode eDataIOMode)
-{
+void CHexerView::ChangeDataIOMode(ut::EDataIOMode eDataIOMode) {
 	const auto pDoc = GetDocument();
 	if (pDoc->GetDataIOMode() == eDataIOMode)
 		return;
@@ -155,18 +147,15 @@ void CHexerView::ChangeDataIOMode(ut::EDataIOMode eDataIOMode)
 	ut::Log::AddLogEntryInfo(wstr);
 }
 
-auto CHexerView::GetMainFrame()const->CMainFrame*
-{
+auto CHexerView::GetMainFrame()const->CMainFrame* {
 	return static_cast<CMainFrame*>(AfxGetMainWnd());
 }
 
-auto CHexerView::GetChildFrame()const->CChildFrame*
-{
+auto CHexerView::GetChildFrame()const->CChildFrame* {
 	return static_cast<CChildFrame*>(GetParentFrame());
 }
 
-void CHexerView::HexCtrlLoadSavedBkms()
-{
+void CHexerView::HexCtrlLoadSavedBkms() {
 	const auto vecBkm = theApp.GetAppSettings().GetSavedBkms(GetDocument()->GetUniqueDocName());
 	const auto pBkm = GetHexCtrl()->GetBookmarks();
 	for (const auto& bkm : vecBkm) {
@@ -174,8 +163,7 @@ void CHexerView::HexCtrlLoadSavedBkms()
 	}
 }
 
-void CHexerView::HexCtrlLoadSavedTemplApplied()
-{
+void CHexerView::HexCtrlLoadSavedTemplApplied() {
 	const auto vecTemplApplied = theApp.GetAppSettings().GetSavedTemplApplied(GetDocument()->GetUniqueDocName());
 	const auto pTemplates = GetHexCtrl()->GetTemplates();
 	for (const auto& applied : vecTemplApplied) {
@@ -183,20 +171,17 @@ void CHexerView::HexCtrlLoadSavedTemplApplied()
 	}
 }
 
-void CHexerView::HexCtrlSaveBkms()
-{
+void CHexerView::HexCtrlSaveBkms() {
 	const auto pBkm = GetHexCtrl()->GetBookmarks();
 	theApp.GetAppSettings().SaveBkms(GetDocument()->GetUniqueDocName(), pBkm->GetAllBkms());
 }
 
-void CHexerView::HexCtrlSaveTemplApplied()
-{
+void CHexerView::HexCtrlSaveTemplApplied() {
 	const auto pTemplates = GetHexCtrl()->GetTemplates();
 	theApp.GetAppSettings().SaveTemplApplied(GetDocument()->GetUniqueDocName(), pTemplates->GetAllApplied());
 }
 
-void CHexerView::HexCtrlSetData(bool fAdjust)
-{
+void CHexerView::HexCtrlSetData(bool fAdjust) {
 	const auto pDoc = GetDocument();
 	const auto fMutable = pDoc->IsDataAccessRW();
 	GetHexCtrl()->SetData({ .spnData { pDoc->GetFileMMAPData(), pDoc->GetDataSize() },
@@ -204,8 +189,7 @@ void CHexerView::HexCtrlSetData(bool fAdjust)
 		.dwCacheSize { pDoc->GetCacheSize() }, .fMutable { fMutable } }, fAdjust);
 }
 
-void CHexerView::HexCtrlUpdateIcons()
-{
+void CHexerView::HexCtrlUpdateIcons() {
 	using enum HEXCTRL::EHexMenuItem;
 	const auto pHex = GetHexCtrl();
 	const auto& sett = theApp.GetAppSettings();
@@ -228,8 +212,7 @@ void CHexerView::HexCtrlUpdateIcons()
 	pHex->SetMenuItem(IDM_APPEAR_CHOOSEFONT, mii);
 }
 
-bool CHexerView::IsPaneAlreadyLaunch(UINT uPaneID)const
-{
+bool CHexerView::IsPaneAlreadyLaunch(UINT uPaneID)const {
 	switch (uPaneID) {
 	case IDC_PANE_BKMMGR:
 		return m_fIsAlreadyLaunchDlgBkmMgr;
@@ -242,91 +225,74 @@ bool CHexerView::IsPaneAlreadyLaunch(UINT uPaneID)const
 	}
 }
 
-void CHexerView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView)
-{
+void CHexerView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView) {
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
 }
 
-void CHexerView::OnDataAccessRO()
-{
+void CHexerView::OnDataAccessRO() {
 	ChangeDataAccessMode({ 0 });
 }
 
-void CHexerView::OnDataAccessRWSAFE()
-{
+void CHexerView::OnDataAccessRWSAFE() {
 	ChangeDataAccessMode({ 1 });
 }
 
-void CHexerView::OnDataAccessRWINPLACE()
-{
+void CHexerView::OnDataAccessRWINPLACE() {
 	//ChangeDataAccessMode({ 2 });
 }
 
-void CHexerView::OnDataIOMMAP()
-{
+void CHexerView::OnDataIOMMAP() {
 	ChangeDataAccessMode({ 2 });
 	ChangeDataIOMode(ut::EDataIOMode::DATA_MMAP);
 }
 
-void CHexerView::OnDataIOBuff()
-{
+void CHexerView::OnDataIOBuff() {
 	ChangeDataAccessMode({ 2 });
 	ChangeDataIOMode(ut::EDataIOMode::DATA_IOBUFF);
 }
 
-void CHexerView::OnDataIOImmediate()
-{
+void CHexerView::OnDataIOImmediate() {
 	ChangeDataAccessMode({ 2 });
 	ChangeDataIOMode(ut::EDataIOMode::DATA_IOIMMEDIATE);
 }
 
-auto CHexerView::OnDPIChangedAfterParent(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
-{
+auto CHexerView::OnDPIChangedAfterParent(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT {
 	const auto ret = Default();
 	HexCtrlUpdateIcons();
 	return ret;
 }
 
-void CHexerView::OnDraw(CDC* /*pDC*/)
-{ }
+void CHexerView::OnDraw(CDC* /*pDC*/) { }
 
-void CHexerView::OnEditCopyHex()
-{
+void CHexerView::OnEditCopyHex() {
 	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_CLPBRD_COPY_HEX);
 }
 
-void CHexerView::OnEditPasteHex()
-{
+void CHexerView::OnEditPasteHex() {
 	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_CLPBRD_PASTE_HEX);
 }
 
-void CHexerView::OnEditUndo()
-{
+void CHexerView::OnEditUndo() {
 	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_MODIFY_UNDO);
 }
 
-void CHexerView::OnEditRedo()
-{
+void CHexerView::OnEditRedo() {
 	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_MODIFY_REDO);
 }
 
-void CHexerView::OnFilePrint()
-{
+void CHexerView::OnFilePrint() {
 	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_PRINT_DLG);
 }
 
-void CHexerView::OnFileSave()
-{
+void CHexerView::OnFileSave() {
 	SaveDataToDisk();
 }
 
-void CHexerView::OnFindSearch()
-{
+void CHexerView::OnFindSearch() {
 	GetHexCtrl()->ExecuteCmd(HEXCTRL::EHexCmd::CMD_SEARCH_DLG);
 }
 
-void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	UINT uPaneID;
 	switch (pNMHDR->code) {
 	case HEXCTRL::HEXCTRL_MSG_DLGBKMMGR:
@@ -345,21 +311,18 @@ void CHexerView::OnHexCtrlDLG(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	GetMainFrame()->ShowPane(uPaneID, true, true);
 }
 
-void CHexerView::OnHexCtrlSetData(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CHexerView::OnHexCtrlSetData(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	if (GetDocument()->IsDataAccessRWSAFE()) {
 		m_fIsHexCtrlDataModified = true;
 	}
 }
 
-void CHexerView::OnHexCtrlSetFont(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CHexerView::OnHexCtrlSetFont(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	theApp.GetAppSettings().GetHexCtrlSettings().stLogFont = GetHexCtrl()->GetFont();
 	theApp.GetAppSettings().GetHexCtrlSettings().stClrs = GetHexCtrl()->GetColors(); //Because font color could be changed.
 }
 
-void CHexerView::OnInitialUpdate()
-{
+void CHexerView::OnInitialUpdate() {
 	CView::OnInitialUpdate();
 
 	GetChildFrame()->SetHexerView(this);
@@ -386,8 +349,7 @@ void CHexerView::OnInitialUpdate()
 	HexCtrlLoadSavedTemplApplied();
 }
 
-void CHexerView::OnSize(UINT nType, int cx, int cy)
-{
+void CHexerView::OnSize(UINT nType, int cx, int cy) {
 	CView::OnSize(nType, cx, cy);
 
 	if (GetHexCtrl()->IsCreated()) {
@@ -395,8 +357,7 @@ void CHexerView::OnSize(UINT nType, int cx, int cy)
 	}
 }
 
-void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
-{
+void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/) {
 	if (lHint == ut::WM_APP_SETTINGS_CHANGED) {
 		const auto& HexSett = theApp.GetAppSettings().GetHexCtrlSettings();
 		const auto pHex = GetHexCtrl();
@@ -418,8 +379,7 @@ void CHexerView::OnUpdate(CView* /*pSender*/, LPARAM lHint, CObject* /*pHint*/)
 	}
 }
 
-void CHexerView::OnUpdateDataAccessMode(CCmdUI* pCmdUI)
-{
+void CHexerView::OnUpdateDataAccessMode(CCmdUI* pCmdUI) {
 	const auto pDoc = GetDocument();
 	const auto stDAC = pDoc->GetDataAccessMode();
 
@@ -443,8 +403,7 @@ void CHexerView::OnUpdateDataAccessMode(CCmdUI* pCmdUI)
 	pCmdUI->SetCheck(fCheck);
 }
 
-void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI)
-{
+void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI) {
 	const auto pDoc = GetDocument();
 	const auto fIsFile = pDoc->IsFile();
 	const auto fModeAllowed = pDoc->IsDataAccessRW() && !pDoc->IsDataAccessRWSAFE();
@@ -474,51 +433,43 @@ void CHexerView::OnUpdateDataIOMode(CCmdUI* pCmdUI)
 	pCmdUI->SetCheck(fCheck);
 }
 
-void CHexerView::OnUpdateFileSave(CCmdUI* pCmdUI)
-{
+void CHexerView::OnUpdateFileSave(CCmdUI* pCmdUI) {
 	pCmdUI->Enable(m_fIsHexCtrlDataModified);
 }
 
-void CHexerView::OnUpdateEditCopyHex(CCmdUI* pCmdUI)
-{
+void CHexerView::OnUpdateEditCopyHex(CCmdUI* pCmdUI) {
 	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_CLPBRD_COPY_HEX);
 	pCmdUI->Enable(fEnable);
 }
 
-void CHexerView::OnUpdateEditPasteHex(CCmdUI* pCmdUI)
-{
+void CHexerView::OnUpdateEditPasteHex(CCmdUI* pCmdUI) {
 	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_CLPBRD_PASTE_HEX);
 	pCmdUI->Enable(fEnable);
 }
 
-void CHexerView::OnUpdateEditUndo(CCmdUI* pCmdUI)
-{
+void CHexerView::OnUpdateEditUndo(CCmdUI* pCmdUI) {
 	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_MODIFY_UNDO);
 	pCmdUI->Enable(fEnable);
 }
 
-void CHexerView::OnUpdateEditRedo(CCmdUI* pCmdUI)
-{
+void CHexerView::OnUpdateEditRedo(CCmdUI* pCmdUI) {
 	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_MODIFY_REDO);
 	pCmdUI->Enable(fEnable);
 }
 
-void CHexerView::OnUpdateFindSearch(CCmdUI* pCmdUI)
-{
+void CHexerView::OnUpdateFindSearch(CCmdUI* pCmdUI) {
 	const auto fEnable = GetHexCtrl()->IsCmdAvail(HEXCTRL::EHexCmd::CMD_SEARCH_DLG);
 	pCmdUI->Enable(fEnable);
 }
 
-void CHexerView::OnUpdateProcMemory(CCmdUI* pCmdUI)
-{
+void CHexerView::OnUpdateProcMemory(CCmdUI* pCmdUI) {
 	pCmdUI->Enable(GetDocument()->IsProcess());
 	if (::IsWindow(m_dlgProcMem)) {
 		pCmdUI->SetCheck(m_dlgProcMem.IsWindowVisible());
 	}
 }
 
-void CHexerView::OnViewProcMemory()
-{
+void CHexerView::OnViewProcMemory() {
 	if (!::IsWindow(m_dlgProcMem)) {
 		m_dlgProcMem.Init(GetHexCtrl(), GetDocument()->GetVecProcMemory());
 		m_dlgProcMem.Create(IDD_PROCMEMORY, AfxGetMainWnd());
@@ -526,8 +477,7 @@ void CHexerView::OnViewProcMemory()
 	m_dlgProcMem.ShowWindow(m_dlgProcMem.IsWindowVisible() ? SW_HIDE : SW_SHOW);
 }
 
-void CHexerView::SetPaneAlreadyLaunch(UINT uPaneID)
-{
+void CHexerView::SetPaneAlreadyLaunch(UINT uPaneID) {
 	switch (uPaneID) {
 	case IDC_PANE_BKMMGR:
 		m_fIsAlreadyLaunchDlgBkmMgr = true;
@@ -543,8 +493,7 @@ void CHexerView::SetPaneAlreadyLaunch(UINT uPaneID)
 	}
 }
 
-void CHexerView::SaveDataToDisk()
-{
+void CHexerView::SaveDataToDisk() {
 	if (!m_fIsHexCtrlDataModified)
 		return;
 
@@ -552,8 +501,7 @@ void CHexerView::SaveDataToDisk()
 	m_fIsHexCtrlDataModified = false;
 }
 
-void CHexerView::UpdateDlgBkmMgr()const
-{
+void CHexerView::UpdateDlgBkmMgr()const {
 	using enum HEXCTRL::EHexWnd;
 	using enum HEXCTRL::EHexDlgItem;
 	const auto pHex = GetHexCtrl();
@@ -572,8 +520,7 @@ void CHexerView::UpdateDlgBkmMgr()const
 	}
 }
 
-void CHexerView::UpdateDlgDataInterp()const
-{
+void CHexerView::UpdateDlgDataInterp()const {
 	using enum HEXCTRL::EHexWnd;
 	using enum HEXCTRL::EHexDlgItem;
 	const auto pHex = GetHexCtrl();
@@ -592,14 +539,11 @@ void CHexerView::UpdateDlgDataInterp()const
 	}
 }
 
-void CHexerView::UpdateDlgModify()const
-{ }
+void CHexerView::UpdateDlgModify()const { }
 
-void CHexerView::UpdateDlgSearch()const
-{ }
+void CHexerView::UpdateDlgSearch()const { }
 
-void CHexerView::UpdateDlgTemplMgr()const
-{
+void CHexerView::UpdateDlgTemplMgr()const {
 	using enum HEXCTRL::EHexWnd;
 	using enum HEXCTRL::EHexDlgItem;
 	const auto pHex = GetHexCtrl();
@@ -636,8 +580,7 @@ void CHexerView::UpdateDlgTemplMgr()const
 	}
 }
 
-void CHexerView::UpdateHexCtrlDlgData(UINT uPaneID)const
-{
+void CHexerView::UpdateHexCtrlDlgData(UINT uPaneID)const {
 	using enum HEXCTRL::EHexWnd;
 	switch (*ut::GetEHexWndFromPaneID(uPaneID)) {
 	case DLG_BKMMGR:

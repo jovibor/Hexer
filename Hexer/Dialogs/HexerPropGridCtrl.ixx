@@ -37,14 +37,12 @@ private:
 	COLORREF m_clrValue { 0xFFFFFFFFUL }; //Value text color.
 };
 
-BOOL CHexerPropGridProp::AddOptionEx(LPCWSTR lpszOption, DWORD_PTR dwData)
-{
+BOOL CHexerPropGridProp::AddOptionEx(LPCWSTR lpszOption, DWORD_PTR dwData) {
 	m_umapData[lpszOption] = dwData;
 	return CMFCPropertyGridProperty::AddOption(lpszOption, TRUE);
 }
 
-auto CHexerPropGridProp::FormatProperty()->CString
-{
+auto CHexerPropGridProp::FormatProperty()->CString {
 	//Formatting output string for floats and doubles.
 	switch (GetValue().vt) {
 	case VT_R4: //float.
@@ -57,8 +55,7 @@ auto CHexerPropGridProp::FormatProperty()->CString
 }
 
 
-void CHexerPropGridProp::OnDrawValue(CDC* pDC, CRect rect)
-{
+void CHexerPropGridProp::OnDrawValue(CDC* pDC, CRect rect) {
 	if (m_clrValue != 0xFFFFFFFFUL) {
 		const auto clrOld = pDC->SetTextColor(m_clrValue);
 		CMFCPropertyGridProperty::OnDrawValue(pDC, rect);
@@ -69,13 +66,11 @@ void CHexerPropGridProp::OnDrawValue(CDC* pDC, CRect rect)
 	}
 }
 
-void CHexerPropGridProp::SetValueColor(COLORREF clr)
-{
+void CHexerPropGridProp::SetValueColor(COLORREF clr) {
 	m_clrValue = clr;
 }
 
-void CHexerPropGridProp::SetValueFromData(DWORD_PTR dwData)
-{
+void CHexerPropGridProp::SetValueFromData(DWORD_PTR dwData) {
 	for (const auto& [key, value] : m_umapData) {
 		if (value == dwData) {
 			SetValue(key.data());
@@ -84,8 +79,7 @@ void CHexerPropGridProp::SetValueFromData(DWORD_PTR dwData)
 	}
 }
 
-void CHexerPropGridProp::OnSelectCombo()
-{
+void CHexerPropGridProp::OnSelectCombo() {
 	CMFCPropertyGridProperty::OnSelectCombo();
 	SetData(m_umapData[GetValue().bstrVal]);
 }

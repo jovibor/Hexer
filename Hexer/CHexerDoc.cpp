@@ -42,8 +42,7 @@ auto CHexerDoc::GetDataIOMode()const->ut::EDataIOMode {
 	return m_stDataLoader.GetDataIOMode();
 }
 
-auto CHexerDoc::GetDataOpen()const->const ut::DATAOPEN&
-{
+auto CHexerDoc::GetDataOpen()const->const ut::DATAOPEN& {
 	return m_dos;
 }
 
@@ -87,8 +86,7 @@ auto CHexerDoc::GetProcID()const->DWORD {
 	return m_stDataLoader.GetProcID();
 }
 
-auto CHexerDoc::GetUniqueDocName()->std::wstring_view
-{
+auto CHexerDoc::GetUniqueDocName()->std::wstring_view {
 	return m_strPathName.GetString();
 }
 
@@ -138,8 +136,7 @@ bool CHexerDoc::IsProcess()const {
 	return m_stDataLoader.IsProcess();
 }
 
-bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos)
-{
+bool CHexerDoc::OnOpenDocument(const ut::DATAOPEN& dos) {
 	m_dos = dos;
 	m_wstrFileName = m_dos.wstrDataPath.substr(m_dos.wstrDataPath.find_last_of(L'\\') + 1); //Doc name with the .extension.
 	auto& sett = theApp.GetAppSettings();
@@ -199,8 +196,7 @@ BOOL CHexerDoc::OnOpenDocument(LPCWSTR lpszPathName) {
 	return OnOpenDocument({ .wstrDataPath { lpszPathName }, .eOpenMode { ut::EOpenMode::OPEN_FILE } });
 }
 
-void CHexerDoc::OnCloseDocument()
-{
+void CHexerDoc::OnCloseDocument() {
 	//Doing below only when closing an individual opened document, not the whole App.
 	if (m_fOpened && !GetMainFrame()->IsAppClosing()) {
 		std::wstring wstrInfo;
@@ -218,8 +214,7 @@ void CHexerDoc::OnCloseDocument()
 	CDocument::OnCloseDocument();
 }
 
-auto CHexerDoc::GetUniqueDocName(const ut::DATAOPEN& dos)->std::wstring
-{
+auto CHexerDoc::GetUniqueDocName(const ut::DATAOPEN& dos)->std::wstring {
 	if (dos.eOpenMode == ut::EOpenMode::OPEN_PROC) {
 		return std::format(L"Process: {} (ID: {})", dos.wstrDataPath, dos.dwProcID);
 	}
@@ -228,8 +223,7 @@ auto CHexerDoc::GetUniqueDocName(const ut::DATAOPEN& dos)->std::wstring
 	}
 }
 
-auto CHexerDoc::GetDocTitle(const ut::DATAOPEN& dos)->std::wstring
-{
+auto CHexerDoc::GetDocTitle(const ut::DATAOPEN& dos)->std::wstring {
 	using enum ut::EOpenMode;
 	if (dos.eOpenMode == OPEN_PROC) {
 		return GetUniqueDocName(dos);

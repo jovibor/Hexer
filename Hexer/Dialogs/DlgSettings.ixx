@@ -51,8 +51,7 @@ private:
 	[[nodiscard]] virtual auto GetGridVec()const -> const std::vector<GRIDDATA> & = 0;
 };
 
-auto IPropsHelper::GetGridData(std::uint8_t ui8Name)const->const GRIDDATA*
-{
+auto IPropsHelper::GetGridData(std::uint8_t ui8Name)const->const GRIDDATA* {
 	const auto it = std::find_if(GetGridVec().begin(), GetGridVec().end(), [=](const GRIDDATA& refData) {
 		return refData.ui8Name == ui8Name; });
 	assert(it != GetGridVec().end());
@@ -60,84 +59,68 @@ auto IPropsHelper::GetGridData(std::uint8_t ui8Name)const->const GRIDDATA*
 	return it != GetGridVec().end() ? &*it : nullptr;
 }
 
-auto IPropsHelper::GetProperty(std::uint8_t ui8Name)const->CMFCPropertyGridProperty*
-{
+auto IPropsHelper::GetProperty(std::uint8_t ui8Name)const->CMFCPropertyGridProperty* {
 	return GetGridData(ui8Name)->pProp;
 }
 
-auto IPropsHelper::GetPropOptDataDWORD(std::uint8_t ui8Name)const->DWORD
-{
+auto IPropsHelper::GetPropOptDataDWORD(std::uint8_t ui8Name)const->DWORD {
 	return static_cast<DWORD>(GetPropOptDataULL(ui8Name));
 }
 
-auto IPropsHelper::GetPropOptDataULL(std::uint8_t ui8Name) const -> DWORD_PTR
-{
+auto IPropsHelper::GetPropOptDataULL(std::uint8_t ui8Name) const -> DWORD_PTR {
 	return GetProperty(ui8Name)->GetData();
 }
 
-auto IPropsHelper::GetPropValueDWORD(std::uint8_t ui8Name)const->DWORD
-{
+auto IPropsHelper::GetPropValueDWORD(std::uint8_t ui8Name)const->DWORD {
 	return GetProperty(ui8Name)->GetValue().uintVal;
 }
 
-auto IPropsHelper::GetPropValueFLOAT(std::uint8_t ui8Name)const->float
-{
+auto IPropsHelper::GetPropValueFLOAT(std::uint8_t ui8Name)const->float {
 	return GetProperty(ui8Name)->GetValue().fltVal;
 }
 
-auto IPropsHelper::GetPropValuePLOGFONT(std::uint8_t ui8Name)const->LOGFONTW*
-{
+auto IPropsHelper::GetPropValuePLOGFONT(std::uint8_t ui8Name)const->LOGFONTW* {
 	return static_cast<CMFCPropertyGridFontProperty*>(GetProperty(ui8Name))->GetLogFont();
 }
 
-auto IPropsHelper::GetPropValueRGB(std::uint8_t ui8Name)const->COLORREF
-{
+auto IPropsHelper::GetPropValueRGB(std::uint8_t ui8Name)const->COLORREF {
 	return static_cast<CMFCPropertyGridColorProperty*>(GetProperty(ui8Name))->GetColor();
 }
 
-auto IPropsHelper::GetPropValueWCHAR(std::uint8_t ui8Name)const->wchar_t
-{
+auto IPropsHelper::GetPropValueWCHAR(std::uint8_t ui8Name)const->wchar_t {
 	const auto wsv = GetPropValueWSTR(ui8Name);
 	return wsv.empty() ? L'\0' : wsv[0];
 }
 
-auto IPropsHelper::GetPropValueWSTR(std::uint8_t ui8Name)const->std::wstring_view
-{
+auto IPropsHelper::GetPropValueWSTR(std::uint8_t ui8Name)const->std::wstring_view {
 	return GetProperty(ui8Name)->GetValue().bstrVal;
 }
 
-void IPropsHelper::SetPropOptValueByData(std::uint8_t ui8Name, DWORD_PTR dwData)const
-{
+void IPropsHelper::SetPropOptValueByData(std::uint8_t ui8Name, DWORD_PTR dwData)const {
 	static_cast<CHexerPropGridProp*>(GetProperty(ui8Name))->SetValueFromData(dwData);
 }
 
-void IPropsHelper::SetPropValueDWORD(std::uint8_t ui8Name, DWORD dwValue)const
-{
+void IPropsHelper::SetPropValueDWORD(std::uint8_t ui8Name, DWORD dwValue)const {
 	GetProperty(ui8Name)->SetValue(static_cast<_variant_t>(dwValue));
 }
 
-void IPropsHelper::SetPropValueFLOAT(std::uint8_t ui8Name, float flValue)const
-{
+void IPropsHelper::SetPropValueFLOAT(std::uint8_t ui8Name, float flValue)const {
 	GetProperty(ui8Name)->SetValue(static_cast<_variant_t>(flValue));
 }
 
-void IPropsHelper::SetPropValueLOGFONT(std::uint8_t ui8Name, const LOGFONTW& lf)const
-{
+void IPropsHelper::SetPropValueLOGFONT(std::uint8_t ui8Name, const LOGFONTW& lf)const {
 	*GetPropValuePLOGFONT(ui8Name) = lf;
 }
 
-void IPropsHelper::SetPropValueRGB(std::uint8_t ui8Name, COLORREF clrValue)const
-{
+void IPropsHelper::SetPropValueRGB(std::uint8_t ui8Name, COLORREF clrValue)const {
 	static_cast<CMFCPropertyGridColorProperty*>(GetProperty(ui8Name))->SetColor(clrValue);
 }
 
-void IPropsHelper::SetPropValueWCHAR(std::uint8_t ui8Name, wchar_t wchValue)const
-{
+void IPropsHelper::SetPropValueWCHAR(std::uint8_t ui8Name, wchar_t wchValue)const {
 	GetProperty(ui8Name)->SetValue(static_cast<_variant_t>(std::format(L"{}", wchValue).data()));
 }
 
-void IPropsHelper::SetPropValueWSTR(std::uint8_t ui8Name, LPCWSTR pwstr)const
-{
+void IPropsHelper::SetPropValueWSTR(std::uint8_t ui8Name, LPCWSTR pwstr)const {
 	GetProperty(ui8Name)->SetValue(pwstr);
 }
 
@@ -179,16 +162,14 @@ BEGIN_MESSAGE_MAP(CDlgSettingsGeneral, CDialogEx)
 	ON_REGISTERED_MESSAGE(AFX_WM_PROPERTY_CHANGED, &CDlgSettingsGeneral::OnPropertyDataChanged)
 END_MESSAGE_MAP()
 
-auto CDlgSettingsGeneral::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSettings* pAppSettings)->BOOL
-{
+auto CDlgSettingsGeneral::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSettings* pAppSettings)->BOOL {
 	assert(pAppSettings != nullptr);
 	m_pAppSettings = pAppSettings;
 
 	return CDialogEx::Create(nIDTemplate, pParentWnd);
 }
 
-void CDlgSettingsGeneral::ResetToDefaults()
-{
+void CDlgSettingsGeneral::ResetToDefaults() {
 	using enum EName;
 	m_grid.SetRedraw(FALSE);
 	const auto& refDefs = CAppSettings::GetGeneralDefs();
@@ -203,8 +184,7 @@ void CDlgSettingsGeneral::ResetToDefaults()
 	m_fModified = true;
 }
 
-void CDlgSettingsGeneral::SaveSettings()
-{
+void CDlgSettingsGeneral::SaveSettings() {
 	if (!IsModified())
 		return;
 
@@ -222,29 +202,24 @@ void CDlgSettingsGeneral::SaveSettings()
 
 //CDlgSettingsGeneral private methods.
 
-void CDlgSettingsGeneral::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgSettingsGeneral::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_SETTINGSGENERAL_GRID, m_grid);
 }
 
-auto CDlgSettingsGeneral::GetGridVec()const->const std::vector<GRIDDATA>&
-{
+auto CDlgSettingsGeneral::GetGridVec()const->const std::vector<GRIDDATA>& {
 	return m_vecGrid;
 }
 
-bool CDlgSettingsGeneral::IsModified()const
-{
+bool CDlgSettingsGeneral::IsModified()const {
 	return m_fModified;
 }
 
-void CDlgSettingsGeneral::OnCancel()
-{
+void CDlgSettingsGeneral::OnCancel() {
 	static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDCANCEL);
 }
 
-BOOL CDlgSettingsGeneral::OnInitDialog()
-{
+BOOL CDlgSettingsGeneral::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	const auto flDPIScale = ut::GetDPIScaleForHWND(m_grid);
@@ -338,13 +313,11 @@ BOOL CDlgSettingsGeneral::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgSettingsGeneral::OnOK()
-{
+void CDlgSettingsGeneral::OnOK() {
 	static_cast<CDialogEx*>(GetParentOwner())->GetDlgItem(IDOK)->SendMessageW(BM_CLICK);
 }
 
-auto CDlgSettingsGeneral::OnPropertyDataChanged(WPARAM wParam, LPARAM lParam)->LRESULT
-{
+auto CDlgSettingsGeneral::OnPropertyDataChanged(WPARAM wParam, LPARAM lParam)->LRESULT {
 	m_fModified = true;
 	GetParent()->SendMessageW(AFX_WM_PROPERTY_CHANGED, wParam, lParam);
 
@@ -393,16 +366,14 @@ BEGIN_MESSAGE_MAP(CDlgSettingsHexCtrl, CDialogEx)
 	ON_REGISTERED_MESSAGE(AFX_WM_PROPERTY_CHANGED, &CDlgSettingsHexCtrl::OnPropertyDataChanged)
 END_MESSAGE_MAP()
 
-auto CDlgSettingsHexCtrl::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSettings* pAppSettings)->BOOL
-{
+auto CDlgSettingsHexCtrl::Create(UINT nIDTemplate, CWnd* pParentWnd, CAppSettings* pAppSettings)->BOOL {
 	assert(pAppSettings != nullptr);
 	m_pAppSettings = pAppSettings;
 
 	return CDialogEx::Create(nIDTemplate, pParentWnd);
 }
 
-void CDlgSettingsHexCtrl::ResetToDefaults()
-{
+void CDlgSettingsHexCtrl::ResetToDefaults() {
 	using enum EName;
 	m_grid.SetRedraw(FALSE);
 	const auto& refDefs = CAppSettings::GetHexCtrlDefs();
@@ -446,8 +417,7 @@ void CDlgSettingsHexCtrl::ResetToDefaults()
 	m_fModified = true;
 }
 
-void CDlgSettingsHexCtrl::SaveSettings()
-{
+void CDlgSettingsHexCtrl::SaveSettings() {
 	if (!IsModified())
 		return;
 
@@ -494,29 +464,24 @@ void CDlgSettingsHexCtrl::SaveSettings()
 
 //CDlgSettingsHexCtrl private methods.
 
-void CDlgSettingsHexCtrl::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgSettingsHexCtrl::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_SETTINGSHEXCTRL_GRID, m_grid);
 }
 
-auto CDlgSettingsHexCtrl::GetGridVec()const->const std::vector<GRIDDATA>&
-{
+auto CDlgSettingsHexCtrl::GetGridVec()const->const std::vector<GRIDDATA>& {
 	return m_vecGrid;
 }
 
-bool CDlgSettingsHexCtrl::IsModified()const
-{
+bool CDlgSettingsHexCtrl::IsModified()const {
 	return m_fModified;
 }
 
-void CDlgSettingsHexCtrl::OnCancel()
-{
+void CDlgSettingsHexCtrl::OnCancel() {
 	static_cast<CDialogEx*>(GetParentOwner())->EndDialog(IDCANCEL);
 }
 
-BOOL CDlgSettingsHexCtrl::OnInitDialog()
-{
+BOOL CDlgSettingsHexCtrl::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	const auto flDPIScale = ut::GetDPIScaleForHWND(m_grid);
@@ -695,13 +660,11 @@ BOOL CDlgSettingsHexCtrl::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgSettingsHexCtrl::OnOK()
-{
+void CDlgSettingsHexCtrl::OnOK() {
 	static_cast<CDialogEx*>(GetParentOwner())->GetDlgItem(IDOK)->SendMessageW(BM_CLICK);
 }
 
-auto CDlgSettingsHexCtrl::OnPropertyDataChanged(WPARAM wParam, LPARAM lParam)->LRESULT
-{
+auto CDlgSettingsHexCtrl::OnPropertyDataChanged(WPARAM wParam, LPARAM lParam)->LRESULT {
 	m_fModified = true;
 	GetParent()->SendMessageW(AFX_WM_PROPERTY_CHANGED, wParam, lParam);
 
@@ -748,8 +711,7 @@ BEGIN_MESSAGE_MAP(CDlgSettings, CDialogEx)
 	ON_REGISTERED_MESSAGE(AFX_WM_PROPERTY_CHANGED, &CDlgSettings::OnAnyPropertyDataChanged)
 END_MESSAGE_MAP()
 
-auto CDlgSettings::DoModal(CAppSettings& refSettings)->INT_PTR
-{
+auto CDlgSettings::DoModal(CAppSettings& refSettings)->INT_PTR {
 	m_pAppSettings = &refSettings;
 
 	return CDialogEx::DoModal();
@@ -758,33 +720,28 @@ auto CDlgSettings::DoModal(CAppSettings& refSettings)->INT_PTR
 
 //CDlgSettings private methods.
 
-void CDlgSettings::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgSettings::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_SETTINGS_TAB, m_tabMain);
 }
 
-auto CDlgSettings::OnAnyPropertyDataChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
-{
+auto CDlgSettings::OnAnyPropertyDataChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT {
 	GetDlgItem(IDC_SETTINGS_APPLY)->EnableWindow(TRUE);
 	m_fModified = true;
 
 	return TRUE;
 }
 
-void CDlgSettings::OnApply()
-{
+void CDlgSettings::OnApply() {
 	SaveSettings();
 	GetDlgItem(IDC_SETTINGS_APPLY)->EnableWindow(FALSE);
 }
 
-void CDlgSettings::OnCancel()
-{
+void CDlgSettings::OnCancel() {
 	CDialogEx::OnCancel();
 }
 
-void CDlgSettings::OnDefaults()
-{
+void CDlgSettings::OnDefaults() {
 	if (MessageBoxW(L"Reset all settings to their defaults?", L"Defaults", MB_YESNO | MB_ICONQUESTION) != IDYES)
 		return;
 
@@ -794,8 +751,7 @@ void CDlgSettings::OnDefaults()
 	m_fModified = true;
 }
 
-BOOL CDlgSettings::OnInitDialog()
-{
+BOOL CDlgSettings::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	m_tabMain.InsertItem(TCIF_TEXT | TCIF_PARAM, 0, L"General", 0, std::to_underlying(ETabs::TAB_GENERAL));
@@ -835,19 +791,16 @@ BOOL CDlgSettings::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgSettings::OnOK()
-{
+void CDlgSettings::OnOK() {
 	SaveSettings();
 	CDialogEx::OnOK();
 }
 
-void CDlgSettings::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CDlgSettings::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	SetCurrentTab(TabIDToName(m_tabMain.GetCurSel()));
 }
 
-void CDlgSettings::SaveSettings()
-{
+void CDlgSettings::SaveSettings() {
 	if (!m_fModified)
 		return;
 
@@ -858,8 +811,7 @@ void CDlgSettings::SaveSettings()
 	m_fModified = false;
 }
 
-void CDlgSettings::SetCurrentTab(ETabs eTab)
-{
+void CDlgSettings::SetCurrentTab(ETabs eTab) {
 	m_tabMain.SetCurSel(TabNameToID(eTab));
 	using enum ETabs;
 	switch (eTab) {
@@ -876,8 +828,7 @@ void CDlgSettings::SetCurrentTab(ETabs eTab)
 	}
 }
 
-auto CDlgSettings::TabIDToName(int iTab)const->ETabs
-{
+auto CDlgSettings::TabIDToName(int iTab)const->ETabs {
 	TCITEMW tci { .mask { TCIF_PARAM } };
 	m_tabMain.GetItem(iTab, &tci);
 

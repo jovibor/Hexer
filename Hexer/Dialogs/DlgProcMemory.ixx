@@ -47,19 +47,16 @@ BEGIN_MESSAGE_MAP(CDlgProcMemory, CDialogEx)
 	ON_WM_DRAWITEM()
 END_MESSAGE_MAP()
 
-void CDlgProcMemory::Init(HEXCTRL::IHexCtrl* pHexCtrl, const std::vector<MEMORY_BASIC_INFORMATION>& vec)
-{
+void CDlgProcMemory::Init(HEXCTRL::IHexCtrl* pHexCtrl, const std::vector<MEMORY_BASIC_INFORMATION>& vec) {
 	m_pHexCtrl = pHexCtrl;
 	m_pVecProcMemory = &vec;
 }
 
-void CDlgProcMemory::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgProcMemory::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 }
 
-void CDlgProcMemory::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
-{
+void CDlgProcMemory::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct) {
 	if (nIDCtl == IDC_PROCMEMORY_LIST) {
 		m_pListProcMem.DrawItem(lpDrawItemStruct);
 		return;
@@ -68,8 +65,7 @@ void CDlgProcMemory::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }
 
-BOOL CDlgProcMemory::OnInitDialog()
-{
+BOOL CDlgProcMemory::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	assert(m_pVecProcMemory != nullptr);
@@ -92,8 +88,7 @@ BOOL CDlgProcMemory::OnInitDialog()
 
 void CDlgProcMemory::OnListProcMemoryColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) { }
 
-void CDlgProcMemory::OnListProcMemoryItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgProcMemory::OnListProcMemoryItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pNMI = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 	const auto iItem = pNMI->iItem;
 	const auto iSubItem = pNMI->iSubItem;
@@ -105,8 +100,7 @@ void CDlgProcMemory::OnListProcMemoryItemChanged(NMHDR* pNMHDR, LRESULT* /*pResu
 	m_pHexCtrl->GoToOffset(ullOffset, -1);
 }
 
-void CDlgProcMemory::OnListProcMemoryGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgProcMemory::OnListProcMemoryGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pLCI = reinterpret_cast<lex::PLISTEXCOLORINFO>(pNMHDR);
 	if (pLCI->iSubItem == 2) { //Protection.
 		constexpr DWORD dwWritable = PAGE_READWRITE | PAGE_WRITECOPY | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
@@ -116,8 +110,7 @@ void CDlgProcMemory::OnListProcMemoryGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*
 	}
 }
 
-void CDlgProcMemory::OnListProcMemoryGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgProcMemory::OnListProcMemoryGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	static const std::unordered_map<DWORD, const wchar_t*> umapMemProtect {
 		{ PAGE_NOACCESS, L"PAGE_NOACCESS" },
 		{ PAGE_READONLY, L"PAGE_READONLY" },
@@ -183,8 +176,7 @@ void CDlgProcMemory::OnListProcMemoryGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResu
 	}
 }
 
-void CDlgProcMemory::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
-{
+void CDlgProcMemory::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct) {
 	if (nIDCtl == IDC_PROCMEMORY_LIST) {
 		m_pListProcMem.MeasureItem(lpMeasureItemStruct);
 		return;
@@ -193,8 +185,7 @@ void CDlgProcMemory::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItem
 	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
-BOOL CDlgProcMemory::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
-{
+BOOL CDlgProcMemory::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult) {
 	const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
 
 	if (pNMI->hdr.idFrom == IDC_PROCMEMORY_LIST) {

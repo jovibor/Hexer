@@ -24,8 +24,7 @@ BEGIN_MESSAGE_MAP(CHexerPaneDivider, CPaneDivider)
 	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
-void CHexerPaneDivider::OnMouseMove(UINT nFlags, CPoint pt)
-{
+void CHexerPaneDivider::OnMouseMove(UINT nFlags, CPoint pt) {
 	CPaneDivider::OnMouseMove(nFlags, pt);
 
 	//For some reason cursor doesn't turn into resizable on Windows 11. This is to circumvent.
@@ -58,13 +57,11 @@ BEGIN_MESSAGE_MAP(CHexerTabCtrl, CMFCTabCtrl)
 	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
-void CHexerTabCtrl::OnLButtonDblClk(UINT /*nFlags*/, CPoint /*point*/)
-{
+void CHexerTabCtrl::OnLButtonDblClk(UINT /*nFlags*/, CPoint /*point*/) {
 	//Empty handler for tabs' doubleclicks.
 }
 
-void CHexerTabCtrl::OnMouseMove(UINT nFlags, CPoint point)
-{
+void CHexerTabCtrl::OnMouseMove(UINT nFlags, CPoint point) {
 	//This method is overriden to resolve the issue with tabs' dragging described here:
 	//https://developercommunity.visualstudio.com/t/problem-dragging-mdi-tabs-in-a-mfc-application-com/478457
 
@@ -205,8 +202,7 @@ BEGIN_MESSAGE_MAP(CHexerDockablePane, CDockablePane)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
-void CHexerDockablePane::SetNestedHWND(HWND hWnd)
-{
+void CHexerDockablePane::SetNestedHWND(HWND hWnd) {
 	assert(hWnd != nullptr);
 	if (hWnd == nullptr || hWnd == m_hWndNested)
 		return;
@@ -233,16 +229,14 @@ void CHexerDockablePane::SetNestedHWND(HWND hWnd)
 	AdjustLayout();
 }
 
-auto CHexerDockablePane::GetNestedHWND()const->HWND
-{
+auto CHexerDockablePane::GetNestedHWND()const->HWND {
 	return m_hWndNested;
 }
 
 
 //CHexerDockablePane Private methods.
 
-void CHexerDockablePane::AdjustLayout()
-{
+void CHexerDockablePane::AdjustLayout() {
 	if (m_hWndNested == nullptr) {
 		return;
 	}
@@ -252,8 +246,7 @@ void CHexerDockablePane::AdjustLayout()
 	::SetWindowPos(m_hWndNested, nullptr, 0, 0, rcClient.Width(), rcClient.Height(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
-int CHexerDockablePane::OnCreate(LPCREATESTRUCT lpCreateStruct)
-{
+int CHexerDockablePane::OnCreate(LPCREATESTRUCT lpCreateStruct) {
 	if (CDockablePane::OnCreate(lpCreateStruct) == -1)
 		return -1;
 
@@ -262,22 +255,19 @@ int CHexerDockablePane::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
-void CHexerDockablePane::OnPaint()
-{
+void CHexerDockablePane::OnPaint() {
 	CPaintDC dc(this);
 	CRect rcClient;
 	GetClientRect(rcClient);
 	dc.FillSolidRect(rcClient, RGB(255, 255, 255)); //Default white bk.
 }
 
-void CHexerDockablePane::OnSize(UINT nType, int cx, int cy)
-{
+void CHexerDockablePane::OnSize(UINT nType, int cx, int cy) {
 	CDockablePane::OnSize(nType, cx, cy);
 	AdjustLayout();
 }
 
-BOOL CHexerDockablePane::PreTranslateMessage(MSG* pMsg)
-{
+BOOL CHexerDockablePane::PreTranslateMessage(MSG* pMsg) {
 	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_ESCAPE) {
 		return FALSE; //To prevent App hanging on pressing Esc on any Pane's title.
 	}

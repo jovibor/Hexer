@@ -55,8 +55,7 @@ BEGIN_MESSAGE_MAP(CDlgLogger, CDialogEx)
 	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
 
-void CDlgLogger::AddLogEntry(const ut::Log::LOGINFO& li)
-{
+void CDlgLogger::AddLogEntry(const ut::Log::LOGINFO& li) {
 	m_vecData.emplace_back(li.time, std::wstring { li.wsvMsg }, li.eType);
 
 	if (::IsWindow(m_hWnd)) {
@@ -68,24 +67,20 @@ void CDlgLogger::AddLogEntry(const ut::Log::LOGINFO& li)
 
 //Private methods.
 
-void CDlgLogger::ClearAll()
-{
+void CDlgLogger::ClearAll() {
 	m_vecData.clear();
 	m_List.SetItemCountEx(static_cast<int>(m_vecData.size()), LVSICF_NOSCROLL);
 }
 
-void CDlgLogger::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgLogger::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 }
 
-void CDlgLogger::OnCancel()
-{
+void CDlgLogger::OnCancel() {
 	//Just an empty handler, to not close Dialog on Escape key.
 }
 
-BOOL CDlgLogger::OnCommand(WPARAM wParam, LPARAM lParam)
-{
+BOOL CDlgLogger::OnCommand(WPARAM wParam, LPARAM lParam) {
 	switch (static_cast<EMenuID>(LOWORD(wParam))) {
 	case EMenuID::IDM_LIST_CLEARALL:
 		ClearAll();
@@ -97,8 +92,7 @@ BOOL CDlgLogger::OnCommand(WPARAM wParam, LPARAM lParam)
 	return CDialogEx::OnCommand(wParam, lParam);
 }
 
-void CDlgLogger::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
-{
+void CDlgLogger::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct) {
 	if (nIDCtl == IDC_LOGINFO_LIST) {
 		m_List.DrawItem(lpDrawItemStruct);
 		return;
@@ -107,8 +101,7 @@ void CDlgLogger::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }
 
-BOOL CDlgLogger::OnInitDialog()
-{
+BOOL CDlgLogger::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
@@ -138,8 +131,7 @@ BOOL CDlgLogger::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgLogger::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgLogger::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pDI = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	const auto pItem = &pDI->item;
 	if ((pItem->mask & LVIF_TEXT) == 0)
@@ -162,8 +154,7 @@ void CDlgLogger::OnListGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CDlgLogger::OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult)
-{
+void CDlgLogger::OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult) {
 	const auto pLII = reinterpret_cast<lex::PLISTEXICONINFO>(pNMHDR);
 	if (pLII->iItem < 0 || pLII->iSubItem != 2) //Event field.
 		return;
@@ -172,15 +163,13 @@ void CDlgLogger::OnListGetIcon(NMHDR* pNMHDR, LRESULT* pResult)
 	*pResult = TRUE;
 }
 
-void CDlgLogger::OnListRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CDlgLogger::OnListRClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	POINT pt;
 	GetCursorPos(&pt);
 	m_menuList.TrackPopupMenuEx(TPM_LEFTALIGN, pt.x, pt.y, this, nullptr);
 }
 
-void CDlgLogger::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
-{
+void CDlgLogger::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct) {
 	if (nIDCtl == IDC_LOGINFO_LIST) {
 		m_List.MeasureItem(lpMeasureItemStruct);
 		return;
@@ -189,7 +178,6 @@ void CDlgLogger::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStru
 	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
-void CDlgLogger::OnOK()
-{
+void CDlgLogger::OnOK() {
 	//Just an empty handler, to not close Dialog on Enter key.
 }

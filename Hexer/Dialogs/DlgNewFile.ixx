@@ -17,7 +17,7 @@ import Utility;
 export class CDlgNewFile final : public CDialogEx {
 public:
 	CDlgNewFile(CWnd* pParent = nullptr) : CDialogEx(IDD_NEWFILE, pParent) { }
-	[[nodiscard]] auto GetOpenData()const->const ut::DATAOPEN&;
+	[[nodiscard]] auto GetOpenData()const -> const ut::DATAOPEN&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
 	[[nodiscard]] bool IsOK()const;
@@ -39,29 +39,25 @@ BEGIN_MESSAGE_MAP(CDlgNewFile, CDialogEx)
 	ON_EN_CHANGE(IDC_NEWFILE_EDIT_SIZE, &CDlgNewFile::OnChangeEditPathAndSize)
 END_MESSAGE_MAP()
 
-auto CDlgNewFile::GetOpenData()const->const ut::DATAOPEN&
-{
+auto CDlgNewFile::GetOpenData()const->const ut::DATAOPEN& {
 	return m_stDOS;
 }
 
 
 //Private methods.
 
-void CDlgNewFile::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgNewFile::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_NEWFILE_EDIT_PATH, m_stEditPath);
 	DDX_Control(pDX, IDC_NEWFILE_EDIT_SIZE, m_stEditSize);
 	DDX_Control(pDX, IDC_NEWFILE_COMBO_MEASURE, m_stComboMeasure);
 }
 
-bool CDlgNewFile::IsOK()const
-{
+bool CDlgNewFile::IsOK()const {
 	return (m_stEditPath.GetWindowTextLengthW() > 0) && (m_stEditSize.GetWindowTextLengthW() > 0);
 }
 
-BOOL CDlgNewFile::OnInitDialog()
-{
+BOOL CDlgNewFile::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	auto iIndex = m_stComboMeasure.AddString(L"Bytes");
@@ -81,8 +77,7 @@ BOOL CDlgNewFile::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgNewFile::OnBtnBrowse()
-{
+void CDlgNewFile::OnBtnBrowse() {
 	CFileDialog fd(FALSE, nullptr, nullptr,
 		OFN_OVERWRITEPROMPT | OFN_EXPLORER | OFN_DONTADDTORECENT | OFN_ENABLESIZING | OFN_PATHMUSTEXIST);
 	if (fd.DoModal() == IDOK) {
@@ -90,13 +85,11 @@ void CDlgNewFile::OnBtnBrowse()
 	}
 }
 
-void CDlgNewFile::OnChangeEditPathAndSize()
-{
+void CDlgNewFile::OnChangeEditPathAndSize() {
 	GetDlgItem(IDOK)->EnableWindow(IsOK());
 }
 
-void CDlgNewFile::OnOK()
-{
+void CDlgNewFile::OnOK() {
 	CStringW cwstrSize;
 	m_stEditSize.GetWindowTextW(cwstrSize);
 	const auto optSize = stn::StrToUInt64(cwstrSize.GetString());

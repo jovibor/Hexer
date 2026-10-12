@@ -34,33 +34,27 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWndEx)
 	ON_WM_SYSCOMMAND()
 END_MESSAGE_MAP()
 
-void CMainFrame::AddLogEntry(const ut::Log::LOGINFO& stData)
-{
+void CMainFrame::AddLogEntry(const ut::Log::LOGINFO& stData) {
 	m_dlgLogInfo.AddLogEntry(stData);
 }
 
-int& CMainFrame::GetChildFramesCount()
-{
+int& CMainFrame::GetChildFramesCount() {
 	return m_iChildFrames;
 }
 
-bool CMainFrame::IsAppClosing()const
-{
+bool CMainFrame::IsAppClosing()const {
 	return m_fClosing;
 }
 
-bool CMainFrame::IsPaneActive(UINT uPaneID)
-{
+bool CMainFrame::IsPaneActive(UINT uPaneID) {
 	return GetPtrFromPaneID(uPaneID)->IsPaneVisible();
 }
 
-bool CMainFrame::IsPaneVisible(UINT uPaneID)
-{
+bool CMainFrame::IsPaneVisible(UINT uPaneID) {
 	return GetPtrFromPaneID(uPaneID)->IsVisible();
 }
 
-void CMainFrame::OnChildFrameActivate()
-{
+void CMainFrame::OnChildFrameActivate() {
 	if (IsAppClosing() || !HasChildFrame())
 		return;
 
@@ -77,8 +71,7 @@ void CMainFrame::OnChildFrameActivate()
 	}
 }
 
-void CMainFrame::OnChildFrameCloseLast()
-{
+void CMainFrame::OnChildFrameCloseLast() {
 	if (IsAppClosing()) {
 		return;
 	}
@@ -88,13 +81,11 @@ void CMainFrame::OnChildFrameCloseLast()
 	HideAllPanes();        //To disable panes from showing at the next app's launch.
 }
 
-void CMainFrame::OnChildFrameDisactivate()
-{
+void CMainFrame::OnChildFrameDisactivate() {
 	//Nothing to implement yet.
 }
 
-void CMainFrame::OnChildFrameOpenFirst()
-{
+void CMainFrame::OnChildFrameOpenFirst() {
 	if (IsAppClosing()) {
 		return;
 	}
@@ -106,8 +97,7 @@ void CMainFrame::OnChildFrameOpenFirst()
 	}
 }
 
-void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
-{
+void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate) {
 	const auto pPane = GetPtrFromPaneID(uPaneID);
 	if (pPane == nullptr)
 		return;
@@ -127,15 +117,13 @@ void CMainFrame::ShowPane(UINT uPaneID, bool fShow, bool fActivate)
 	pPane->ShowPane(fShow, FALSE, fActivate);
 }
 
-void CMainFrame::UpdatePaneFileInfo()
-{
+void CMainFrame::UpdatePaneFileInfo() {
 	if (const auto pHex = GetHexerView(); pHex != nullptr) {
 		m_dlgDataInfo.SetDataInfo(pHex->GetDataInfo());
 	}
 }
 
-auto CMainFrame::GetDlgDataBkmMgr()->std::uint64_t
-{
+auto CMainFrame::GetDlgDataBkmMgr()->std::uint64_t {
 	using enum HEXCTRL::EHexWnd;
 	using enum HEXCTRL::EHexDlgItem;
 
@@ -159,8 +147,7 @@ auto CMainFrame::GetDlgDataBkmMgr()->std::uint64_t
 	return ullData;
 }
 
-auto CMainFrame::GetDlgDataDataInterp()->std::uint64_t
-{
+auto CMainFrame::GetDlgDataDataInterp()->std::uint64_t {
 	using enum HEXCTRL::EHexWnd;
 	using enum HEXCTRL::EHexDlgItem;
 
@@ -185,18 +172,15 @@ auto CMainFrame::GetDlgDataDataInterp()->std::uint64_t
 	return ullData;
 }
 
-auto CMainFrame::GetDlgDataModify()->std::uint64_t
-{
+auto CMainFrame::GetDlgDataModify()->std::uint64_t {
 	return { };
 }
 
-auto CMainFrame::GetDlgDataSearch()->std::uint64_t
-{
+auto CMainFrame::GetDlgDataSearch()->std::uint64_t {
 	return { };
 }
 
-auto CMainFrame::GetDlgDataTemplMgr()->std::uint64_t
-{
+auto CMainFrame::GetDlgDataTemplMgr()->std::uint64_t {
 	using enum HEXCTRL::EHexWnd;
 	using enum HEXCTRL::EHexDlgItem;
 
@@ -242,8 +226,7 @@ auto CMainFrame::GetDlgDataTemplMgr()->std::uint64_t
 
 //Private methods.
 
-auto CMainFrame::GetHexCtrl()->HEXCTRL::IHexCtrl*
-{
+auto CMainFrame::GetHexCtrl()->HEXCTRL::IHexCtrl* {
 	if (const auto pView = GetHexerView(); pView != nullptr) {
 		return pView->GetHexCtrl();
 	}
@@ -251,8 +234,7 @@ auto CMainFrame::GetHexCtrl()->HEXCTRL::IHexCtrl*
 	return { };
 }
 
-auto CMainFrame::GetHexCtrlDlgData(HEXCTRL::EHexWnd eWnd)->std::uint64_t
-{
+auto CMainFrame::GetHexCtrlDlgData(HEXCTRL::EHexWnd eWnd)->std::uint64_t {
 	using enum HEXCTRL::EHexWnd;
 	switch (eWnd) {
 	case DLG_BKMMGR:
@@ -270,8 +252,7 @@ auto CMainFrame::GetHexCtrlDlgData(HEXCTRL::EHexWnd eWnd)->std::uint64_t
 	}
 }
 
-auto CMainFrame::GetHexerView()->CHexerView*
-{
+auto CMainFrame::GetHexerView()->CHexerView* {
 	//If the MDI frame window has no active document, the implicit "this" pointer will be returned.
 	//https://docs.microsoft.com/en-us/cpp/mfc/reference/cframewnd-class?view=msvc-160#getactiveframe
 	if (const auto pFrame = GetActiveFrame(); pFrame != nullptr && pFrame != this) {
@@ -281,8 +262,7 @@ auto CMainFrame::GetHexerView()->CHexerView*
 	return { };
 }
 
-auto CMainFrame::GetHWNDForPane(UINT uPaneID)->HWND
-{
+auto CMainFrame::GetHWNDForPane(UINT uPaneID)->HWND {
 	switch (uPaneID) {
 	case IDC_PANE_DATAINFO:
 		if (!IsWindow(m_dlgDataInfo)) {
@@ -303,8 +283,7 @@ auto CMainFrame::GetHWNDForPane(UINT uPaneID)->HWND
 	return { };
 }
 
-auto CMainFrame::GetPanesMap()->const std::unordered_map<UINT, CHexerDockablePane*>&
-{
+auto CMainFrame::GetPanesMap()->const std::unordered_map<UINT, CHexerDockablePane*>& {
 	//PaneID <-> CHexerDockablePane* correspondence.
 	static const std::unordered_map<UINT, CHexerDockablePane*> umapPanes {
 		{ IDC_PANE_DATAINFO, &m_paneDataInfo }, { IDC_PANE_BKMMGR, &m_paneBkmMgr },
@@ -315,8 +294,7 @@ auto CMainFrame::GetPanesMap()->const std::unordered_map<UINT, CHexerDockablePan
 	return umapPanes;
 }
 
-auto CMainFrame::GetPtrFromPaneID(UINT uPaneID)->CHexerDockablePane*
-{
+auto CMainFrame::GetPtrFromPaneID(UINT uPaneID)->CHexerDockablePane* {
 	if (GetPanesMap().contains(uPaneID)) {
 		return GetPanesMap().at(uPaneID);
 	}
@@ -324,13 +302,11 @@ auto CMainFrame::GetPtrFromPaneID(UINT uPaneID)->CHexerDockablePane*
 	return { };
 }
 
-bool CMainFrame::HasChildFrame()
-{
+bool CMainFrame::HasChildFrame() {
 	return GetChildFramesCount() > 0;
 }
 
-void CMainFrame::HideAllPanes()
-{
+void CMainFrame::HideAllPanes() {
 	for (const auto [uKey, pPane] : GetPanesMap()) {
 		if (::IsWindow(pPane->m_hWnd)) {
 			pPane->ShowPane(FALSE, FALSE, FALSE);
@@ -338,26 +314,22 @@ void CMainFrame::HideAllPanes()
 	}
 }
 
-BOOL CMainFrame::LoadFrame(UINT nIDResource, DWORD dwDefaultStyle, CWnd* pParentWnd, CCreateContext* pContext)
-{
+BOOL CMainFrame::LoadFrame(UINT nIDResource, DWORD dwDefaultStyle, CWnd* pParentWnd, CCreateContext* pContext) {
 	return CMDIFrameWndEx::LoadFrame(nIDResource, dwDefaultStyle, pParentWnd, pContext);
 }
 
-auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
-{
+auto CMainFrame::OnAddLogEntry(WPARAM /*wParam*/, LPARAM lParam)->LRESULT {
 	AddLogEntry(*reinterpret_cast<ut::Log::LOGINFO*>(lParam));
 	return S_OK;
 }
 
-auto CMainFrame::OnAppSettingsChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
-{
+auto CMainFrame::OnAppSettingsChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT {
 	theApp.NotifyTabsOnSettingsChange();
 	UpdatePaneFileInfo();
 	return S_OK;
 }
 
-bool CMainFrame::OnBeforeClose()
-{
+bool CMainFrame::OnBeforeClose() {
 	auto posTempl = theApp.GetFirstDocTemplatePosition();
 	while (posTempl != nullptr) {
 		const auto pDocTempl = theApp.GetNextDocTemplate(posTempl);
@@ -377,8 +349,7 @@ bool CMainFrame::OnBeforeClose()
 	return true;
 }
 
-BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS)
-{
+BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS) {
 	if (pCDS->dwData == 1) {
 		theApp.OpenDocumentCustom(reinterpret_cast<LPCWSTR>(pCDS->lpData), false);
 	}
@@ -386,8 +357,7 @@ BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS)
 	return CMDIFrameWndEx::OnCopyData(pWnd, pCDS);
 }
 
-void CMainFrame::OnClose()
-{
+void CMainFrame::OnClose() {
 	if (!OnBeforeClose())
 		return;
 
@@ -413,8 +383,7 @@ void CMainFrame::OnClose()
 	CMDIFrameWndEx::OnClose();
 }
 
-BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pPane)
-{
+BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pPane) {
 	//When pane is closing by mouse click we save pane's data to the settings.
 	CStringW wstrPane;
 	pPane->GetWindowTextW(wstrPane);
@@ -430,8 +399,7 @@ BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pPane)
 	return CMDIFrameWndEx::OnCloseDockingPane(pPane);
 }
 
-int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
-{
+int CMainFrame::OnCreate(LPCREATESTRUCT lpcs) {
 	if (CMDIFrameWndEx::OnCreate(lpcs) == -1)
 		return -1;
 
@@ -508,8 +476,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpcs)
 	return 0;
 }
 
-BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
-{
+BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext) {
 	//Default "MdiClient" class doesn't have CS_DBLCLKS flag set.
 	//We acquire class info, unregister it, set the CS_DBLCLKS flag and then register again.
 	//Now we will recieve WM_LBUTTONDBLCLK messages for m_hWndMDIClient window.
@@ -532,26 +499,22 @@ BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 	return TRUE;
 }
 
-auto CMainFrame::OnDPIChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT
-{
+auto CMainFrame::OnDPIChanged(WPARAM /*wParam*/, LPARAM /*lParam*/)->LRESULT {
 	const auto ret = Default();
 	UpdateIconsForDPI();
 
 	return ret;
 }
 
-BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/)
-{
+BOOL CMainFrame::OnEraseMDIClientBackground(CDC* /*pDC*/) {
 	return TRUE;
 }
 
-void CMainFrame::OnFileRFClearList()
-{
+void CMainFrame::OnFileRFClearList() {
 	theApp.GetAppSettings().RFLClearList();
 }
 
-auto CMainFrame::OnGetTabTooltip(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
-{
+auto CMainFrame::OnGetTabTooltip(WPARAM /*wParam*/, LPARAM lParam)->LRESULT {
 	const auto pTTI = reinterpret_cast<CMFCTabToolTipInfo*>(lParam);
 	ASSERT(pTTI != NULL);
 	if (pTTI == nullptr)
@@ -570,8 +533,7 @@ auto CMainFrame::OnGetTabTooltip(WPARAM /*wParam*/, LPARAM lParam)->LRESULT
 	return 0;
 }
 
-void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam)
-{
+void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam) {
 	static HWND hWndFocus { };
 	if (nID == SC_MINIMIZE) {
 		hWndFocus = ::GetFocus();
@@ -584,26 +546,22 @@ void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam)
 	}
 }
 
-void CMainFrame::OnUpdateFileRFClearList(CCmdUI* pCmdUI)
-{
+void CMainFrame::OnUpdateFileRFClearList(CCmdUI* pCmdUI) {
 	pCmdUI->Enable(!theApp.GetAppSettings().RFLIsEmpty());
 }
 
-void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI)
-{
+void CMainFrame::OnUpdateRangePanes(CCmdUI* pCmdUI) {
 	pCmdUI->Enable(HasChildFrame());
 	pCmdUI->SetCheck(HasChildFrame() ? IsPaneVisible(ut::GetPaneIDFromMenuID(pCmdUI->m_nID)) : FALSE);
 }
 
-void CMainFrame::OnViewCustomize()
-{
+void CMainFrame::OnViewCustomize() {
 	const auto pDlgCust = new CMFCToolBarsCustomizeDialog(this, TRUE /* scan menus */);
 	pDlgCust->EnableUserDefinedToolbars();
 	pDlgCust->Create();
 }
 
-void CMainFrame::OnViewRangePanes(UINT uMenuID)
-{
+void CMainFrame::OnViewRangePanes(UINT uMenuID) {
 	const auto uPaneID = ut::GetPaneIDFromMenuID(uMenuID);
 	const auto fVisible = IsPaneVisible(uPaneID);
 	ShowPane(uPaneID, !fVisible, !fVisible);
@@ -613,8 +571,7 @@ void CMainFrame::OnViewRangePanes(UINT uMenuID)
 	}
 }
 
-BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
-{
+BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs) {
 	CMDIFrameWndEx::PreCreateWindow(cs);
 
 	//Replacing MFC internal Window Class Name with our own, to easily finding it in the CHexerApp::InitInstance.
@@ -634,8 +591,7 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	return TRUE;
 }
 
-BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
-{
+BOOL CMainFrame::PreTranslateMessage(MSG* pMsg) {
 	//PreTranslateMessage doesn't work in CHexerView for no reason.
 	//Messages for HexCtrl dialogs just do not reach it.
 	if (const auto pHex = GetHexCtrl(); pHex != nullptr) {
@@ -703,8 +659,7 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	return CMDIFrameWndEx::PreTranslateMessage(pMsg);
 }
 
-void CMainFrame::SaveHexCtrlSettings()
-{
+void CMainFrame::SaveHexCtrlSettings() {
 	const auto pHexCtrl = GetHexCtrl();
 	if (pHexCtrl == nullptr)
 		return;
@@ -727,15 +682,13 @@ void CMainFrame::SaveHexCtrlSettings()
 	refSett.stClrs = pHexCtrl->GetColors();
 }
 
-void CMainFrame::SavePaneData(UINT uPaneID)
-{
+void CMainFrame::SavePaneData(UINT uPaneID) {
 	if (const auto optDlg = ut::GetEHexWndFromPaneID(uPaneID); optDlg) {
 		theApp.GetAppSettings().SetPaneData(uPaneID, GetHexCtrlDlgData(*optDlg));
 	}
 }
 
-void CMainFrame::SavePanesSettings()
-{
+void CMainFrame::SavePanesSettings() {
 	if (GetHexerView() == nullptr)
 		return;
 
@@ -747,8 +700,7 @@ void CMainFrame::SavePanesSettings()
 	}
 }
 
-void CMainFrame::UpdateIconsForDPI()
-{
+void CMainFrame::UpdateIconsForDPI() {
 	const auto pImgTB = CMFCToolBar::GetImages();
 	pImgTB->Clear(); //Removing all images from the toolbar's image list.
 
@@ -810,8 +762,7 @@ void CMainFrame::UpdateIconsForDPI()
 	::DrawMenuBar(m_hWnd);
 }
 
-auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR /*uID*/, DWORD_PTR dwData)->LRESULT
-{
+auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR /*uID*/, DWORD_PTR dwData)->LRESULT {
 	const auto pMainFrame = reinterpret_cast<CMainFrame*>(dwData);
 	if (pMainFrame->GetChildFramesCount() != 0) {
 		return DefSubclassProc(hWnd, uMsg, wParam, lParam);
@@ -850,8 +801,7 @@ auto CMainFrame::MDIClientProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
 
-void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam)
-{
+void CMainFrame::MDIClientSize(HWND hWnd, WPARAM /*wParam*/, LPARAM lParam) {
 	const auto pDC = CDC::FromHandle(::GetDC(hWnd));
 	const auto iWidthNew = LOWORD(lParam);
 	const auto flDPIScale = ut::GetDPIScaleForHWND(hWnd);

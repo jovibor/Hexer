@@ -58,8 +58,7 @@ BEGIN_MESSAGE_MAP(CDlgOpenDrive, CDialogEx)
 	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
 
-auto CDlgOpenDrive::GetOpenData()const->std::vector<ut::DATAOPEN>
-{
+auto CDlgOpenDrive::GetOpenData()const->std::vector<ut::DATAOPEN> {
 	std::vector<ut::DATAOPEN> vec;
 	int nItem { -1 };
 	for (auto i { 0UL }; i < m_List.GetSelectedCount(); ++i) {
@@ -72,21 +71,18 @@ auto CDlgOpenDrive::GetOpenData()const->std::vector<ut::DATAOPEN>
 	return vec;
 }
 
-bool CDlgOpenDrive::IsOK()
-{
+bool CDlgOpenDrive::IsOK() {
 	return m_List.GetSelectedCount() > 0;
 }
 
 
 //CDlgOpenDisk Private methods.
 
-void CDlgOpenDrive::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgOpenDrive::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 }
 
-BOOL CDlgOpenDrive::OnInitDialog()
-{
+BOOL CDlgOpenDrive::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	EnableDynamicLayout(TRUE);
@@ -120,21 +116,18 @@ BOOL CDlgOpenDrive::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgOpenDrive::OnCancel()
-{
+void CDlgOpenDrive::OnCancel() {
 	static_cast<CDialogEx*>(GetParent())->EndDialog(IDCANCEL);
 }
 
-void CDlgOpenDrive::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgOpenDrive::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	if (const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 		pNMI->iItem >= 0 && pNMI->iSubItem >= 0) {
 		OnOK();
 	}
 }
 
-void CDlgOpenDrive::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgOpenDrive::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pLCI = reinterpret_cast<lex::PLISTEXCOLORINFO>(pNMHDR);
 	if (pLCI->iSubItem == 1) { //Size column.
 		LVITEMW lvi { .mask { LVIF_PARAM }, .iItem { pLCI->iItem } };
@@ -145,18 +138,15 @@ void CDlgOpenDrive::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CDlgOpenDrive::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CDlgOpenDrive::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(IsOK());
 }
 
-void CDlgOpenDrive::OnOK()
-{
+void CDlgOpenDrive::OnOK() {
 	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->SendMessageW(BM_CLICK);
 }
 
-auto CDlgOpenDrive::GetDeviceDrives()->std::vector<DEVICE_DRIVE>
-{
+auto CDlgOpenDrive::GetDeviceDrives()->std::vector<DEVICE_DRIVE> {
 	const std::unordered_map<STORAGE_BUS_TYPE, const wchar_t*> umapBusType {
 		{ BusTypeUnknown, L"Unknown" }, { BusTypeScsi, L"SCSI" }, { BusTypeAtapi, L"ATAPI" },
 		{ BusTypeAta, L"ATA" }, { BusType1394, L"1394" }, { BusTypeSsa, L"SSA" },
@@ -275,8 +265,7 @@ BEGIN_MESSAGE_MAP(CDlgOpenVolume, CDialogEx)
 	ON_WM_MEASUREITEM()
 END_MESSAGE_MAP()
 
-auto CDlgOpenVolume::GetOpenData()const->std::vector<ut::DATAOPEN>
-{
+auto CDlgOpenVolume::GetOpenData()const->std::vector<ut::DATAOPEN> {
 	std::vector<ut::DATAOPEN> vec;
 	int nItem { -1 };
 	for (auto i { 0UL }; i < m_List.GetSelectedCount(); ++i) {
@@ -292,26 +281,22 @@ auto CDlgOpenVolume::GetOpenData()const->std::vector<ut::DATAOPEN>
 	return vec;
 }
 
-bool CDlgOpenVolume::IsOK()
-{
+bool CDlgOpenVolume::IsOK() {
 	return m_List.GetSelectedCount() > 0;
 }
 
 
 //CDlgOpenVolume Private methods.
 
-void CDlgOpenVolume::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgOpenVolume::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 }
 
-void CDlgOpenVolume::OnCancel()
-{
+void CDlgOpenVolume::OnCancel() {
 	static_cast<CDialogEx*>(GetParent())->EndDialog(IDCANCEL);
 }
 
-void CDlgOpenVolume::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
-{
+void CDlgOpenVolume::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct) {
 	if (nIDCtl == IDC_OPENVOLUME_LIST) {
 		m_List.DrawItem(lpDrawItemStruct);
 		return;
@@ -320,8 +305,7 @@ void CDlgOpenVolume::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }
 
-BOOL CDlgOpenVolume::OnInitDialog()
-{
+BOOL CDlgOpenVolume::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	EnableDynamicLayout(TRUE);
@@ -364,16 +348,14 @@ BOOL CDlgOpenVolume::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgOpenVolume::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgOpenVolume::OnListDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	if (const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 		pNMI->iItem >= 0 && pNMI->iSubItem >= 0) {
 		OnOK();
 	}
 }
 
-void CDlgOpenVolume::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgOpenVolume::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pLCI = reinterpret_cast<lex::PLISTEXCOLORINFO>(pNMHDR);
 	if (pLCI->iSubItem == 3) { //Size column.
 		LVITEMW lvi { .mask { LVIF_PARAM }, .iItem { pLCI->iItem } };
@@ -384,13 +366,11 @@ void CDlgOpenVolume::OnListGetColor(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	}
 }
 
-void CDlgOpenVolume::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CDlgOpenVolume::OnListItemChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(IsOK());
 }
 
-void CDlgOpenVolume::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
-{
+void CDlgOpenVolume::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct) {
 	if (nIDCtl == IDC_OPENVOLUME_LIST) {
 		m_List.MeasureItem(lpMeasureItemStruct);
 		return;
@@ -399,13 +379,11 @@ void CDlgOpenVolume::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItem
 	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
-void CDlgOpenVolume::OnOK()
-{
+void CDlgOpenVolume::OnOK() {
 	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->SendMessageW(BM_CLICK);
 }
 
-auto CDlgOpenVolume::GetDeviceVolumes()->std::vector<DEVICE_VOLUME>
-{
+auto CDlgOpenVolume::GetDeviceVolumes()->std::vector<DEVICE_VOLUME> {
 	//This data is returned from the GetDriveTypeW.
 	const std::unordered_map<UINT, const wchar_t*> umapDriveType {
 		{ 0, L"Unknown" }, { 1, L"Invalid Root Path" }, { 2, L"Removable" },
@@ -508,8 +486,7 @@ BEGIN_MESSAGE_MAP(CDlgOpenPath, CDialogEx)
 	ON_CBN_EDITUPDATE(IDC_OPENPATH_COMBO_PATH, &CDlgOpenPath::OnComboPathEdit)
 END_MESSAGE_MAP()
 
-auto CDlgOpenPath::GetOpenData()->std::vector<ut::DATAOPEN>
-{
+auto CDlgOpenPath::GetOpenData()->std::vector<ut::DATAOPEN> {
 	if (m_stComboPath.GetWindowTextLengthW() == 0)
 		return { };
 
@@ -519,8 +496,7 @@ auto CDlgOpenPath::GetOpenData()->std::vector<ut::DATAOPEN>
 	return { ut::DATAOPEN { .wstrDataPath { cstrText }, .eOpenMode { ut::EOpenMode::OPEN_PATH } } };
 }
 
-bool CDlgOpenPath::IsOK()
-{
+bool CDlgOpenPath::IsOK() {
 	return m_stComboPath.GetWindowTextLengthW() > 0;
 }
 
@@ -528,24 +504,20 @@ bool CDlgOpenPath::IsOK()
 
 //CDlgOpenPath Private methods.
 
-void CDlgOpenPath::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgOpenPath::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_OPENPATH_COMBO_PATH, m_stComboPath);
 }
 
-void CDlgOpenPath::OnCancel()
-{
+void CDlgOpenPath::OnCancel() {
 	static_cast<CDialogEx*>(GetParent())->EndDialog(IDCANCEL);
 }
 
-void CDlgOpenPath::OnComboPathEdit()
-{
+void CDlgOpenPath::OnComboPathEdit() {
 	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->EnableWindow(IsOK());
 }
 
-void CDlgOpenPath::OnOK()
-{
+void CDlgOpenPath::OnOK() {
 	static_cast<CDialogEx*>(GetParent())->GetDlgItem(IDOK)->SendMessageW(BM_CLICK);
 }
 
@@ -586,28 +558,24 @@ BEGIN_MESSAGE_MAP(CDlgOpenDevice, CDialogEx)
 	ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
 
-INT_PTR CDlgOpenDevice::DoModal(ut::EOpenMode eTab)
-{
+INT_PTR CDlgOpenDevice::DoModal(ut::EOpenMode eTab) {
 	m_eCurTab = eTab;
 	return CDialogEx::DoModal();
 }
 
-auto CDlgOpenDevice::GetOpenData()const->const std::vector<ut::DATAOPEN>&
-{
+auto CDlgOpenDevice::GetOpenData()const->const std::vector<ut::DATAOPEN>& {
 	return m_vecOpenData;
 }
 
 
 //CDlgOpenDevice Private methods.
 
-void CDlgOpenDevice::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgOpenDevice::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_OPENDEVICE_TAB, m_tabMain);
 }
 
-auto CDlgOpenDevice::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH
-{
+auto CDlgOpenDevice::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH {
 	const auto hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
 	if (nCtlColor == CTLCOLOR_STATIC) {
 		pDC->SetTextColor(ut::IsElevated() ? RGB(0, 210, 0) : RGB(250, 0, 0));
@@ -615,8 +583,7 @@ auto CDlgOpenDevice::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH
 	return hbr;
 }
 
-void CDlgOpenDrive::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
-{
+void CDlgOpenDrive::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct) {
 	if (nIDCtl == IDC_OPENDRIVE_LIST) {
 		m_List.DrawItem(lpDrawItemStruct);
 		return;
@@ -625,16 +592,14 @@ void CDlgOpenDrive::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }
 
-void CDlgOpenDevice::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
-{
+void CDlgOpenDevice::OnGetMinMaxInfo(MINMAXINFO* lpMMI) {
 	lpMMI->ptMinTrackSize.x = m_rcWnd.Width();
 	lpMMI->ptMinTrackSize.y = m_rcWnd.Height();
 
 	CDialogEx::OnGetMinMaxInfo(lpMMI);
 }
 
-BOOL CDlgOpenDevice::OnInitDialog()
-{
+BOOL CDlgOpenDevice::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	GetWindowRect(m_rcWnd);
@@ -688,8 +653,7 @@ BOOL CDlgOpenDevice::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgOpenDrive::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
-{
+void CDlgOpenDrive::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct) {
 	if (nIDCtl == IDC_OPENDRIVE_LIST) {
 		m_List.MeasureItem(lpMeasureItemStruct);
 		return;
@@ -698,8 +662,7 @@ void CDlgOpenDrive::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemS
 	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
-void CDlgOpenDevice::OnOK()
-{
+void CDlgOpenDevice::OnOK() {
 	m_vecOpenData.clear();
 
 	using enum ut::EOpenMode;
@@ -722,8 +685,7 @@ void CDlgOpenDevice::OnOK()
 	}
 }
 
-void CDlgOpenDevice::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CDlgOpenDevice::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	const auto eTab = TabIDToName(m_tabMain.GetCurSel());
 	if (m_eCurTab == eTab)
 		return;
@@ -731,8 +693,7 @@ void CDlgOpenDevice::OnTabSelChanged(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
 	SetCurrentTab(eTab);
 }
 
-BOOL CDlgOpenDevice::PreTranslateMessage(MSG* pMsg)
-{
+BOOL CDlgOpenDevice::PreTranslateMessage(MSG* pMsg) {
 	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_RETURN) {
 		OnOK(); //To prevent triggering "Cancel" button on Enter press, when "Open" is disabled.
 		return TRUE;
@@ -741,8 +702,7 @@ BOOL CDlgOpenDevice::PreTranslateMessage(MSG* pMsg)
 	return CDialogEx::PreTranslateMessage(pMsg);
 }
 
-void CDlgOpenDevice::SetCurrentTab(ut::EOpenMode eTab)
-{
+void CDlgOpenDevice::SetCurrentTab(ut::EOpenMode eTab) {
 	m_eCurTab = eTab;
 	m_tabMain.SetCurSel(TabNameToID(eTab));
 
@@ -774,8 +734,7 @@ void CDlgOpenDevice::SetCurrentTab(ut::EOpenMode eTab)
 	GetDlgItem(IDOK)->EnableWindow(fEnableOK);
 }
 
-auto CDlgOpenDevice::TabIDToName(int iTab)const->ut::EOpenMode
-{
+auto CDlgOpenDevice::TabIDToName(int iTab)const->ut::EOpenMode {
 	TCITEMW tci { .mask { TCIF_PARAM } };
 	m_tabMain.GetItem(iTab, &tci);
 

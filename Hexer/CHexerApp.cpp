@@ -40,8 +40,7 @@ END_MESSAGE_MAP()
 #define STR2WIDE(x) L##x
 #define STRWIDER(x) STR2WIDE(x)
 
-BOOL CDlgAbout::OnInitDialog()
-{
+BOOL CDlgAbout::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	const auto wstrDescr = std::format(L"Hexer v{}.{}.{}, based on the HexCtrl v{}.{}.{}\r\n"
@@ -63,8 +62,7 @@ public:
 	[[nodiscard]] auto OpenDocumentFile(const ut::DATAOPEN& dos) -> CDocument*;
 };
 
-auto CHexerMDTemplate::OpenDocumentFile(const ut::DATAOPEN& dos)->CDocument*
-{
+auto CHexerMDTemplate::OpenDocumentFile(const ut::DATAOPEN& dos)->CDocument* {
 	//This code is copy-pasted from the original CMultiDocTemplate::OpenDocumentFile.
 	//And adapted to work with the DATAOPEN struct.
 
@@ -112,14 +110,12 @@ public:
 
 IMPLEMENT_DYNCREATE(CHexerDocMgr, CDocument)
 
-auto CHexerDocMgr::OpenDocumentCustom(LPCWSTR lpszFileName, bool fDontLNK)->CDocument*
-{
+auto CHexerDocMgr::OpenDocumentCustom(LPCWSTR lpszFileName, bool fDontLNK)->CDocument* {
 	return OpenDocumentCustom({ .wstrDataPath { fDontLNK ? lpszFileName : ut::ResolveLNK(lpszFileName) },
 		.eOpenMode { ut::EOpenMode::OPEN_FILE } });
 }
 
-auto CHexerDocMgr::OpenDocumentCustom(const ut::DATAOPEN& dos)->CDocument*
-{
+auto CHexerDocMgr::OpenDocumentCustom(const ut::DATAOPEN& dos)->CDocument* {
 	//This code below is copy-pasted from the original CDocManager::OpenDocumentFile.
 	//We need to override this method to remove calls to AtlStrLen, AfxFullPath, AfxResolveShortcut
 	//functions from the original method, because these functions can't handle paths like "\\?\PhysicalDisk".
@@ -183,8 +179,7 @@ auto CHexerDocMgr::OpenDocumentCustom(const ut::DATAOPEN& dos)->CDocument*
 	return pBestTemplate->OpenDocumentFile(dos);
 }
 
-auto CHexerDocMgr::OpenDocumentFile(LPCWSTR lpszFileName, BOOL /*bAddToMRU*/)->CDocument*
-{
+auto CHexerDocMgr::OpenDocumentFile(LPCWSTR lpszFileName, BOOL /*bAddToMRU*/)->CDocument* {
 	//This method also takes a part in the HDROP.
 
 	return OpenDocumentCustom({ .wstrDataPath { ut::ResolveLNK(lpszFileName) }, .eOpenMode { ut::EOpenMode::OPEN_FILE } });
@@ -202,19 +197,16 @@ BEGIN_MESSAGE_MAP(CHexerApp, CWinAppEx)
 	ON_COMMAND_RANGE(IDM_FILE_RFL00, IDM_FILE_RFL19, &CHexerApp::OnFileRFL)
 END_MESSAGE_MAP()
 
-auto CHexerApp::GetAppSettings()->CAppSettings&
-{
+auto CHexerApp::GetAppSettings()->CAppSettings& {
 	return m_stAppSettings;
 }
 
-auto CHexerApp::GetClassName()const->LPCWSTR
-{
+auto CHexerApp::GetClassName()const->LPCWSTR {
 	//Just a "unique" string for a Window Class name.
 	return L"HexerClassUnique{78306c63-7865}";
 }
 
-void CHexerApp::NotifyTabsOnSettingsChange()
-{
+void CHexerApp::NotifyTabsOnSettingsChange() {
 	auto posDocTempl = GetFirstDocTemplatePosition();
 	while (posDocTempl != nullptr) {
 		const auto pDocTempl = GetNextDocTemplate(posDocTempl);
@@ -225,8 +217,7 @@ void CHexerApp::NotifyTabsOnSettingsChange()
 	}
 }
 
-void CHexerApp::OnFileOpenFile()
-{
+void CHexerApp::OnFileOpenFile() {
 	const auto lmbFOD = [this]()->bool {
 		CFileDialog fd(TRUE, nullptr, nullptr, OFN_EXPLORER | OFN_ALLOWMULTISELECT | OFN_DONTADDTORECENT
 			| OFN_ENABLESIZING | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NODEREFERENCELINKS, L"All files (*.*)|*.*||");
@@ -258,20 +249,17 @@ void CHexerApp::OnFileOpenFile()
 	while (!lmbFOD()) { }; //If no file has been opened (in multiple selection) show the "Open File Dialog" again.
 }
 
-auto CHexerApp::OpenDocumentCustom(LPCWSTR pwszPath, bool fDontLNK)->CDocument*
-{
+auto CHexerApp::OpenDocumentCustom(LPCWSTR pwszPath, bool fDontLNK)->CDocument* {
 	ENSURE_VALID(m_pDocManager);
 	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentCustom(pwszPath, fDontLNK);
 }
 
-auto CHexerApp::OpenDocumentCustom(const ut::DATAOPEN& dos)->CDocument*
-{
+auto CHexerApp::OpenDocumentCustom(const ut::DATAOPEN& dos)->CDocument* {
 	ENSURE_VALID(m_pDocManager);
 	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentCustom(dos);
 }
 
-auto CHexerApp::OpenDocumentFile(LPCWSTR pwszPath)->CDocument*
-{
+auto CHexerApp::OpenDocumentFile(LPCWSTR pwszPath)->CDocument* {
 	ENSURE_VALID(m_pDocManager);
 	return static_cast<CHexerDocMgr*>(m_pDocManager)->OpenDocumentFile(pwszPath);
 }
@@ -279,8 +267,7 @@ auto CHexerApp::OpenDocumentFile(LPCWSTR pwszPath)->CDocument*
 
 //CHexerApp private methods.
 
-BOOL CHexerApp::InitInstance()
-{
+BOOL CHexerApp::InitInstance() {
 	CWinAppEx::InitInstance();
 
 	CCommandLineInfo cmdInfo;
@@ -410,8 +397,7 @@ BOOL CHexerApp::InitInstance()
 	return TRUE;
 }
 
-int CHexerApp::ExitInstance()
-{
+int CHexerApp::ExitInstance() {
 	if (m_fMainAppInSingleAppMode) { //To make sure it's the main app, when in the Single App mode. 
 		GetAppSettings().SaveSettings();
 	}
@@ -419,21 +405,18 @@ int CHexerApp::ExitInstance()
 	return CWinAppEx::ExitInstance();
 }
 
-void CHexerApp::OnAppAbout()
-{
+void CHexerApp::OnAppAbout() {
 	CDlgAbout aboutDlg;
 	aboutDlg.DoModal();
 }
 
-void CHexerApp::OnFileNewFile()
-{
+void CHexerApp::OnFileNewFile() {
 	if (CDlgNewFile dlg; dlg.DoModal() == IDOK) {
 		OpenDocumentCustom(dlg.GetOpenData());
 	}
 }
 
-void CHexerApp::OnFileOpenDevice()
-{
+void CHexerApp::OnFileOpenDevice() {
 	if (CDlgOpenDevice dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& refData : dlg.GetOpenData()) {
 			OpenDocumentCustom(refData);
@@ -441,8 +424,7 @@ void CHexerApp::OnFileOpenDevice()
 	}
 }
 
-void CHexerApp::OnFileOpenProcess()
-{
+void CHexerApp::OnFileOpenProcess() {
 	if (CDlgOpenProcess dlg(AfxGetMainWnd()); dlg.DoModal() == IDOK) {
 		for (const auto& refData : dlg.GetOpenData()) {
 			OpenDocumentCustom(refData);
@@ -450,13 +432,11 @@ void CHexerApp::OnFileOpenProcess()
 	}
 }
 
-void CHexerApp::OnFileRFL(UINT uID)
-{
+void CHexerApp::OnFileRFL(UINT uID) {
 	OpenDocumentCustom(GetAppSettings().RFLGetDataFromMenuID(uID));
 }
 
-void CHexerApp::OnToolsSettings()
-{
+void CHexerApp::OnToolsSettings() {
 	CDlgSettings dlg;
 	dlg.DoModal(m_stAppSettings);
 }

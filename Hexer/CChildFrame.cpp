@@ -24,8 +24,7 @@ BEGIN_MESSAGE_MAP(CChildFrame, CMDIChildWndEx)
 	ON_WM_MDIACTIVATE()
 END_MESSAGE_MAP()
 
-auto CChildFrame::GetFrameIcon()const->HICON
-{
+auto CChildFrame::GetFrameIcon()const->HICON {
 	const auto pView = GetHexerView();
 	if (pView == nullptr) {
 		return { };
@@ -34,13 +33,11 @@ auto CChildFrame::GetFrameIcon()const->HICON
 	return pView->GetDocument()->GetDocIcon();
 }
 
-auto CChildFrame::GetHexerView()const->CHexerView*
-{
+auto CChildFrame::GetHexerView()const->CHexerView* {
 	return m_pHexerView;
 }
 
-bool CChildFrame::OnBeforeClose()
-{
+bool CChildFrame::OnBeforeClose() {
 	const auto pView = GetHexerView();;
 	if (pView == nullptr)
 		return true;
@@ -48,21 +45,18 @@ bool CChildFrame::OnBeforeClose()
 	return pView->OnBeforeClose();
 }
 
-void CChildFrame::SetHexerView(CHexerView* pView)
-{
+void CChildFrame::SetHexerView(CHexerView* pView) {
 	m_pHexerView = pView;
 }
 
 
 //Private methods.
 
-auto CChildFrame::GetMainFrame()const->CMainFrame*
-{
+auto CChildFrame::GetMainFrame()const->CMainFrame* {
 	return reinterpret_cast<CMainFrame*>(AfxGetMainWnd());
 }
 
-auto CChildFrame::GetHexCtrl()const->HEXCTRL::IHexCtrl*
-{
+auto CChildFrame::GetHexCtrl()const->HEXCTRL::IHexCtrl* {
 	if (const auto pView = GetHexerView(); pView != nullptr) {
 		return pView->GetHexCtrl();
 	}
@@ -70,8 +64,7 @@ auto CChildFrame::GetHexCtrl()const->HEXCTRL::IHexCtrl*
 	return { };
 }
 
-void CChildFrame::OnClose()
-{
+void CChildFrame::OnClose() {
 	if (!OnBeforeClose()) {
 		return;
 	}
@@ -80,21 +73,18 @@ void CChildFrame::OnClose()
 	CMDIChildWndEx::OnClose();
 }
 
-BOOL CChildFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
-{
+BOOL CChildFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext) {
 	m_fCreating = true;
 	++GetMainFrame()->GetChildFramesCount();
 	return CMDIChildWndEx::OnCreateClient(lpcs, pContext);
 }
 
-void CChildFrame::OnDestroy()
-{
+void CChildFrame::OnDestroy() {
 	--GetMainFrame()->GetChildFramesCount();
 	CMDIChildWndEx::OnDestroy();
 }
 
-void CChildFrame::OnFrameActivate()
-{
+void CChildFrame::OnFrameActivate() {
 	for (const auto hWnd : m_vecWndHidden) { //Show all hidden dialogs.
 		::ShowWindow(hWnd, SW_SHOW);
 	}
@@ -103,8 +93,7 @@ void CChildFrame::OnFrameActivate()
 	GetMainFrame()->OnChildFrameActivate();
 }
 
-void CChildFrame::OnFrameDisactivate()
-{
+void CChildFrame::OnFrameDisactivate() {
 	//HexCtrl dialogs that is not in panes. They must be hidden/restored during tab switching.
 	static constexpr HEXCTRL::EHexWnd arrHexDlg[] { HEXCTRL::EHexWnd::DLG_CODEPAGE, HEXCTRL::EHexWnd::DLG_GOTO,
 		HEXCTRL::EHexWnd::DLG_MODIFY, HEXCTRL::EHexWnd::DLG_SEARCH };
@@ -124,8 +113,7 @@ void CChildFrame::OnFrameDisactivate()
 	GetMainFrame()->OnChildFrameDisactivate();
 }
 
-void CChildFrame::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd)
-{
+void CChildFrame::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd) {
 	CMDIChildWndEx::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
 
 	const auto pMainFrame = GetMainFrame();

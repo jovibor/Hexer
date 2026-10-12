@@ -91,20 +91,17 @@ BEGIN_MESSAGE_MAP(CDlgOpenProcess, CDialogEx)
 	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
-auto CDlgOpenProcess::GetOpenData()const->const std::vector<ut::DATAOPEN>&
-{
+auto CDlgOpenProcess::GetOpenData()const->const std::vector<ut::DATAOPEN>& {
 	return m_vecOpenData;
 }
 
-void CDlgOpenProcess::DoDataExchange(CDataExchange* pDX)
-{
+void CDlgOpenProcess::DoDataExchange(CDataExchange* pDX) {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDOK, m_btnOpen);
 	DDX_Control(pDX, IDC_OPENPROCESS_STAT_INFO, m_statInfo);
 }
 
-void CDlgOpenProcess::EnableDynamicLayoutHelper(bool fEnable)
-{
+void CDlgOpenProcess::EnableDynamicLayoutHelper(bool fEnable) {
 	if (fEnable && IsDynamicLayoutEnabled())
 		return;
 
@@ -129,13 +126,11 @@ void CDlgOpenProcess::EnableDynamicLayoutHelper(bool fEnable)
 	}
 }
 
-void CDlgOpenProcess::OnBnClickedRefresh()
-{
+void CDlgOpenProcess::OnBnClickedRefresh() {
 	RefreshProcs();
 }
 
-auto CDlgOpenProcess::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH
-{
+auto CDlgOpenProcess::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH {
 	const auto hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
 
 	if (pWnd == &m_statInfo) {
@@ -150,8 +145,7 @@ auto CDlgOpenProcess::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)->HBRUSH
 	return hbr;
 }
 
-void CDlgOpenProcess::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
-{
+void CDlgOpenProcess::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct) {
 	if (nIDCtl == IDC_OPENPROCESS_LIST_PROCS) {
 		m_ListProcs.DrawItem(lpDrawItemStruct);
 		return;
@@ -164,8 +158,7 @@ void CDlgOpenProcess::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	CDialogEx::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }
 
-BOOL CDlgOpenProcess::OnInitDialog()
-{
+BOOL CDlgOpenProcess::OnInitDialog() {
 	CDialogEx::OnInitDialog();
 
 	const auto flDPIScale = ut::GetDPIScaleForHWND(m_hWnd);
@@ -195,8 +188,7 @@ BOOL CDlgOpenProcess::OnInitDialog()
 	return TRUE;
 }
 
-void CDlgOpenProcess::OnLButtonDown(UINT nFlags, CPoint point)
-{
+void CDlgOpenProcess::OnLButtonDown(UINT nFlags, CPoint point) {
 	if (m_fCurInSplitter) {
 		m_fLMDownResize = true;
 		SetCapture();
@@ -206,8 +198,7 @@ void CDlgOpenProcess::OnLButtonDown(UINT nFlags, CPoint point)
 	CDialogEx::OnLButtonDown(nFlags, point);
 }
 
-void CDlgOpenProcess::OnLButtonUp(UINT nFlags, CPoint point)
-{
+void CDlgOpenProcess::OnLButtonUp(UINT nFlags, CPoint point) {
 	m_fLMDownResize = false;
 	ReleaseCapture();
 	EnableDynamicLayoutHelper(true);
@@ -215,8 +206,7 @@ void CDlgOpenProcess::OnLButtonUp(UINT nFlags, CPoint point)
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
-void CDlgOpenProcess::OnListModulesColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CDlgOpenProcess::OnListModulesColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	const auto iColumn = m_ListModules.GetSortColumn();
 	const auto fAscending = m_ListModules.GetSortAscending();
 	std::sort(m_vecModules.begin(), m_vecModules.end(), [iColumn, fAscending](const MODULEDATA& lhs, const MODULEDATA& rhs) {
@@ -237,8 +227,7 @@ void CDlgOpenProcess::OnListModulesColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pRe
 	m_ListModules.RedrawWindow();
 }
 
-void CDlgOpenProcess::OnListModulesGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgOpenProcess::OnListModulesGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pDI = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	const auto pItem = &pDI->item;
 	if ((pItem->mask & LVIF_TEXT) == 0)
@@ -260,8 +249,7 @@ void CDlgOpenProcess::OnListModulesGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult
 
 void CDlgOpenProcess::OnListModulesDblClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) { }
 
-void CDlgOpenProcess::OnListProcsColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/)
-{
+void CDlgOpenProcess::OnListProcsColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResult*/) {
 	const auto iColumn = m_ListProcs.GetSortColumn();
 	const auto fAscending = m_ListProcs.GetSortAscending();
 	std::sort(m_vecProcs.begin(), m_vecProcs.end(), [iColumn, fAscending](const PROCDATA& lhs, const PROCDATA& rhs) {
@@ -287,8 +275,7 @@ void CDlgOpenProcess::OnListProcsColumnClick(NMHDR* /*pNMHDR*/, LRESULT* /*pResu
 	m_ListProcs.RedrawWindow();
 }
 
-void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 	if (pNMI->iItem < 0 || pNMI->iSubItem < 0 || !(pNMI->uNewState & LVIS_SELECTED))
 		return;
@@ -325,16 +312,14 @@ void CDlgOpenProcess::OnListProcsItemChanged(NMHDR* pNMHDR, LRESULT* /*pResult*/
 	OnProcReady(true);
 }
 
-void CDlgOpenProcess::OnListProcsDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgOpenProcess::OnListProcsDblClick(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	if (const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 		pNMI->iItem >= 0 && pNMI->iSubItem >= 0) {
 		OnOK();
 	}
 }
 
-void CDlgOpenProcess::OnListProcsGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgOpenProcess::OnListProcsGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pDI = reinterpret_cast<NMLVDISPINFOW*>(pNMHDR);
 	const auto pItem = &pDI->item;
 	if ((pItem->mask & LVIF_TEXT) == 0)
@@ -360,8 +345,7 @@ void CDlgOpenProcess::OnListProcsGetDispInfo(NMHDR* pNMHDR, LRESULT* /*pResult*/
 	}
 }
 
-void CDlgOpenProcess::OnListProcsGetTooltip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
-{
+void CDlgOpenProcess::OnListProcsGetTooltip(NMHDR* pNMHDR, LRESULT* /*pResult*/) {
 	const auto pTTI = reinterpret_cast<lex::LISTEXTTINFO*>(pNMHDR);
 	const auto iItem = pTTI->iItem;
 	const auto iSubItem = pTTI->iSubItem;
@@ -381,8 +365,7 @@ void CDlgOpenProcess::OnListProcsGetTooltip(NMHDR* pNMHDR, LRESULT* /*pResult*/)
 	pTTI->stData.pwszText = m_wstrTTProcPath.data();
 }
 
-void CDlgOpenProcess::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
-{
+void CDlgOpenProcess::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct) {
 	if (nIDCtl == IDC_OPENPROCESS_LIST_PROCS) {
 		m_ListProcs.MeasureItem(lpMeasureItemStruct);
 		return;
@@ -395,8 +378,7 @@ void CDlgOpenProcess::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureIte
 	CDialogEx::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
-void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
-{
+void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point) {
 	static constexpr auto iResAreaHalfWidth = 6;   //Area where cursor turns into resizable (IDC_SIZEWE).
 	static constexpr auto iWidthBetweenLists = 1;  //Width between tree and list after resizing.
 	static constexpr auto iMinLeftListWidth = 100; //Left list minimum allowed width.
@@ -439,8 +421,7 @@ void CDlgOpenProcess::OnMouseMove(UINT nFlags, CPoint point)
 	CDialogEx::OnMouseMove(nFlags, point);
 }
 
-BOOL CDlgOpenProcess::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
-{
+BOOL CDlgOpenProcess::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult) {
 	const auto* const pNMI = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
 
 	if (pNMI->hdr.idFrom == IDC_OPENPROCESS_LIST_PROCS) {
@@ -460,8 +441,7 @@ BOOL CDlgOpenProcess::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 	return CDialogEx::OnNotify(wParam, lParam, pResult);
 }
 
-void CDlgOpenProcess::OnOK()
-{
+void CDlgOpenProcess::OnOK() {
 	if (!m_fProcReady)
 		return;
 
@@ -477,8 +457,7 @@ void CDlgOpenProcess::OnOK()
 	CDialogEx::OnOK();
 }
 
-void CDlgOpenProcess::OnProcReady(bool fReady)
-{
+void CDlgOpenProcess::OnProcReady(bool fReady) {
 	std::wstring wstr;
 	if (fReady) {
 		wstr = L"Process ready to be opened";
@@ -495,8 +474,7 @@ void CDlgOpenProcess::OnProcReady(bool fReady)
 	m_statInfo.SetWindowTextW(wstr.data());
 }
 
-void CDlgOpenProcess::RefreshProcs()
-{
+void CDlgOpenProcess::RefreshProcs() {
 	m_vecProcs.clear();
 	DWORD dwLevel { 1 };
 	WTS_PROCESS_INFO_EXW* pWPI { };
