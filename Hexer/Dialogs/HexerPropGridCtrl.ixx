@@ -1,10 +1,15 @@
+/*******************************************************************************
+* Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
+* Hexer is a Hexadecimal Editor for Windows platform.                          *
+* Official git repository: https://github.com/jovibor/Hexer/                   *
+* This software is available under "The Hexer License", see the LICENSE file.  *
+*******************************************************************************/
 module;
 #include <SDKDDKVer.h>
 #include <afxcontrolbars.h>
-#include <format>
-#include <string>
-#include <unordered_map>
 export module HexerPropGridCtrl;
+
+import std;
 
 //CHexerPropGridCtrl.
 export class CHexerPropGridCtrl final : public CMFCPropertyGridCtrl {

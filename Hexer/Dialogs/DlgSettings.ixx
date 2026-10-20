@@ -1,10 +1,10 @@
-module;
 /*******************************************************************************
 * Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
+module;
 #include <SDKDDKVer.h>
 #include "resource.h"
 #include <afxdialogex.h>
@@ -13,11 +13,9 @@ module;
 #include <comutil.h> //_variant_t.
 #include <cassert>
 #include <format>
-#include <memory>
-#include <utility>
-#include <vector>
 export module DlgSettings;
 
+import std;
 import HexerPropGridCtrl;
 import AppSettings;
 import Utility;
@@ -52,8 +50,8 @@ private:
 };
 
 auto IPropsHelper::GetGridData(std::uint8_t ui8Name)const->const GRIDDATA* {
-	const auto it = std::find_if(GetGridVec().begin(), GetGridVec().end(), [=](const GRIDDATA& refData) {
-		return refData.ui8Name == ui8Name; });
+	const auto it = std::find_if(GetGridVec().begin(), GetGridVec().end(), [=](const GRIDDATA& gd) {
+		return gd.ui8Name == ui8Name; });
 	assert(it != GetGridVec().end());
 
 	return it != GetGridVec().end() ? &*it : nullptr;

@@ -1,19 +1,16 @@
-module;
 /*******************************************************************************
 * Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
+module;
 #include <SDKDDKVer.h>
 #include "resource.h"
 #include <afxdialogex.h>
-#include <chrono>
-#include <format>
-#include <string>
-#include <vector>
 export module DlgLogger;
 
+import std;
 import Utility;
 
 export class CDlgLogger final : public CDialogEx {

@@ -13,15 +13,11 @@ module;
 #include <winioctl.h>
 #include "HexCtrl.h"
 #include <cassert>
-#include <compare>
-#include <chrono>
-#include <expected>
-#include <memory>
-#include <string>
 export module Utility;
 
 #pragma comment(lib, "d2d1")
 
+import std;
 export import StrToNum;
 export import ListEx;
 export namespace lex = LISTEX;

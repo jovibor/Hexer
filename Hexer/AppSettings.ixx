@@ -10,15 +10,7 @@ module;
 #include "sqlite3.h"
 #include <afxwin.h>
 #include "HexCtrl.h"
-#include <algorithm>
 #include <cassert>
-#include <bitset>
-#include <filesystem>
-#include <format>
-#include <ranges>
-#include <string>
-#include <utility>
-#include <vector>
 export module AppSettings;
 
 #ifdef _DEBUG
@@ -28,6 +20,7 @@ export module AppSettings;
 #endif
 #pragma comment (lib, SQLITE_LIBNAME)
 
+import std;
 import Utility;
 
 using uptr_stmt = std::unique_ptr < sqlite3_stmt, decltype([](sqlite3_stmt* pSTMT) {

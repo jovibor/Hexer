@@ -1,29 +1,27 @@
-module;
 /*******************************************************************************
 * Copyright © 2023-present Jovibor https://github.com/jovibor/                 *
 * Hexer is a Hexadecimal Editor for Windows platform.                          *
 * Official git repository: https://github.com/jovibor/Hexer/                   *
 * This software is available under "The Hexer License", see the LICENSE file.  *
 *******************************************************************************/
+module;
 #include <SDKDDKVer.h>
 #include "resource.h"
 #include <afxdialogex.h>
-#include <algorithm>
-#include <format>
 #include <psapi.h>
-#include <string>
-#include <vector>
 #include <wtsapi32.h>
 export module DlgOpenProcess;
 
 #pragma comment(lib, "Wtsapi32.lib")
+import std;
 import Utility;
 
 export class CDlgOpenProcess final : public CDialogEx {
 public:
 	struct PROCDATA;
 	struct MODULEDATA;
-	CDlgOpenProcess(CWnd* pParent = nullptr) : CDialogEx(IDD_OPENPROCESS, pParent) { }
+	CDlgOpenProcess(CWnd* pParent = nullptr);
+	~CDlgOpenProcess();
 	[[nodiscard]] auto GetOpenData()const -> const std::vector<ut::DATAOPEN>&;
 private:
 	void DoDataExchange(CDataExchange* pDX)override;
@@ -90,6 +88,9 @@ BEGIN_MESSAGE_MAP(CDlgOpenProcess, CDialogEx)
 	ON_WM_MEASUREITEM()
 	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
+
+CDlgOpenProcess::CDlgOpenProcess(CWnd* pParent) : CDialogEx(IDD_OPENPROCESS, pParent) { }
+CDlgOpenProcess::~CDlgOpenProcess() { }
 
 auto CDlgOpenProcess::GetOpenData()const->const std::vector<ut::DATAOPEN>& {
 	return m_vecOpenData;

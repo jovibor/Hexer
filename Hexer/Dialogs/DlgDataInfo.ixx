@@ -9,12 +9,9 @@ module;
 #include "resource.h"
 #include <afxcontrolbars.h>
 #include <afxdialogex.h>
-#include <algorithm>
-#include <format>
-#include <string>
-#include <vector>
 export module DlgDataInfo;
 
+import std;
 import Utility;
 import HexerPropGridCtrl;
 
